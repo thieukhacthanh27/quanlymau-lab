@@ -7,7 +7,7 @@ from datetime import datetime
 # CẤU HÌNH CƠ BẢN
 # ==========================================
 st.set_page_config(page_title="Hệ thống Quản lý Mẫu - Lab GC", layout="wide")
-DATA_FILE = "https://docs.google.com/spreadsheets/d/1F2wFnxboWTFWDMGUuBDRGB901a5EKgvazHxkCgBjjRU/edit?usp=sharing"
+DATA_FILE = "https://docs.google.com/spreadsheets/d/1F2wFnxboWTFWDMGUuBDRGB901a5EKgvazHxkCgBjjRU/edit?gid=0#gid=0"
 
 STATUSES = [
     "🔴 1. Chờ xử lý", "🟠 2. Đang xử lý mẫu", "🟡 3. Chờ chạy máy",
