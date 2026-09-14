@@ -1,13 +1,15 @@
 import streamlit as st
 import pandas as pd
-import os
 from datetime import datetime
+from streamlit_gsheets import GSheetsConnection
 
 # ==========================================
 # CẤU HÌNH CƠ BẢN
 # ==========================================
 st.set_page_config(page_title="Hệ thống Quản lý Mẫu - Lab GC", layout="wide")
-DATA_FILE = "https://docs.google.com/spreadsheets/d/1F2wFnxboWTFWDMGUuBDRGB901a5EKgvazHxkCgBjjRU/edit?gid=0#gid=0"
+
+# Đã thay bằng link thật của bạn
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1F2wFnxboWTFWDMGUuBDRGB901a5EKgvazHxkCgBjjRU/edit?gid=0#gid=0"
 
 STATUSES = [
     "🔴 1. Chờ xử lý", "🟠 2. Đang xử lý mẫu", "🟡 3. Chờ chạy máy",
@@ -15,21 +17,31 @@ STATUSES = [
 ]
 
 # ==========================================
-# HÀM XỬ LÝ DỮ LIỆU
+# HÀM XỬ LÝ DỮ LIỆU BẰNG GOOGLE SHEETS API
 # ==========================================
+# Khởi tạo kết nối với Google Sheets thông qua Secrets đã cài
+conn = st.connection("gsheets", type=GSheetsConnection)
+
 def load_data():
-    if not os.path.exists(DATA_FILE):
-        df = pd.DataFrame(columns=["Mã Mẫu", "Tên Mẫu", "Nền Mẫu", "Chỉ Tiêu", "Trạng Thái", "Người Giữ", "Ghi Chú", "Giờ Nhận"])
-        df.to_csv(DATA_FILE, index=False)
-    else:
-        df = pd.read_csv(DATA_FILE)
+    # Đọc dữ liệu trực tiếp từ Google Sheets, bỏ qua cache (ttl=0) để luôn lấy bản mới nhất
+    df = conn.read(spreadsheet=SHEET_URL, ttl=0)
     
-    # Đảm bảo cột Giờ Nhận luôn ở định dạng thời gian để tính toán
+    # Nếu bảng trống chưa có gì, tự tạo tiêu đề cột và đẩy lên Google Sheets
+    if df.empty or len(df.columns) == 0 or "Mã Mẫu" not in df.columns:
+        df = pd.DataFrame(columns=["Mã Mẫu", "Tên Mẫu", "Nền Mẫu", "Chỉ Tiêu", "Trạng Thái", "Người Giữ", "Ghi Chú", "Giờ Nhận"])
+        conn.update(spreadsheet=SHEET_URL, data=df)
+    
     df['Giờ Nhận'] = pd.to_datetime(df['Giờ Nhận'], errors='coerce')
     return df
 
 def save_data(df):
-    df.to_csv(DATA_FILE, index=False)
+    df_save = df.copy()
+    # Phải biến thời gian thành chuỗi chữ trước khi lưu để Google Sheets không báo lỗi
+    df_save['Giờ Nhận'] = df_save['Giờ Nhận'].dt.strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Lệnh đẩy dữ liệu lên Google Sheets
+    conn.update(spreadsheet=SHEET_URL, data=df_save)
+    st.cache_data.clear()
 
 if "df" not in st.session_state:
     st.session_state.df = load_data()
@@ -42,7 +54,6 @@ st.title("🧪 Bảng Điều Khiển LIMS - Phòng Lab GC")
 # --- BỘ LỌC NGÀY LÀM VIỆC ---
 col_date, col_search, col_filter = st.columns([1.5, 1, 1.5])
 with col_date:
-    # Mặc định luôn mở ra là ngày hôm nay
     selected_date = st.date_input("📅 Chọn Ngày Làm Việc:", datetime.today())
 with col_search:
     search_query = st.text_input("🔍 Nhập ID mã mẫu:")
@@ -55,23 +66,14 @@ st.subheader(f"📋 Danh sách công việc ngày {selected_date.strftime('%d/%m
 df_current = st.session_state.df.copy()
 df_current["Ngày Nhận"] = df_current["Giờ Nhận"].dt.date
 
-# 1. Mẫu tồn đọng: Nhận từ các ngày trước VÀ trạng thái KHÔNG PHẢI là "Lưu kho" hoặc "Tiêu hủy"
 mask_ton_dong = (df_current["Ngày Nhận"] < selected_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))
-
-# 2. Mẫu mới: Nhận đúng vào ngày đang chọn
 mask_trong_ngay = (df_current["Ngày Nhận"] == selected_date)
 
-# Gộp chung vào bảng hiển thị
 df_display = df_current[mask_ton_dong | mask_trong_ngay].copy()
-
-# Gắn nhãn để người dùng phân biệt
 df_display["Phân Loại"] = "🟢 Nhận trong ngày"
 df_display.loc[mask_ton_dong, "Phân Loại"] = "⚠️ TỒN ĐỌNG CHƯA XONG"
-
-# Sắp xếp: Mẫu tồn đọng luôn bị đẩy lên trên cùng, sau đó mới đến mẫu mới
 df_display = df_display.sort_values(by=["Phân Loại", "Giờ Nhận"], ascending=[False, True])
 
-# Lọc theo thanh tìm kiếm
 if search_query:
     df_display = df_display[df_display["Mã Mẫu"].str.contains(search_query, case=False, na=False)]
 if filter_status:
@@ -86,15 +88,14 @@ edited_df = st.data_editor(
         "Nền Mẫu": st.column_config.SelectboxColumn("Nền Mẫu", options=["Khí", "Nước"], required=True),
         "Phân Loại": st.column_config.TextColumn("Phân Loại", disabled=True),
         "Giờ Nhận": st.column_config.DatetimeColumn("Giờ Nhận", format="DD/MM/YYYY HH:mm", disabled=True),
-        "Ngày Nhận": None # Ẩn cột tạm thời
+        "Ngày Nhận": None 
     },
-    disabled=["Mã Mẫu", "Tên Mẫu", "Chỉ Tiêu", "Phân Loại", "Giờ Nhận"], # Khóa không cho sửa sai thông tin gốc
+    disabled=["Mã Mẫu", "Tên Mẫu", "Chỉ Tiêu", "Phân Loại", "Giờ Nhận"], 
     use_container_width=True,
     num_rows="dynamic",
     key="data_editor"
 )
 
-# Nút lưu thay đổi (Chỉ ghi đè những cột được phép sửa để tránh lỗi dữ liệu)
 if st.button("💾 Lưu các thay đổi vào Hệ thống"):
     for index, row in edited_df.iterrows():
         st.session_state.df.loc[index, "Trạng Thái"] = row["Trạng Thái"]
@@ -103,6 +104,7 @@ if st.button("💾 Lưu các thay đổi vào Hệ thống"):
         st.session_state.df.loc[index, "Ghi Chú"] = row["Ghi Chú"]
     save_data(st.session_state.df)
     st.success("Đã cập nhật cơ sở dữ liệu thành công!")
+    st.rerun()
 
 st.divider()
 
@@ -126,7 +128,7 @@ with col_add:
                 "Mã Mẫu": new_id, "Tên Mẫu": new_name, "Nền Mẫu": new_nen, 
                 "Chỉ Tiêu": new_chi_tieu, "Trạng Thái": STATUSES[0], 
                 "Người Giữ": new_nguoi, "Ghi Chú": "", 
-                "Giờ Nhận": datetime.now() # Ghi nhận thời gian thực
+                "Giờ Nhận": datetime.now() 
             }])
             st.session_state.df = pd.concat([st.session_state.df, new_row], ignore_index=True)
             save_data(st.session_state.df)
