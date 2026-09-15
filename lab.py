@@ -8,8 +8,8 @@ from streamlit_gsheets import GSheetsConnection
 # ==========================================
 st.set_page_config(page_title="Hệ thống Quản lý Mẫu - Lab GC", layout="wide")
 
-# BẠN NHỚ DÁN LẠI LINK GOOGLE SHEETS THẬT VÀO ĐÂY:
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1F2wFnxboWTFWDMGUuBDRGB901a5EKgvazHxkCgBjjRU/edit?gid=0#gid=0"
+# NHỚ DÁN LẠI LINK GOOGLE SHEETS CỦA BẠN VÀO ĐÂY:
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1F2wFnxboWTFWDMGUuBDRGB901a5EKgvazHxkCgBjjRU/edit?usp=sharing"
 
 STATUSES = [
     "🔴 1. Chờ xử lý", "🟠 2. Đang xử lý mẫu", "🟡 3. Chờ chạy máy",
@@ -17,7 +17,7 @@ STATUSES = [
 ]
 
 # ==========================================
-# HÀM XỬ LÝ DỮ LIỆU BẰNG GOOGLE SHEETS API
+# HÀM XỬ LÝ DỮ LIỆU
 # ==========================================
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -25,7 +25,8 @@ def load_data():
     df = conn.read(spreadsheet=SHEET_URL, ttl=0)
     
     if df.empty or len(df.columns) == 0 or "Mã Mẫu" not in df.columns:
-        df = pd.DataFrame(columns=["Mã Mẫu", "Tên Mẫu", "Nền Mẫu", "Chỉ Tiêu", "Trạng Thái", "Người Giữ", "Ghi Chú", "Giờ Nhận"])
+        # Đã đổi Tên Mẫu thành Tên Mẻ
+        df = pd.DataFrame(columns=["Mã Mẫu", "Tên Mẻ", "Nền Mẫu", "Chỉ Tiêu", "Trạng Thái", "Người Giữ", "Ghi Chú", "Giờ Nhận"])
         conn.update(spreadsheet=SHEET_URL, data=df)
     
     df['Giờ Nhận'] = pd.to_datetime(df['Giờ Nhận'], errors='coerce')
@@ -34,7 +35,6 @@ def load_data():
 def save_data(df):
     df_save = df.copy()
     df_save['Giờ Nhận'] = df_save['Giờ Nhận'].dt.strftime('%Y-%m-%d %H:%M:%S')
-    
     conn.update(spreadsheet=SHEET_URL, data=df_save)
     st.cache_data.clear()
 
@@ -72,7 +72,7 @@ if search_query:
 if filter_status:
     df_display = df_display[df_display["Trạng Thái"].isin(filter_status)]
 
-st.caption("Mẹo: Mẫu nào làm xong và chuyển trạng thái thành 'Lưu kho', sang ngày mai sẽ tự động biến mất khỏi danh sách chờ.")
+st.caption("Mẹo: Chọn một dòng và bấm Delete để xóa. Cập nhật trạng thái xong nhớ bấm Lưu.")
 edited_df = st.data_editor(
     df_display,
     column_config={
@@ -82,34 +82,30 @@ edited_df = st.data_editor(
         "Giờ Nhận": st.column_config.DatetimeColumn("Giờ Nhận", format="DD/MM/YYYY HH:mm", disabled=True),
         "Ngày Nhận": None 
     },
-    disabled=["Mã Mẫu", "Tên Mẫu", "Chỉ Tiêu", "Phân Loại", "Giờ Nhận"], 
+    disabled=["Mã Mẫu", "Tên Mẻ", "Chỉ Tiêu", "Phân Loại", "Giờ Nhận"], 
     use_container_width=True,
     num_rows="dynamic",
     key="data_editor"
 )
 
+# Nút lưu & xóa thông minh
 if st.button("💾 Lưu các thay đổi vào Hệ thống"):
-    # 1. Cập nhật các dòng có chỉnh sửa nội dung (Trạng thái, Người giữ...)
     for index, row in edited_df.iterrows():
         st.session_state.df.loc[index, "Trạng Thái"] = row["Trạng Thái"]
         st.session_state.df.loc[index, "Nền Mẫu"] = row["Nền Mẫu"]
         st.session_state.df.loc[index, "Người Giữ"] = row["Người Giữ"]
         st.session_state.df.loc[index, "Ghi Chú"] = row["Ghi Chú"]
-    
-    # 2. Chức năng XÓA: Tìm và xóa các dòng mà người dùng đã bấm Delete
+        
     original_indices = df_display.index.tolist()
     remaining_indices = edited_df.index.tolist()
     deleted_indices = list(set(original_indices) - set(remaining_indices))
     
     if deleted_indices:
-        # Xóa hẳn các mẫu bị loại bỏ khỏi hệ thống gốc
         st.session_state.df = st.session_state.df.drop(index=deleted_indices)
-        # Đánh lại số thứ tự để tránh lỗi dữ liệu khi tải Excel lên
         st.session_state.df = st.session_state.df.reset_index(drop=True)
         
-    # 3. Ghi đè dữ liệu chuẩn lên Google Sheets
     save_data(st.session_state.df)
-    st.success("Đã xóa mẫu và cập nhật cơ sở dữ liệu thành công!")
+    st.success("Đã cập nhật cơ sở dữ liệu thành công!")
     st.rerun()
 
 st.divider()
@@ -121,20 +117,19 @@ col_add, col_export = st.columns([1, 1])
 
 with col_add:
     st.subheader("📥 Tiếp nhận mẫu mới")
-    # Chia làm 2 tab giao diện
     tab_thu_cong, tab_excel = st.tabs(["✍️ Nhập thủ công", "📁 Tải file Excel"])
     
     with tab_thu_cong:
         with st.form("add_sample_form", clear_on_submit=True):
             new_id = st.text_input("Mã Mẫu (VD: NT-1509-01)*")
-            new_name = st.text_input("Tên/Ký hiệu Mẫu")
+            new_name = st.text_input("Tên Mẻ (VD: 2026.07.017)")
             new_nen = st.selectbox("Nền Mẫu", ["Nước", "Khí"])
             new_chi_tieu = st.text_input("Chỉ tiêu đo (VD: VOCs, Formaldehyde)")
             new_nguoi = st.text_input("Người tiếp nhận (Ký tên)")
             
             if st.form_submit_button("Thêm Mẫu") and new_id:
                 new_row = pd.DataFrame([{
-                    "Mã Mẫu": new_id, "Tên Mẫu": new_name, "Nền Mẫu": new_nen, 
+                    "Mã Mẫu": new_id, "Tên Mẻ": new_name, "Nền Mẫu": new_nen, 
                     "Chỉ Tiêu": new_chi_tieu, "Trạng Thái": STATUSES[0], 
                     "Người Giữ": new_nguoi, "Ghi Chú": "", "Giờ Nhận": datetime.now() 
                 }])
@@ -144,15 +139,33 @@ with col_add:
                 st.rerun()
 
     with tab_excel:
-        st.info("💡 Hệ thống sẽ tự động quét file và lọc lấy các mã mẫu hợp lệ (KHM).")
+        st.info("💡 Hệ thống sẽ tự động quét Tên Mẻ (Số: ...) và các mã mẫu (KHM).")
         uploaded_file = st.file_uploader("Kéo thả file KetQuaMeThuNghiem...xlsx vào đây", type=["xlsx", "xls"])
         
         if uploaded_file is not None:
             try:
                 df_upload = pd.read_excel(uploaded_file, sheet_name=0)
                 khm_col, start_row = None, None
+                ten_me_extract = "Không xác định"
                 
-                # Quét 20 dòng đầu để tìm cột chứa chữ KHM
+                # 1. Tìm Tên Mẻ (Quét các dòng đầu tiên để tìm ô chứa chữ "Số:")
+                for r in range(min(5, len(df_upload))):
+                    for c in range(len(df_upload.columns)):
+                        val = str(df_upload.iloc[r, c]).strip()
+                        if val.startswith("Số:"):
+                            ten_me_extract = val.replace("Số:", "").strip()
+                            break
+                    if ten_me_extract != "Không xác định":
+                        break
+                
+                # Dự phòng trường hợp chữ "Số:" nằm ở ngay tên cột (header)
+                if ten_me_extract == "Không xác định":
+                    for col in df_upload.columns:
+                        if str(col).startswith("Số:"):
+                            ten_me_extract = str(col).replace("Số:", "").strip()
+                            break
+                
+                # 2. Tìm cột KHM
                 for row_idx in range(min(20, len(df_upload))):
                     row_vals = df_upload.iloc[row_idx].values
                     for col_idx, val in enumerate(row_vals):
@@ -163,14 +176,12 @@ with col_add:
                     if khm_col: break
                         
                 if khm_col and start_row is not None:
-                    # Lấy danh sách mẫu, loại bỏ ô trống hoặc rác (chỉ lấy mã > 3 ký tự)
                     raw_samples = df_upload[khm_col].iloc[start_row:].dropna().astype(str).tolist()
                     samples = [s for s in raw_samples if len(s) > 3 and s.lower() != 'nan']
                     
                     if len(samples) > 0:
-                        st.success(f"✔️ Đã quét thành công **{len(samples)}** mẫu: {', '.join(samples)}")
+                        st.success(f"✔️ Đã quét thành công **{len(samples)}** mẫu thuộc mẻ: **{ten_me_extract}**")
                         
-                        # Khai báo thông tin chung cho cả lô file Excel này
                         batch_nen = st.selectbox("Nền mẫu chung cho lô này:", ["Nước", "Khí"])
                         batch_chitieu = st.text_input("Chỉ tiêu chung cho lô:", "Chưa xác định")
                         batch_nguoi = st.text_input("Người tiếp nhận (Ký tên):")
@@ -179,7 +190,7 @@ with col_add:
                             new_rows = []
                             for s in samples:
                                 new_rows.append({
-                                    "Mã Mẫu": s, "Tên Mẫu": "", "Nền Mẫu": batch_nen, 
+                                    "Mã Mẫu": s, "Tên Mẻ": ten_me_extract, "Nền Mẫu": batch_nen, 
                                     "Chỉ Tiêu": batch_chitieu, "Trạng Thái": STATUSES[0], 
                                     "Người Giữ": batch_nguoi, "Ghi Chú": "Import từ Excel", 
                                     "Giờ Nhận": datetime.now()
