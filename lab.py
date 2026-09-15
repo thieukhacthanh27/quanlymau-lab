@@ -9,7 +9,7 @@ from streamlit_gsheets import GSheetsConnection
 st.set_page_config(page_title="Hệ thống Quản lý Mẫu - Lab GC", layout="wide")
 
 # BẠN NHỚ DÁN LẠI LINK GOOGLE SHEETS THẬT VÀO ĐÂY:
-SHEET_URL = "Dhttps://docs.google.com/spreadsheets/d/1F2wFnxboWTFWDMGUuBDRGB901a5EKgvazHxkCgBjjRU/edit?gid=0#gid=0"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1F2wFnxboWTFWDMGUuBDRGB901a5EKgvazHxkCgBjjRU/edit?gid=0#gid=0"
 
 STATUSES = [
     "🔴 1. Chờ xử lý", "🟠 2. Đang xử lý mẫu", "🟡 3. Chờ chạy máy",
