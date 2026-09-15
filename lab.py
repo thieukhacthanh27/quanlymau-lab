@@ -89,13 +89,27 @@ edited_df = st.data_editor(
 )
 
 if st.button("💾 Lưu các thay đổi vào Hệ thống"):
+    # 1. Cập nhật các dòng có chỉnh sửa nội dung (Trạng thái, Người giữ...)
     for index, row in edited_df.iterrows():
         st.session_state.df.loc[index, "Trạng Thái"] = row["Trạng Thái"]
         st.session_state.df.loc[index, "Nền Mẫu"] = row["Nền Mẫu"]
         st.session_state.df.loc[index, "Người Giữ"] = row["Người Giữ"]
         st.session_state.df.loc[index, "Ghi Chú"] = row["Ghi Chú"]
+    
+    # 2. Chức năng XÓA: Tìm và xóa các dòng mà người dùng đã bấm Delete
+    original_indices = df_display.index.tolist()
+    remaining_indices = edited_df.index.tolist()
+    deleted_indices = list(set(original_indices) - set(remaining_indices))
+    
+    if deleted_indices:
+        # Xóa hẳn các mẫu bị loại bỏ khỏi hệ thống gốc
+        st.session_state.df = st.session_state.df.drop(index=deleted_indices)
+        # Đánh lại số thứ tự để tránh lỗi dữ liệu khi tải Excel lên
+        st.session_state.df = st.session_state.df.reset_index(drop=True)
+        
+    # 3. Ghi đè dữ liệu chuẩn lên Google Sheets
     save_data(st.session_state.df)
-    st.success("Đã cập nhật cơ sở dữ liệu thành công!")
+    st.success("Đã xóa mẫu và cập nhật cơ sở dữ liệu thành công!")
     st.rerun()
 
 st.divider()
