@@ -4,11 +4,11 @@ from datetime import datetime
 from streamlit_gsheets import GSheetsConnection
 
 # ==========================================
-# CẤU HÌNH CƠ BẢN
+# 1. CẤU HÌNH GIAO DIỆN & BRANDING
 # ==========================================
-st.set_page_config(page_title="Hệ thống Quản lý Mẫu - Lab GC", layout="wide")
+# Đổi biểu tượng tab và tiêu đề phần mềm
+st.set_page_config(page_title="LIMS HATICO - Lab GC", page_icon="🔬", layout="wide")
 
-# NHỚ DÁN LẠI LINK GOOGLE SHEETS CỦA BẠN VÀO ĐÂY:
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1F2wFnxboWTFWDMGUuBDRGB901a5EKgvazHxkCgBjjRU/edit?usp=sharing"
 
 STATUSES = [
@@ -17,18 +17,15 @@ STATUSES = [
 ]
 
 # ==========================================
-# HÀM XỬ LÝ DỮ LIỆU
+# 2. KẾT NỐI & XỬ LÝ DỮ LIỆU
 # ==========================================
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 def load_data():
     df = conn.read(spreadsheet=SHEET_URL, ttl=0)
-    
     if df.empty or len(df.columns) == 0 or "Mã Mẫu" not in df.columns:
-        # Đã đổi Tên Mẫu thành Tên Mẻ
         df = pd.DataFrame(columns=["Mã Mẫu", "Tên Mẻ", "Nền Mẫu", "Chỉ Tiêu", "Trạng Thái", "Người Giữ", "Ghi Chú", "Giờ Nhận"])
         conn.update(spreadsheet=SHEET_URL, data=df)
-    
     df['Giờ Nhận'] = pd.to_datetime(df['Giờ Nhận'], errors='coerce')
     return df
 
@@ -42,130 +39,142 @@ if "df" not in st.session_state:
     st.session_state.df = load_data()
 
 # ==========================================
-# GIAO DIỆN CHÍNH
+# 3. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
-st.title("🧪 Bảng Điều Khiển LIMS - Phòng Lab GC")
+st.sidebar.title("🔬 LIMS HATICO")
+st.sidebar.caption("Phần mềm Quản lý Phòng Lab GC-MS")
+st.sidebar.divider()
 
-col_date, col_search, col_filter = st.columns([1.5, 1, 1.5])
-with col_date:
-    selected_date = st.date_input("📅 Chọn Ngày Làm Việc:", datetime.today())
-with col_search:
-    search_query = st.text_input("🔍 Nhập ID mã mẫu:")
-with col_filter:
-    filter_status = st.multiselect("Lọc theo trạng thái:", STATUSES, default=[])
+menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
+    "🏠 Trang chủ (Tổng quan)", 
+    "📥 Quản lý Tiếp nhận", 
+    "⚙️ Vận hành GC-MS",
+    "🚀 Không gian phát triển"
+])
 
-st.subheader(f"📋 Danh sách công việc ngày {selected_date.strftime('%d/%m/%Y')}")
-
-df_current = st.session_state.df.copy()
-df_current["Ngày Nhận"] = df_current["Giờ Nhận"].dt.date
-
-mask_ton_dong = (df_current["Ngày Nhận"] < selected_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))
-mask_trong_ngay = (df_current["Ngày Nhận"] == selected_date)
-
-df_display = df_current[mask_ton_dong | mask_trong_ngay].copy()
-df_display["Phân Loại"] = "🟢 Nhận trong ngày"
-df_display.loc[mask_ton_dong, "Phân Loại"] = "⚠️ TỒN ĐỌNG CHƯA XONG"
-df_display = df_display.sort_values(by=["Phân Loại", "Giờ Nhận"], ascending=[False, True])
-
-if search_query:
-    df_display = df_display[df_display["Mã Mẫu"].str.contains(search_query, case=False, na=False)]
-if filter_status:
-    df_display = df_display[df_display["Trạng Thái"].isin(filter_status)]
-
-st.caption("Mẹo: Chọn một dòng và bấm Delete để xóa. Cập nhật trạng thái xong nhớ bấm Lưu.")
-edited_df = st.data_editor(
-    df_display,
-    column_config={
-        "Trạng Thái": st.column_config.SelectboxColumn("Trạng Thái Hiện Tại", options=STATUSES, required=True),
-        "Nền Mẫu": st.column_config.SelectboxColumn("Nền Mẫu", options=["Khí", "Nước"], required=True),
-        "Phân Loại": st.column_config.TextColumn("Phân Loại", disabled=True),
-        "Giờ Nhận": st.column_config.DatetimeColumn("Giờ Nhận", format="DD/MM/YYYY HH:mm", disabled=True),
-        "Ngày Nhận": None 
-    },
-    disabled=["Mã Mẫu", "Tên Mẻ", "Chỉ Tiêu", "Phân Loại", "Giờ Nhận"], 
-    use_container_width=True,
-    num_rows="dynamic",
-    key="data_editor"
-)
-
-# Nút lưu & xóa thông minh
-if st.button("💾 Lưu các thay đổi vào Hệ thống"):
-    for index, row in edited_df.iterrows():
-        st.session_state.df.loc[index, "Trạng Thái"] = row["Trạng Thái"]
-        st.session_state.df.loc[index, "Nền Mẫu"] = row["Nền Mẫu"]
-        st.session_state.df.loc[index, "Người Giữ"] = row["Người Giữ"]
-        st.session_state.df.loc[index, "Ghi Chú"] = row["Ghi Chú"]
-        
-    original_indices = df_display.index.tolist()
-    remaining_indices = edited_df.index.tolist()
-    deleted_indices = list(set(original_indices) - set(remaining_indices))
-    
-    if deleted_indices:
-        st.session_state.df = st.session_state.df.drop(index=deleted_indices)
-        st.session_state.df = st.session_state.df.reset_index(drop=True)
-        
-    save_data(st.session_state.df)
-    st.success("Đã cập nhật cơ sở dữ liệu thành công!")
+st.sidebar.divider()
+st.sidebar.markdown("**Hỗ trợ nhanh:**")
+if st.sidebar.button("🔄 Cập nhật dữ liệu tức thì"):
+    st.cache_data.clear()
+    st.session_state.df = load_data()
     st.rerun()
 
-st.divider()
+# --- Tính toán Logic chung ---
+df_current = st.session_state.df.copy()
+df_current["Ngày Nhận"] = df_current["Giờ Nhận"].dt.date
+today_date = datetime.today().date()
 
 # ==========================================
-# THÊM MẪU (THỦ CÔNG & EXCEL) & XUẤT SEQUENCE
+# 4. GIAO DIỆN CÁC TRANG
 # ==========================================
-col_add, col_export = st.columns([1, 1])
 
-with col_add:
-    st.subheader("📥 Tiếp nhận mẫu mới")
-    tab_thu_cong, tab_excel = st.tabs(["✍️ Nhập thủ công", "📁 Tải file Excel"])
+if menu == "🏠 Trang chủ (Tổng quan)":
+    st.title("📊 Bảng Điều Khiển Trung Tâm")
     
-    with tab_thu_cong:
-        with st.form("add_sample_form", clear_on_submit=True):
-            new_id = st.text_input("Mã Mẫu (VD: NT-1509-01)*")
-            new_name = st.text_input("Tên Mẻ (VD: 2026.07.017)")
-            new_nen = st.selectbox("Nền Mẫu", ["Nước", "Khí"])
-            new_chi_tieu = st.text_input("Chỉ tiêu đo (VD: VOCs, Formaldehyde)")
-            new_nguoi = st.text_input("Người tiếp nhận (Ký tên)")
-            
-            if st.form_submit_button("Thêm Mẫu") and new_id:
-                new_row = pd.DataFrame([{
-                    "Mã Mẫu": new_id, "Tên Mẻ": new_name, "Nền Mẫu": new_nen, 
-                    "Chỉ Tiêu": new_chi_tieu, "Trạng Thái": STATUSES[0], 
-                    "Người Giữ": new_nguoi, "Ghi Chú": "", "Giờ Nhận": datetime.now() 
-                }])
-                st.session_state.df = pd.concat([st.session_state.df, new_row], ignore_index=True)
-                save_data(st.session_state.df)
-                st.success(f"Đã thêm mẫu {new_id} thành công!")
-                st.rerun()
+    # --- THỐNG KÊ NHANH (METRICS) ---
+    col1, col2, col3, col4 = st.columns(4)
+    tong_hom_nay = len(df_current[df_current["Ngày Nhận"] == today_date])
+    cho_chay_may = len(df_current[df_current["Trạng Thái"] == "🟡 3. Chờ chạy máy"])
+    da_hoan_thanh = len(df_current[(df_current["Ngày Nhận"] == today_date) & (df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))])
+    ton_dong = len(df_current[(df_current["Ngày Nhận"] < today_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))])
+    
+    col1.metric("Tổng mẫu nhận hôm nay", tong_hom_nay, f"Đã xong: {da_hoan_thanh}")
+    col2.metric("Đang chờ chạy máy GC", cho_chay_may)
+    col3.metric("⚠️ Tồn đọng nguy cấp", ton_dong, delta="-Cần xử lý", delta_color="inverse")
+    
+    st.divider()
+    
+    # --- BỘ LỌC TÌM KIẾM ---
+    col_date, col_search, col_filter = st.columns([1.5, 1, 1.5])
+    with col_date:
+        selected_date = st.date_input("📅 Chọn Ngày Làm Việc:", today_date)
+    with col_search:
+        search_query = st.text_input("🔍 Nhập ID mã mẫu:")
+    with col_filter:
+        filter_status = st.multiselect("Lọc theo trạng thái:", STATUSES, default=[])
 
-    with tab_excel:
-        st.info("💡 Hệ thống sẽ tự động quét Tên Mẻ (Số: ...) và các mã mẫu (KHM).")
-        uploaded_file = st.file_uploader("Kéo thả file KetQuaMeThuNghiem...xlsx vào đây", type=["xlsx", "xls"])
+    st.subheader(f"📋 Danh sách công việc ({selected_date.strftime('%d/%m/%Y')})")
+
+    # --- LỌC BẢNG DỮ LIỆU ---
+    mask_ton_dong = (df_current["Ngày Nhận"] < selected_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))
+    mask_trong_ngay = (df_current["Ngày Nhận"] == selected_date)
+
+    df_display = df_current[mask_ton_dong | mask_trong_ngay].copy()
+    df_display["Phân Loại"] = "🟢 Nhận trong ngày"
+    df_display.loc[mask_ton_dong, "Phân Loại"] = "⚠️ TỒN ĐỌNG CHƯA XONG"
+    df_display = df_display.sort_values(by=["Phân Loại", "Giờ Nhận"], ascending=[False, True])
+
+    if search_query:
+        df_display = df_display[df_display["Mã Mẫu"].str.contains(search_query, case=False, na=False)]
+    if filter_status:
+        df_display = df_display[df_display["Trạng Thái"].isin(filter_status)]
+
+    st.caption("Mẹo: Chọn dòng và bấm Delete trên bàn phím để xóa. Sau khi chỉnh sửa, hãy bấm nút Lưu bên dưới.")
+    edited_df = st.data_editor(
+        df_display,
+        column_config={
+            "Trạng Thái": st.column_config.SelectboxColumn("Trạng Thái Hiện Tại", options=STATUSES, required=True),
+            "Nền Mẫu": st.column_config.SelectboxColumn("Nền Mẫu", options=["Khí", "Nước"], required=True),
+            "Phân Loại": st.column_config.TextColumn("Phân Loại", disabled=True),
+            "Giờ Nhận": st.column_config.DatetimeColumn("Giờ Nhận", format="DD/MM/YYYY HH:mm", disabled=True),
+            "Ngày Nhận": None 
+        },
+        disabled=["Mã Mẫu", "Tên Mẻ", "Chỉ Tiêu", "Phân Loại", "Giờ Nhận"], 
+        use_container_width=True,
+        num_rows="dynamic",
+        key="data_editor",
+        height=400
+    )
+
+    if st.button("💾 Lưu các thay đổi vào Hệ thống", type="primary"):
+        for index, row in edited_df.iterrows():
+            st.session_state.df.loc[index, "Trạng Thái"] = row["Trạng Thái"]
+            st.session_state.df.loc[index, "Nền Mẫu"] = row["Nền Mẫu"]
+            st.session_state.df.loc[index, "Người Giữ"] = row["Người Giữ"]
+            st.session_state.df.loc[index, "Ghi Chú"] = row["Ghi Chú"]
+            
+        original_indices = df_display.index.tolist()
+        remaining_indices = edited_df.index.tolist()
+        deleted_indices = list(set(original_indices) - set(remaining_indices))
         
+        if deleted_indices:
+            st.session_state.df = st.session_state.df.drop(index=deleted_indices)
+            st.session_state.df = st.session_state.df.reset_index(drop=True)
+            
+        save_data(st.session_state.df)
+        st.success("Đã đồng bộ lên cơ sở dữ liệu chung!")
+        st.rerun()
+
+# ---------------------------------------------------------
+elif menu == "📥 Quản lý Tiếp nhận":
+    st.title("📥 Khu vực Tiếp nhận mẫu mới")
+    
+    tab_excel, tab_thu_cong = st.tabs(["📁 Tải file Excel tự động", "✍️ Nhập thủ công (Mẫu lẻ)"])
+    
+    with tab_excel:
+        st.info("Hệ thống sẽ tự động tìm kiếm Số Mẻ và mã KHM trong phiếu yêu cầu để trích xuất.")
+        uploaded_file = st.file_uploader("Kéo thả file KetQuaMeThuNghiem...xlsx vào đây", type=["xlsx", "xls"])
         if uploaded_file is not None:
             try:
                 df_upload = pd.read_excel(uploaded_file, sheet_name=0)
-                khm_col, start_row = None, None
-                ten_me_extract = "Không xác định"
+                khm_col, start_row, ten_me_extract = None, None, "Không xác định"
                 
-                # 1. Tìm Tên Mẻ (Quét các dòng đầu tiên để tìm ô chứa chữ "Số:")
+                # Quét Tên Mẻ
                 for r in range(min(5, len(df_upload))):
                     for c in range(len(df_upload.columns)):
                         val = str(df_upload.iloc[r, c]).strip()
                         if val.startswith("Số:"):
                             ten_me_extract = val.replace("Số:", "").strip()
                             break
-                    if ten_me_extract != "Không xác định":
-                        break
+                    if ten_me_extract != "Không xác định": break
                 
-                # Dự phòng trường hợp chữ "Số:" nằm ở ngay tên cột (header)
                 if ten_me_extract == "Không xác định":
                     for col in df_upload.columns:
                         if str(col).startswith("Số:"):
                             ten_me_extract = str(col).replace("Số:", "").strip()
                             break
                 
-                # 2. Tìm cột KHM
+                # Quét KHM
                 for row_idx in range(min(20, len(df_upload))):
                     row_vals = df_upload.iloc[row_idx].values
                     for col_idx, val in enumerate(row_vals):
@@ -180,41 +189,60 @@ with col_add:
                     samples = [s for s in raw_samples if len(s) > 3 and s.lower() != 'nan']
                     
                     if len(samples) > 0:
-                        st.success(f"✔️ Đã quét thành công **{len(samples)}** mẫu thuộc mẻ: **{ten_me_extract}**")
+                        st.success(f"✔️ Tìm thấy **{len(samples)}** mẫu thuộc mẻ: **{ten_me_extract}**")
                         
-                        batch_nen = st.selectbox("Nền mẫu chung cho lô này:", ["Nước", "Khí"])
-                        batch_chitieu = st.text_input("Chỉ tiêu chung cho lô:", "Chưa xác định")
-                        batch_nguoi = st.text_input("Người tiếp nhận (Ký tên):")
+                        col_f1, col_f2 = st.columns(2)
+                        with col_f1: batch_nen = st.selectbox("Nền mẫu chung:", ["Nước", "Khí"])
+                        with col_f2: batch_chitieu = st.text_input("Chỉ tiêu chung:", "Chưa xác định")
+                        batch_nguoi = st.selectbox("Người tiếp nhận:", ["Người dùng 1", "Người dùng 2", "Người dùng 3"]) # Sửa tên nhân sự ở đây
                         
-                        if st.button("🚀 Thêm hàng loạt vào Hệ thống"):
+                        if st.button("🚀 Lưu toàn bộ vào Hệ thống", type="primary"):
                             new_rows = []
                             for s in samples:
                                 new_rows.append({
                                     "Mã Mẫu": s, "Tên Mẻ": ten_me_extract, "Nền Mẫu": batch_nen, 
                                     "Chỉ Tiêu": batch_chitieu, "Trạng Thái": STATUSES[0], 
-                                    "Người Giữ": batch_nguoi, "Ghi Chú": "Import từ Excel", 
-                                    "Giờ Nhận": datetime.now()
+                                    "Người Giữ": batch_nguoi, "Ghi Chú": "Import từ Excel", "Giờ Nhận": datetime.now()
                                 })
                             st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame(new_rows)], ignore_index=True)
                             save_data(st.session_state.df)
                             st.success(f"Tuyệt vời! Đã nạp thành công {len(samples)} mẫu.")
-                            st.rerun()
-                    else:
-                        st.warning("Không tìm thấy mã mẫu nào bên dưới cột 'KHM'.")
-                else:
-                    st.error("Không tìm thấy ô 'KHM' (Ký hiệu mẫu) trong file. Vui lòng kiểm tra lại!")
-            except Exception as e:
-                st.error(f"Lỗi đọc file: {e}")
+                    else: st.warning("Không có mã KHM nào bên dưới ô tiêu đề.")
+                else: st.error("Không tìm thấy ô 'KHM' trong file!")
+            except Exception as e: st.error(f"Lỗi đọc file: {e}")
 
-with col_export:
-    st.subheader("⚙️ Xuất Sequence MassHunter")
-    st.info("Hệ thống sẽ gom TẤT CẢ các mẫu đang ở trạng thái '🟡 3. Chờ chạy máy' để tạo file Sequence CSV.")
+    with tab_thu_cong:
+        with st.form("add_sample_form", clear_on_submit=True):
+            new_id = st.text_input("Mã Mẫu (VD: NT-1509-01)*")
+            new_name = st.text_input("Tên Mẻ (VD: 2026.07.017)")
+            col_t1, col_t2 = st.columns(2)
+            with col_t1: new_nen = st.selectbox("Nền Mẫu", ["Nước", "Khí"])
+            with col_t2: new_chi_tieu = st.text_input("Chỉ tiêu đo")
+            new_nguoi = st.text_input("Người tiếp nhận (Ký tên)")
+            
+            if st.form_submit_button("Thêm Mẫu lẻ") and new_id:
+                new_row = pd.DataFrame([{
+                    "Mã Mẫu": new_id, "Tên Mẻ": new_name, "Nền Mẫu": new_nen, 
+                    "Chỉ Tiêu": new_chi_tieu, "Trạng Thái": STATUSES[0], 
+                    "Người Giữ": new_nguoi, "Ghi Chú": "", "Giờ Nhận": datetime.now() 
+                }])
+                st.session_state.df = pd.concat([st.session_state.df, new_row], ignore_index=True)
+                save_data(st.session_state.df)
+                st.success(f"Đã thêm {new_id}!")
+
+# ---------------------------------------------------------
+elif menu == "⚙️ Vận hành GC-MS":
+    st.title("⚙️ Điều phối & Vận hành Máy đo")
     
-    if st.button("Tạo File Sequence"):
+    col_seq, col_import = st.columns(2)
+    with col_seq:
+        st.subheader("1. Xuất Sequence chạy máy")
+        st.info("Gom tự động các mẫu đang ở trạng thái '🟡 3. Chờ chạy máy'.")
+        
         df_ready = st.session_state.df[st.session_state.df["Trạng Thái"] == "🟡 3. Chờ chạy máy"]
-        if df_ready.empty:
-            st.warning("Không có mẫu nào đang chờ chạy máy!")
-        else:
+        st.write(f"Hiện đang có **{len(df_ready)}** mẫu chờ chạy.")
+        
+        if not df_ready.empty:
             seq_df = pd.DataFrame()
             seq_df['Vial'] = range(1, len(df_ready) + 1)
             seq_df['Sample Name'] = df_ready['Mã Mẫu']
@@ -223,9 +251,31 @@ with col_export:
             seq_df['Data File'] = datetime.now().strftime("%Y%m%d") + "_" + df_ready['Mã Mẫu']
             
             csv = seq_df.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="📥 Tải xuống Sequence.csv",
-                data=csv,
-                file_name=f"MassHunter_Seq_{datetime.now().strftime('%Y%m%d')}.csv",
-                mime="text/csv",
-            )
+            st.download_button("📥 Tải Sequence.csv", data=csv, file_name=f"MassHunter_Seq_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary")
+            
+    with col_import:
+        st.subheader("2. Xử lý dữ liệu GC (Chờ lập trình)")
+        st.markdown(
+            """
+            *Khu vực này được chuẩn bị sẵn cho giai đoạn 2:*
+            *   Tải file kết quả từ MassHunter lên.
+            *   Tự động tính toán hàm lượng dựa trên diện tích Peak.
+            *   Khớp dữ liệu nồng độ trực tiếp vào Google Sheets.
+            """
+        )
+        st.file_uploader("Kéo thả báo cáo MassHunter vào đây (Tính năng chưa kích hoạt)", disabled=True)
+
+# ---------------------------------------------------------
+elif menu == "🚀 Không gian phát triển":
+    st.title("🛠️ Tiện ích & Mở rộng tương lai")
+    
+    st.markdown("Khu vực này để dành cho bạn tự do sáng tạo và code thêm các module tự động hóa khác cho Lab:")
+    
+    tab1, tab2, tab3 = st.tabs(["📝 In Phiếu Kết Quả", "🧪 Quản lý Hóa chất / Chuẩn", "🏷️ Sinh Mã QR"])
+    
+    with tab1:
+        st.write("Tại đây, bạn có thể lập trình code đọc kết quả từ bảng và điền tự động vào Form Word/Excel mẫu của công ty, sau đó xuất ra file PDF.")
+    with tab2:
+        st.write("Khu vực theo dõi tồn kho hóa chất, hạn sử dụng dung dịch chuẩn, tự động cảnh báo khi sắp hết hạn.")
+    with tab3:
+        st.write("Chức năng tạo mã vạch (Barcode) hàng loạt cho các mẫu mẻ mới nhận để dán lên khay lưu kho.")
