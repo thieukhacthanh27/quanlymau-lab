@@ -152,14 +152,14 @@ elif menu == "📥 Quản lý Tiếp nhận":
     tab_excel, tab_thu_cong = st.tabs(["📁 Tải file Excel tự động", "✍️ Nhập thủ công (Mẫu lẻ)"])
     
     with tab_excel:
-        st.info("Hệ thống sẽ tự động tìm kiếm Số Mẻ và mã KHM trong phiếu yêu cầu để trích xuất.")
+        st.info("💡 Hệ thống tự động quét Tên Mẻ, Mã Mẫu và **TỰ ĐỘNG BÓC TÁCH Chỉ Tiêu** cho từng mẫu riêng biệt.")
         uploaded_file = st.file_uploader("Kéo thả file KetQuaMeThuNghiem...xlsx vào đây", type=["xlsx", "xls"])
         if uploaded_file is not None:
             try:
                 df_upload = pd.read_excel(uploaded_file, sheet_name=0)
-                khm_col, start_row, ten_me_extract = None, None, "Không xác định"
                 
-                # Quét Tên Mẻ
+                # 1. Quét Tên Mẻ
+                ten_me_extract = "Không xác định"
                 for r in range(min(5, len(df_upload))):
                     for c in range(len(df_upload.columns)):
                         val = str(df_upload.iloc[r, c]).strip()
@@ -174,40 +174,74 @@ elif menu == "📥 Quản lý Tiếp nhận":
                             ten_me_extract = str(col).replace("Số:", "").strip()
                             break
                 
-                # Quét KHM
-                for row_idx in range(min(20, len(df_upload))):
-                    row_vals = df_upload.iloc[row_idx].values
-                    for col_idx, val in enumerate(row_vals):
-                        if str(val).strip() == 'KHM':
-                            khm_col = df_upload.columns[col_idx]
-                            start_row = row_idx + 1
+                # 2. Tìm KHM và Trích xuất danh sách Chỉ Tiêu
+                khm_col_idx, header_row_idx = None, None
+                for r in range(min(20, len(df_upload))):
+                    for c in range(len(df_upload.columns)):
+                        if str(df_upload.iloc[r, c]).strip() == 'KHM':
+                            khm_col_idx = c
+                            header_row_idx = r
                             break
-                    if khm_col: break
+                    if khm_col_idx is not None: break
                         
-                if khm_col and start_row is not None:
-                    raw_samples = df_upload[khm_col].iloc[start_row:].dropna().astype(str).tolist()
-                    samples = [s for s in raw_samples if len(s) > 3 and s.lower() != 'nan']
+                if khm_col_idx is not None:
+                    # Lấy tên các cột chỉ tiêu (Từ sau cột KHM cho đến trước cột Ghi chú)
+                    params_info = []
+                    for c in range(khm_col_idx + 1, len(df_upload.columns)):
+                        header_val = str(df_upload.iloc[header_row_idx, c]).strip()
+                        if header_val.lower() == 'ghi chú' or header_val == 'nan' or header_val == '':
+                            break
+                        params_info.append((c, header_val))
                     
-                    if len(samples) > 0:
-                        st.success(f"✔️ Tìm thấy **{len(samples)}** mẫu thuộc mẻ: **{ten_me_extract}**")
+                    # 3. Quét từng mẫu để nhặt Chỉ Tiêu tương ứng
+                    samples_data = []
+                    for r in range(header_row_idx + 1, len(df_upload)):
+                        khm_val = str(df_upload.iloc[r, khm_col_idx]).strip()
+                        
+                        # Bỏ qua dòng trống hoặc dòng chứa chữ "C" (Của giới hạn phát hiện)
+                        if len(khm_val) > 3 and khm_val.lower() != 'nan':
+                            sample_params = []
+                            for c, param_name in params_info:
+                                cell_val = df_upload.iloc[r, c]
+                                # Nếu ô có giá trị (có số liệu hoặc chữ KPH) -> Mẫu có test chỉ tiêu này
+                                if pd.notna(cell_val) and str(cell_val).strip() != '':
+                                    sample_params.append(param_name)
+                            
+                            # Gom các chỉ tiêu lại thành 1 chuỗi dài
+                            chuoi_chi_tieu = ", ".join(sample_params) if sample_params else "Chưa xác định"
+                            samples_data.append({
+                                "Mã Mẫu": khm_val,
+                                "Chỉ Tiêu": chuoi_chi_tieu
+                            })
+                    
+                    if len(samples_data) > 0:
+                        st.success(f"✔️ Tìm thấy **{len(samples_data)}** mẫu thuộc mẻ: **{ten_me_extract}**")
+                        
+                        # Hiển thị bảng xem trước (Preview) để kỹ thuật viên kiểm tra
+                        st.caption("🔍 Xem trước Chỉ tiêu tự động quét được cho từng mẫu:")
+                        st.dataframe(pd.DataFrame(samples_data), use_container_width=True, height=180)
                         
                         col_f1, col_f2 = st.columns(2)
                         with col_f1: batch_nen = st.selectbox("Nền mẫu chung:", ["Nước", "Khí"])
-                        with col_f2: batch_chitieu = st.text_input("Chỉ tiêu chung:", "Chưa xác định")
-                        batch_nguoi = st.selectbox("Người tiếp nhận:", ["Người dùng 1", "Người dùng 2", "Người dùng 3"]) # Sửa tên nhân sự ở đây
+                        with col_f2: batch_nguoi = st.selectbox("Người tiếp nhận:", ["Người dùng 1", "Người dùng 2", "Người dùng 3"]) # Có thể thay bằng tên nhân sự lab
                         
                         if st.button("🚀 Lưu toàn bộ vào Hệ thống", type="primary"):
                             new_rows = []
-                            for s in samples:
+                            for s in samples_data:
                                 new_rows.append({
-                                    "Mã Mẫu": s, "Tên Mẻ": ten_me_extract, "Nền Mẫu": batch_nen, 
-                                    "Chỉ Tiêu": batch_chitieu, "Trạng Thái": STATUSES[0], 
-                                    "Người Giữ": batch_nguoi, "Ghi Chú": "Import từ Excel", "Giờ Nhận": datetime.now()
+                                    "Mã Mẫu": s["Mã Mẫu"], 
+                                    "Tên Mẻ": ten_me_extract, 
+                                    "Nền Mẫu": batch_nen, 
+                                    "Chỉ Tiêu": s["Chỉ Tiêu"], 
+                                    "Trạng Thái": STATUSES[0], 
+                                    "Người Giữ": batch_nguoi, 
+                                    "Ghi Chú": "Import từ Excel", 
+                                    "Giờ Nhận": datetime.now()
                                 })
                             st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame(new_rows)], ignore_index=True)
                             save_data(st.session_state.df)
-                            st.success(f"Tuyệt vời! Đã nạp thành công {len(samples)} mẫu.")
-                    else: st.warning("Không có mã KHM nào bên dưới ô tiêu đề.")
+                            st.success(f"Tuyệt vời! Đã nạp thành công {len(samples_data)} mẫu.")
+                    else: st.warning("Không có mã KHM nào hợp lệ bên dưới ô tiêu đề.")
                 else: st.error("Không tìm thấy ô 'KHM' trong file!")
             except Exception as e: st.error(f"Lỗi đọc file: {e}")
 
@@ -229,7 +263,6 @@ elif menu == "📥 Quản lý Tiếp nhận":
                 st.session_state.df = pd.concat([st.session_state.df, new_row], ignore_index=True)
                 save_data(st.session_state.df)
                 st.success(f"Đã thêm {new_id}!")
-
 # ---------------------------------------------------------
 elif menu == "⚙️ Vận hành GC-MS":
     st.title("⚙️ Điều phối & Vận hành Máy đo")
