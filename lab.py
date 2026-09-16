@@ -152,8 +152,9 @@ elif menu == "📥 Quản lý Tiếp nhận":
     tab_excel, tab_thu_cong = st.tabs(["📁 Tải file Excel tự động", "✍️ Nhập thủ công (Mẫu lẻ)"])
     
     with tab_excel:
-        st.info("💡 Hệ thống tự động quét Tên Mẻ, Mã Mẫu và **TỰ ĐỘNG BÓC TÁCH Chỉ Tiêu** cho từng mẫu riêng biệt.")
+        st.info("💡 Kéo thả file Excel để hệ thống trích xuất Tên Mẻ, Mã Mẫu và Chỉ Tiêu. Bạn có thể **LỰA CHỌN** các mẫu muốn nhập.")
         uploaded_file = st.file_uploader("Kéo thả file KetQuaMeThuNghiem...xlsx vào đây", type=["xlsx", "xls"])
+        
         if uploaded_file is not None:
             try:
                 df_upload = pd.read_excel(uploaded_file, sheet_name=0)
@@ -185,7 +186,6 @@ elif menu == "📥 Quản lý Tiếp nhận":
                     if khm_col_idx is not None: break
                         
                 if khm_col_idx is not None:
-                    # Lấy tên các cột chỉ tiêu (Từ sau cột KHM cho đến trước cột Ghi chú)
                     params_info = []
                     for c in range(khm_col_idx + 1, len(df_upload.columns)):
                         header_val = str(df_upload.iloc[header_row_idx, c]).strip()
@@ -193,54 +193,71 @@ elif menu == "📥 Quản lý Tiếp nhận":
                             break
                         params_info.append((c, header_val))
                     
-                    # 3. Quét từng mẫu để nhặt Chỉ Tiêu tương ứng
+                    # 3. Nhặt thông tin mẫu
                     samples_data = []
                     for r in range(header_row_idx + 1, len(df_upload)):
                         khm_val = str(df_upload.iloc[r, khm_col_idx]).strip()
-                        
-                        # Bỏ qua dòng trống hoặc dòng chứa chữ "C" (Của giới hạn phát hiện)
                         if len(khm_val) > 3 and khm_val.lower() != 'nan':
                             sample_params = []
                             for c, param_name in params_info:
                                 cell_val = df_upload.iloc[r, c]
-                                # Nếu ô có giá trị (có số liệu hoặc chữ KPH) -> Mẫu có test chỉ tiêu này
                                 if pd.notna(cell_val) and str(cell_val).strip() != '':
                                     sample_params.append(param_name)
                             
-                            # Gom các chỉ tiêu lại thành 1 chuỗi dài
                             chuoi_chi_tieu = ", ".join(sample_params) if sample_params else "Chưa xác định"
                             samples_data.append({
+                                "Chọn": True, # Thêm cột Chọn mặc định là True (Được tích)
                                 "Mã Mẫu": khm_val,
                                 "Chỉ Tiêu": chuoi_chi_tieu
                             })
                     
                     if len(samples_data) > 0:
-                        st.success(f"✔️ Tìm thấy **{len(samples_data)}** mẫu thuộc mẻ: **{ten_me_extract}**")
+                        st.success(f"✔️ Quét thành công **{len(samples_data)}** mẫu thuộc mẻ: **{ten_me_extract}**")
                         
-                        # Hiển thị bảng xem trước (Preview) để kỹ thuật viên kiểm tra
-                        st.caption("🔍 Xem trước Chỉ tiêu tự động quét được cho từng mẫu:")
-                        st.dataframe(pd.DataFrame(samples_data), use_container_width=True, height=180)
+                        # --- GIAO DIỆN LỰA CHỌN MẪU ---
+                        st.caption("☑️ Bỏ tích ở những mẫu bạn KHÔNG MUỐN nhập vào hệ thống:")
+                        
+                        # Tạo bảng có thể chỉnh sửa cột "Chọn"
+                        df_preview = pd.DataFrame(samples_data)
+                        edited_preview = st.data_editor(
+                            df_preview,
+                            column_config={
+                                "Chọn": st.column_config.CheckboxColumn("Nhập mẫu?", default=True),
+                                "Mã Mẫu": st.column_config.TextColumn("Mã Mẫu", disabled=True),
+                                "Chỉ Tiêu": st.column_config.TextColumn("Chỉ Tiêu", disabled=True)
+                            },
+                            hide_index=True,
+                            use_container_width=True,
+                            key="preview_editor"
+                        )
                         
                         col_f1, col_f2 = st.columns(2)
                         with col_f1: batch_nen = st.selectbox("Nền mẫu chung:", ["Nước", "Khí"])
-                        with col_f2: batch_nguoi = st.selectbox("Người tiếp nhận:", ["Người dùng 1", "Người dùng 2", "Người dùng 3"]) # Có thể thay bằng tên nhân sự lab
+                        with col_f2: batch_nguoi = st.selectbox("Người tiếp nhận:", ["Thành", "Người dùng 2", "Người dùng 3"])
                         
-                        if st.button("🚀 Lưu toàn bộ vào Hệ thống", type="primary"):
-                            new_rows = []
-                            for s in samples_data:
-                                new_rows.append({
-                                    "Mã Mẫu": s["Mã Mẫu"], 
-                                    "Tên Mẻ": ten_me_extract, 
-                                    "Nền Mẫu": batch_nen, 
-                                    "Chỉ Tiêu": s["Chỉ Tiêu"], 
-                                    "Trạng Thái": STATUSES[0], 
-                                    "Người Giữ": batch_nguoi, 
-                                    "Ghi Chú": "Import từ Excel", 
-                                    "Giờ Nhận": datetime.now()
-                                })
-                            st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame(new_rows)], ignore_index=True)
-                            save_data(st.session_state.df)
-                            st.success(f"Tuyệt vời! Đã nạp thành công {len(samples_data)} mẫu.")
+                        # Lọc ra các dòng được đánh dấu True để lưu
+                        selected_samples = edited_preview[edited_preview["Chọn"] == True]
+                        
+                        if st.button(f"🚀 Lưu {len(selected_samples)} mẫu đã chọn vào Hệ thống", type="primary"):
+                            if selected_samples.empty:
+                                st.warning("⚠️ Bạn chưa chọn mẫu nào để lưu!")
+                            else:
+                                new_rows = []
+                                for _, row in selected_samples.iterrows():
+                                    new_rows.append({
+                                        "Mã Mẫu": row["Mã Mẫu"], 
+                                        "Tên Mẻ": ten_me_extract, 
+                                        "Nền Mẫu": batch_nen, 
+                                        "Chỉ Tiêu": row["Chỉ Tiêu"], 
+                                        "Trạng Thái": STATUSES[0], 
+                                        "Người Giữ": batch_nguoi, 
+                                        "Ghi Chú": "Import từ Excel", 
+                                        "Giờ Nhận": datetime.now()
+                                    })
+                                st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame(new_rows)], ignore_index=True)
+                                save_data(st.session_state.df)
+                                st.success(f"Tuyệt vời! Đã nạp thành công {len(selected_samples)} mẫu.")
+                                st.rerun()
                     else: st.warning("Không có mã KHM nào hợp lệ bên dưới ô tiêu đề.")
                 else: st.error("Không tìm thấy ô 'KHM' trong file!")
             except Exception as e: st.error(f"Lỗi đọc file: {e}")
