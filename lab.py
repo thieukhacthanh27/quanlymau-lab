@@ -6,7 +6,7 @@ from streamlit_gsheets import GSheetsConnection
 # ==========================================
 # 1. CẤU HÌNH GIAO DIỆN & BRANDING
 # ==========================================
-st.set_page_config(page_title="LIMS HATICO - Lab GC", page_icon="🔬", layout="wide")
+st.set_page_config(page_title="GC HATICO - Lab GC", page_icon="🔬", layout="wide")
 
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1F2wFnxboWTFWDMGUuBDRGB901a5EKgvazHxkCgBjjRU/edit?usp=sharing"
 
@@ -83,14 +83,14 @@ if menu == "🏠 Trang chủ (Tổng quan)":
     
     st.divider()
     
-    # --- BỘ LỌC TÌM KIẾM ---
-    col_date, col_search, col_filter = st.columns([1.5, 1, 1.5])
+    # --- BỘ LỌC TÌM KIẾM TỔNG HỢP ---
+    col_date, col_status, col_search = st.columns([1, 1.5, 2])
     with col_date:
-        selected_date = st.date_input("📅 Chọn Ngày Làm Việc:", today_date)
+        selected_date = st.date_input("📅 Chọn Ngày:", today_date)
+    with col_status:
+        filter_status = st.multiselect("Lọc trạng thái:", STATUSES, default=[])
     with col_search:
-        search_query = st.text_input("🔍 Nhập ID mã mẫu:")
-    with col_filter:
-        filter_status = st.multiselect("Lọc theo trạng thái:", STATUSES, default=[])
+        search_query = st.text_input("🔍 Tìm kiếm (Mã mẫu, Tên mẻ, Chỉ tiêu):", placeholder="Gõ 'VOCs', '2026.07.017' hoặc 'NS...'")
 
     st.subheader(f"📋 Danh sách công việc ({selected_date.strftime('%d/%m/%Y')})")
 
@@ -103,8 +103,14 @@ if menu == "🏠 Trang chủ (Tổng quan)":
     df_display.loc[mask_ton_dong, "Phân Loại"] = "⚠️ TỒN ĐỌNG CHƯA XONG"
     df_display = df_display.sort_values(by=["Phân Loại", "Giờ Nhận"], ascending=[False, True])
 
+    # Áp dụng bộ lọc Tìm Kiếm Đa Luồng (Global Search)
     if search_query:
-        df_display = df_display[df_display["Mã Mẫu"].str.contains(search_query, case=False, na=False)]
+        mask_id = df_display["Mã Mẫu"].astype(str).str.contains(search_query, case=False, na=False)
+        mask_me = df_display["Tên Mẻ"].astype(str).str.contains(search_query, case=False, na=False)
+        mask_chitieu = df_display["Chỉ Tiêu"].astype(str).str.contains(search_query, case=False, na=False)
+        
+        df_display = df_display[mask_id | mask_me | mask_chitieu]
+        
     if filter_status:
         df_display = df_display[df_display["Trạng Thái"].isin(filter_status)]
 
