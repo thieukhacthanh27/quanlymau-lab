@@ -101,7 +101,7 @@ if menu == "🏠 Trang chủ (Tổng quan)":
     df_display = df_current[mask_ton_dong | mask_trong_ngay].copy()
     df_display["Phân Loại"] = "🟢 Nhận trong ngày"
     df_display.loc[mask_ton_dong, "Phân Loại"] = "⚠️ TỒN ĐỌNG CHƯA XONG"
-    df_display = df_display.sort_values(by=["Phân Loại", "Giờ Nhận"], ascending=[False, True])
+    df_display = df_display.sort_values(by=["Phân Loại", "Giờ Nhận"], ascending=[True, True])
 
     # Áp dụng bộ lọc Tìm Kiếm Đa Luồng (Global Search)
     if search_query:
