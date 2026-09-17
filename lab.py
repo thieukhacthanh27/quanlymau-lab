@@ -334,7 +334,6 @@ elif menu == "⚙️ Vận hành GC-MS":
             
             # Logic mới: Tự động phát hiện phương pháp dựa vào tên hóa chất dài
             seq_df['Method'] = df_ready['Chỉ Tiêu'].apply(lambda x: 'VOCs.M' if any(k in str(x).upper() for k in ['VOC', 'BENZEN', 'TOLUEN', 'CHLORO', 'STYREN']) else 'HCHO.M')
-            
             seq_df['Data File'] = datetime.now().strftime("%Y%m%d") + "_" + df_ready['Mã Mẫu']
             
             csv = seq_df.to_csv(index=False).encode('utf-8')
@@ -353,11 +352,18 @@ elif menu == "⚙️ Vận hành GC-MS":
                 else:
                     df_gc = pd.read_excel(gc_file)
                 
-                # Cần chuẩn hóa tên cột để tránh lỗi khoảng trắng
+                # Chuẩn hóa tên cột để tránh lỗi khoảng trắng
                 df_gc.columns = [str(c).strip() for c in df_gc.columns]
                 
                 if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns:
                     calc_results = []
+                    
+                    # Thuật toán tìm cột Tên chất (Compound Name) nếu có
+                    compound_col = None
+                    for c in df_gc.columns:
+                        if c.lower() in ['name', 'compound', 'compound name', 'tên chất']:
+                            compound_col = c
+                            break
                     
                     for _, row in df_gc.iterrows():
                         sample_name = str(row['Data File']).replace('.d', '')
@@ -372,20 +378,31 @@ elif menu == "⚙️ Vận hành GC-MS":
                         if v_gas is not None:
                             # Thực hiện tính toán
                             final_result = calculate_air_concentration(raw_conc=raw_conc, v_gas=v_gas)
-                            calc_results.append({
-                                "Mã Mẫu Nhận Diện": sample_name,
+                            
+                            result_dict = {
+                                "Mã Mẫu": sample_name,
                                 "Thể Tích Khí (L)": v_gas,
-                                "Nồng độ thô GC (ng/ml)": raw_conc,
-                                "Nồng độ thực tế không khí": final_result
-                            })
+                                "Nồng độ GC (ng/ml)": raw_conc,
+                                "Kết quả Không khí": final_result
+                            }
+                            # Thêm Tên chất vào bảng nếu file MassHunter có cột này
+                            if compound_col:
+                                result_dict["Tên Chất"] = row[compound_col]
+                                
+                            calc_results.append(result_dict)
                     
                     if calc_results:
-                        st.success(f"✔️ Đã trích xuất và tính toán thành công {len(calc_results)} mẫu môi trường!")
+                        st.success(f"✔️ Đã trích xuất và tính toán thành công {len(calc_results)} dòng dữ liệu!")
                         df_results = pd.DataFrame(calc_results)
+                        
+                        # Sắp xếp lại thứ tự cột cho đẹp mắt nếu có cột Tên Chất
+                        if compound_col and "Tên Chất" in df_results.columns:
+                            df_results = df_results[["Mã Mẫu", "Tên Chất", "Thể Tích Khí (L)", "Nồng độ GC (ng/ml)", "Kết quả Không khí"]]
+                            
                         st.dataframe(df_results, use_container_width=True)
                         
                         if st.button("🔄 Cập nhật kết quả vào Hệ thống"):
-                            st.info("Đang tích hợp API chuyển trạng thái... (Có thể mở rộng thêm)")
+                            st.info("Đang tích hợp module đối chiếu LOQ (Tính năng sẽ ra mắt ở Giai đoạn tiếp theo).")
                     else:
                         st.warning("Không tìm thấy mẫu KT hoặc KXQ nào cần tính toán trong file này.")
                 else:
