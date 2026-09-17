@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import re
+import difflib
 from streamlit_gsheets import GSheetsConnection
 
 # ==========================================
@@ -127,12 +128,17 @@ if menu == "🏠 Trang chủ (Tổng quan)":
     col1, col2, col3, col4 = st.columns(4)
     tong_hom_nay = len(df_current[df_current["Ngày Nhận"] == today_date])
     cho_chay_may = len(df_current[df_current["Trạng Thái"] == "🟡 3. Chờ chạy máy"])
-    da_hoan_thanh = len(df_current[(df_current["Ngày Nhận"] == today_date) & (df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))])
     ton_dong = len(df_current[(df_current["Ngày Nhận"] < today_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))])
     
-    col1.metric("Tổng mẫu nhận hôm nay", tong_hom_nay, f"Đã xong: {da_hoan_thanh}")
-    col2.metric("Đang chờ chạy máy GC", cho_chay_may)
-    col3.metric("⚠️ Tồn đọng nguy cấp", ton_dong, delta="-Cần xử lý", delta_color="inverse")
+    # Cập nhật Logic đếm mẫu hoàn thành, lưu kho và tiêu hủy
+    da_luu = len(df_current[df_current["Trạng Thái"] == "🟢 6. Lưu kho"])
+    da_huy = len(df_current[df_current["Trạng Thái"] == "⚫ 7. Đã tiêu hủy"])
+    tong_hoan_thanh = da_luu + da_huy
+    
+    col1.metric("📥 Tổng nhận hôm nay", tong_hom_nay)
+    col2.metric("⏳ Đang chờ chạy GC", cho_chay_may)
+    col3.metric("⚠️ Tồn đọng chưa xử lý", ton_dong, delta="-Cần xử lý", delta_color="inverse")
+    col4.metric("✅ Đã hoàn thành", tong_hoan_thanh, f"Lưu kho: {da_luu} | Hủy: {da_huy}", delta_color="off")
     
     st.divider()
     
@@ -423,6 +429,39 @@ elif menu == "🚀 Tiện ích & Cấu hình":
     tab_mdl, tab_report, tab_qr = st.tabs(["📚 Quản lý Thư viện MDL", "📝 Lập Biên Bản (Sắp ra mắt)", "🏷️ Sinh Mã QR"])
     
     with tab_mdl:
+        st.subheader("Tra cứu thông minh Thư viện MDL")
+        
+        # 1. KHU VỰC TRA CỨU NHANH (FUZZY SEARCH)
+        search_mdl = st.text_input("🔍 Tra cứu MDL sát tên chất (VD: Benzen, Toluen, Xylen):")
+        
+        mdl_library = st.session_state.df_mdl
+        if search_mdl:
+            if not mdl_library.empty:
+                all_compounds = mdl_library["Tên Chất"].astype(str).unique()
+                
+                # Thuật toán tìm kiếm sát nghĩa (Fuzzy Matching)
+                close_matches = difflib.get_close_matches(search_mdl.lower(), [c.lower() for c in all_compounds], n=10, cutoff=0.4)
+                
+                # Lọc kết quả: Chứa một phần từ khóa HOẶC nằm trong danh sách khớp sát nghĩa
+                mask_contains = mdl_library["Tên Chất"].astype(str).str.contains(search_mdl, case=False, na=False)
+                mask_fuzzy = mdl_library["Tên Chất"].astype(str).str.lower().isin(close_matches)
+                
+                search_result = mdl_library[mask_contains | mask_fuzzy]
+                
+                if not search_result.empty:
+                    st.dataframe(search_result, use_container_width=True, hide_index=True)
+                else:
+                    st.warning("⚠️ Không tìm thấy chất nào sát với từ khóa bạn nhập trong Thư viện.")
+            else:
+                st.info("Thư viện MDL hiện đang trống.")
+        else:
+            if not mdl_library.empty:
+                with st.expander("Xem toàn bộ Thư viện MDL hiện tại", expanded=False):
+                    st.dataframe(mdl_library, use_container_width=True, hide_index=True)
+
+        st.divider()
+
+        # 2. KHU VỰC CẬP NHẬT THƯ VIỆN
         st.subheader("Cập nhật Thư viện Giới hạn Phát hiện (MDL)")
         st.info("Kéo thả file Excel chứa bảng MDL (như file `Bang_MDL_Khi_Cac_Loai...xlsx`). Hệ thống sẽ tự quét các Sheet và gộp lại rồi bắn lên Google Sheets.")
         
@@ -435,16 +474,12 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                 for sheet in xls.sheet_names:
                     df_sheet = pd.read_excel(xls, sheet_name=sheet)
                     
-                    # Tự động tìm cột tên chất và cột MDL
                     col_ten = next((c for c in df_sheet.columns if 'tên' in str(c).lower() or 'hợp chất' in str(c).lower()), None)
                     col_mdl = next((c for c in df_sheet.columns if 'mdl' in str(c).lower()), None)
                     
                     if col_ten and col_mdl:
-                        # Rút trích đơn vị trong ngoặc (nếu có)
                         unit_match = re.search(r'\((.*?)\)', str(col_mdl))
                         unit = unit_match.group(1) if unit_match else "Chưa rõ"
-                        
-                        # Quy chuẩn mã Nền mẫu
                         nen_mau = "KT" if "thải" in sheet.lower() else ("KXQ" if "xung quanh" in sheet.lower() else ("KLV" if "làm việc" in sheet.lower() else sheet))
                         
                         for _, row in df_sheet.iterrows():
@@ -462,14 +497,11 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                     st.dataframe(df_mdl_new, use_container_width=True)
                     
                     if st.button("🚀 Đẩy lên Google Sheets (Tạo/Ghi đè Thư viện)", type="primary"):
-                        # Đẩy trực tiếp tạo Tab mới tên là CauHinh_MDL
                         conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL", data=df_mdl_new)
                         st.session_state.df_mdl = df_mdl_new
                         st.success("🎉 Đã lưu cấu hình MDL lên Cloud thành công! Tự động áp dụng cho các mẻ tính toán sau.")
                 else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên hợp chất / Cột MDL).")
             except Exception as e: st.error(f"Lỗi đọc file: {e}")
 
-    with tab_report:
-        st.write("Tại đây, bạn có thể lập trình code đọc kết quả từ bảng và điền tự động vào Form Word/Excel.")
-    with tab_qr:
-        st.write("Chức năng tạo mã vạch (Barcode) hàng loạt cho các mẫu mẻ mới nhận.")
+    with tab_report: st.write("Khu vực xuất Form Word/Excel.")
+    with tab_qr: st.write("Chức năng tạo mã vạch (Barcode) hàng loạt cho các mẫu mẻ mới nhận.")
