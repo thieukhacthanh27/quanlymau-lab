@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import re
 from streamlit_gsheets import GSheetsConnection
 
 # ==========================================
@@ -16,28 +17,7 @@ STATUSES = [
 ]
 
 # ==========================================
-# HÀM BỔ SUNG: BỘ LỌC VÀ TÍNH TOÁN NỒNG ĐỘ
-# ==========================================
-def parse_sample_volume(sample_name):
-    """Bộ lọc tự động nhận diện thể tích khí hút dựa trên mã mẫu."""
-    name_upper = str(sample_name).upper()
-    if 'KT' in name_upper:
-        return 24.0  # Khí thải: 24L
-    elif 'KXQ' in name_upper:
-        return 4.0   # Không khí xung quanh: 4L
-    return None      # Các mẫu chuẩn (Cal), mẫu trắng bỏ qua tính toán
-
-def calculate_air_concentration(raw_conc, v_gas, v_desorb=1.0, recovery=100.0, blank_conc=0.0):
-    """Tính toán nồng độ thực tế (ug/m3 hoặc mg/Nm3)"""
-    net_conc = raw_conc - blank_conc
-    if net_conc <= 0:
-        return 0.0000
-    # Công thức: (Nồng độ GC * V giải hấp) / V khí hút * (100 / Độ thu hồi)
-    result = (net_conc * v_desorb) / v_gas * (100.0 / recovery)
-    return round(result, 4)
-
-# ==========================================
-# 2. KẾT NỐI & XỬ LÝ DỮ LIỆU
+# 2. KẾT NỐI DATABASE & THƯ VIỆN MDL
 # ==========================================
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -55,11 +35,64 @@ def save_data(df):
     conn.update(spreadsheet=SHEET_URL, data=df_save)
     st.cache_data.clear()
 
+def load_mdl_config():
+    """Tải thư viện MDL từ Tab CauHinh_MDL"""
+    try:
+        df_mdl = conn.read(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL", ttl=60)
+        return df_mdl
+    except:
+        return pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "Đơn Vị"])
+
 if "df" not in st.session_state:
     st.session_state.df = load_data()
+if "df_mdl" not in st.session_state:
+    st.session_state.df_mdl = load_mdl_config()
 
 # ==========================================
-# 3. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
+# 3. HÀM BỔ SUNG: XỬ LÝ SỐ LIỆU & ĐÁNH GIÁ
+# ==========================================
+def parse_sample_matrix(sample_name):
+    """Bộ lọc tự động nhận diện thể tích và Ký hiệu nền mẫu dựa trên mã."""
+    name_upper = str(sample_name).upper()
+    if 'KT' in name_upper:
+        return 24.0, 'KT'
+    elif 'KXQ' in name_upper:
+        return 4.0, 'KXQ'
+    elif 'KLV' in name_upper:
+        return 4.0, 'KLV'
+    return None, None
+
+def evaluate_result(raw_conc, v_gas, compound_name, nen_mau, v_desorb=1.0, recovery=100.0):
+    """Tính toán thực tế và tự động so sánh với Thư viện MDL"""
+    if pd.isna(raw_conc) or raw_conc <= 0:
+        return "KPH"
+        
+    result = (raw_conc * v_desorb) / v_gas * (100.0 / recovery)
+    
+    df_mdl = st.session_state.df_mdl
+    if not df_mdl.empty and compound_name and nen_mau:
+        mask = (df_mdl["Nền Mẫu"].astype(str).str.upper() == nen_mau.upper()) & \
+               (df_mdl["Tên Chất"].astype(str).str.lower() == str(compound_name).lower())
+        match = df_mdl[mask]
+        
+        if not match.empty:
+            mdl_str = str(match["MDL"].values[0]).replace(',', '.')
+            try:
+                mdl_val = float(mdl_str)
+                unit = str(match["Đơn Vị"].values[0])
+                if pd.isna(unit) or unit == 'nan': unit = ""
+                
+                if result < mdl_val:
+                    return f"KPH (MDL={mdl_val} {unit})"
+                else:
+                    return f"{round(result, 4)} {unit}"
+            except:
+                pass
+                
+    return round(result, 4)
+
+# ==========================================
+# 4. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
 st.sidebar.title("🔬 LIMS HATICO")
 st.sidebar.caption("Phần mềm Quản lý Phòng Lab GC-MS")
@@ -69,7 +102,7 @@ menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
     "🏠 Trang chủ (Tổng quan)", 
     "📥 Quản lý Tiếp nhận", 
     "⚙️ Vận hành GC-MS",
-    "🚀 Không gian phát triển"
+    "🚀 Tiện ích & Cấu hình"
 ])
 
 st.sidebar.divider()
@@ -77,21 +110,20 @@ st.sidebar.markdown("**Hỗ trợ nhanh:**")
 if st.sidebar.button("🔄 Cập nhật dữ liệu tức thì"):
     st.cache_data.clear()
     st.session_state.df = load_data()
+    st.session_state.df_mdl = load_mdl_config() 
     st.rerun()
 
-# --- Tính toán Logic chung ---
 df_current = st.session_state.df.copy()
 df_current["Ngày Nhận"] = df_current["Giờ Nhận"].dt.date
 today_date = datetime.today().date()
 
 # ==========================================
-# 4. GIAO DIỆN CÁC TRANG
+# 5. GIAO DIỆN CÁC TRANG
 # ==========================================
 
 if menu == "🏠 Trang chủ (Tổng quan)":
     st.title("📊 Bảng Điều Khiển Trung Tâm")
     
-    # --- THỐNG KÊ NHANH (METRICS) ---
     col1, col2, col3, col4 = st.columns(4)
     tong_hom_nay = len(df_current[df_current["Ngày Nhận"] == today_date])
     cho_chay_may = len(df_current[df_current["Trạng Thái"] == "🟡 3. Chờ chạy máy"])
@@ -104,18 +136,13 @@ if menu == "🏠 Trang chủ (Tổng quan)":
     
     st.divider()
     
-    # --- BỘ LỌC TÌM KIẾM TỔNG HỢP ---
     col_date, col_status, col_search = st.columns([1, 1.5, 2])
-    with col_date:
-        selected_date = st.date_input("📅 Chọn Ngày:", today_date)
-    with col_status:
-        filter_status = st.multiselect("Lọc trạng thái:", STATUSES, default=[])
-    with col_search:
-        search_query = st.text_input("🔍 Tìm kiếm (Mã mẫu, Tên mẻ, Chỉ tiêu):", placeholder="Gõ 'VOCs', '2026.07.017' hoặc 'NS...'")
+    with col_date: selected_date = st.date_input("📅 Chọn Ngày:", today_date)
+    with col_status: filter_status = st.multiselect("Lọc trạng thái:", STATUSES, default=[])
+    with col_search: search_query = st.text_input("🔍 Tìm kiếm (Mã mẫu, Tên mẻ, Chỉ tiêu):", placeholder="Gõ 'VOCs', '2026.07.017' hoặc 'NS...'")
 
     st.subheader(f"📋 Danh sách công việc ({selected_date.strftime('%d/%m/%Y')})")
 
-    # --- LỌC BẢNG DỮ LIỆU ---
     mask_ton_dong = (df_current["Ngày Nhận"] < selected_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))
     mask_trong_ngay = (df_current["Ngày Nhận"] == selected_date)
 
@@ -124,12 +151,10 @@ if menu == "🏠 Trang chủ (Tổng quan)":
     df_display.loc[mask_ton_dong, "Phân Loại"] = "⚠️ TỒN ĐỌNG CHƯA XONG"
     df_display = df_display.sort_values(by=["Phân Loại", "Giờ Nhận"], ascending=[True, True])
 
-    # Áp dụng bộ lọc Tìm Kiếm Đa Luồng (Global Search)
     if search_query:
         mask_id = df_display["Mã Mẫu"].astype(str).str.contains(search_query, case=False, na=False)
         mask_me = df_display["Tên Mẻ"].astype(str).str.contains(search_query, case=False, na=False)
         mask_chitieu = df_display["Chỉ Tiêu"].astype(str).str.contains(search_query, case=False, na=False)
-        
         df_display = df_display[mask_id | mask_me | mask_chitieu]
         
     if filter_status:
@@ -146,10 +171,7 @@ if menu == "🏠 Trang chủ (Tổng quan)":
             "Ngày Nhận": None 
         },
         disabled=["Mã Mẫu", "Tên Mẻ", "Chỉ Tiêu", "Phân Loại", "Giờ Nhận"], 
-        use_container_width=True,
-        num_rows="dynamic",
-        key="data_editor",
-        height=400
+        use_container_width=True, num_rows="dynamic", key="data_editor", height=400
     )
 
     if st.button("💾 Lưu các thay đổi vào Hệ thống", type="primary"):
@@ -185,7 +207,6 @@ elif menu == "📥 Quản lý Tiếp nhận":
             try:
                 df_upload = pd.read_excel(uploaded_file, sheet_name=0)
                 
-                # 1. Quét Tên Mẻ
                 ten_me_extract = "Không xác định"
                 for r in range(min(5, len(df_upload))):
                     for c in range(len(df_upload.columns)):
@@ -201,7 +222,6 @@ elif menu == "📥 Quản lý Tiếp nhận":
                             ten_me_extract = str(col).replace("Số:", "").strip()
                             break
                 
-                # 2. Tìm KHM và Trích xuất danh sách Chỉ Tiêu
                 khm_col_idx, header_row_idx = None, None
                 for r in range(min(20, len(df_upload))):
                     for c in range(len(df_upload.columns)):
@@ -215,23 +235,17 @@ elif menu == "📥 Quản lý Tiếp nhận":
                     params_info = []
                     for c in range(khm_col_idx + 1, len(df_upload.columns)):
                         header_val = str(df_upload.iloc[header_row_idx, c]).strip()
-                        if header_val.lower() == 'ghi chú' or header_val == 'nan' or header_val == '':
-                            break
+                        if header_val.lower() == 'ghi chú' or header_val == 'nan' or header_val == '': break
                         params_info.append((c, header_val))
                     
-                    # 3. Nhặt thông tin mẫu và TỰ ĐỘNG PHÂN LOẠI NỀN MẪU
                     samples_data = []
                     for r in range(header_row_idx + 1, len(df_upload)):
                         khm_val = str(df_upload.iloc[r, khm_col_idx]).strip()
                         if len(khm_val) > 3 and khm_val.lower() != 'nan':
-                            
                             khm_upper = khm_val.upper()
-                            if khm_upper.startswith(("KT", "KKXQ", "KLV")):
-                                nen_mau_auto = "Khí"
-                            elif khm_upper.startswith(("NS", "NT", "NM", "NU")):
-                                nen_mau_auto = "Nước"
-                            else:
-                                nen_mau_auto = "Chưa xác định"
+                            if khm_upper.startswith(("KT", "KKXQ", "KLV")): nen_mau_auto = "Khí"
+                            elif khm_upper.startswith(("NS", "NT", "NM", "NU")): nen_mau_auto = "Nước"
+                            else: nen_mau_auto = "Chưa xác định"
 
                             sample_params = []
                             for c, param_name in params_info:
@@ -240,17 +254,12 @@ elif menu == "📥 Quản lý Tiếp nhận":
                                     sample_params.append(param_name)
                             
                             chuoi_chi_tieu = ", ".join(sample_params) if sample_params else "Chưa xác định"
-                            
                             samples_data.append({
-                                "Chọn": True, 
-                                "Mã Mẫu": khm_val,
-                                "Nền Mẫu": nen_mau_auto, 
-                                "Chỉ Tiêu": chuoi_chi_tieu
+                                "Chọn": True, "Mã Mẫu": khm_val, "Nền Mẫu": nen_mau_auto, "Chỉ Tiêu": chuoi_chi_tieu
                             })
                     
                     if len(samples_data) > 0:
                         st.success(f"✔️ Quét thành công **{len(samples_data)}** mẫu thuộc mẻ: **{ten_me_extract}**")
-                        
                         st.caption("☑️ Máy đã tự đoán Nền Mẫu. Nếu sai, bạn có thể click vào ô để chọn lại trước khi lưu.")
                         
                         df_preview = pd.DataFrame(samples_data)
@@ -262,13 +271,10 @@ elif menu == "📥 Quản lý Tiếp nhận":
                                 "Nền Mẫu": st.column_config.SelectboxColumn("Nền Mẫu", options=["Nước", "Khí", "Chưa xác định"]),
                                 "Chỉ Tiêu": st.column_config.TextColumn("Chỉ Tiêu", disabled=True)
                             },
-                            hide_index=True,
-                            use_container_width=True,
-                            key="preview_editor"
+                            hide_index=True, use_container_width=True, key="preview_editor"
                         )
                         
                         batch_nguoi = st.selectbox("Người tiếp nhận:", ["Thành", "Kỹ thuật viên 2", "Kỹ thuật viên 3"])
-                        
                         selected_samples = edited_preview[edited_preview["Chọn"] == True]
                         
                         if st.button(f"🚀 Lưu {len(selected_samples)} mẫu đã chọn vào Hệ thống", type="primary"):
@@ -278,14 +284,9 @@ elif menu == "📥 Quản lý Tiếp nhận":
                                 new_rows = []
                                 for _, row in selected_samples.iterrows():
                                     new_rows.append({
-                                        "Mã Mẫu": row["Mã Mẫu"], 
-                                        "Tên Mẻ": ten_me_extract, 
-                                        "Nền Mẫu": row["Nền Mẫu"], 
-                                        "Chỉ Tiêu": row["Chỉ Tiêu"], 
-                                        "Trạng Thái": STATUSES[0], 
-                                        "Người Giữ": batch_nguoi, 
-                                        "Ghi Chú": "Import từ Excel", 
-                                        "Giờ Nhận": datetime.now()
+                                        "Mã Mẫu": row["Mã Mẫu"], "Tên Mẻ": ten_me_extract, "Nền Mẫu": row["Nền Mẫu"], 
+                                        "Chỉ Tiêu": row["Chỉ Tiêu"], "Trạng Thái": STATUSES[0], "Người Giữ": batch_nguoi, 
+                                        "Ghi Chú": "Import từ Excel", "Giờ Nhận": datetime.now()
                                     })
                                 st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame(new_rows)], ignore_index=True)
                                 save_data(st.session_state.df)
@@ -332,7 +333,6 @@ elif menu == "⚙️ Vận hành GC-MS":
             seq_df['Sample Name'] = df_ready['Mã Mẫu']
             seq_df['Sample Type'] = 'Sample'
             
-            # Logic mới: Tự động phát hiện phương pháp dựa vào tên hóa chất dài
             seq_df['Method'] = df_ready['Chỉ Tiêu'].apply(lambda x: 'VOCs.M' if any(k in str(x).upper() for k in ['VOC', 'BENZEN', 'TOLUEN', 'CHLORO', 'STYREN']) else 'HCHO.M')
             seq_df['Data File'] = datetime.now().strftime("%Y%m%d") + "_" + df_ready['Mã Mẫu']
             
@@ -340,27 +340,24 @@ elif menu == "⚙️ Vận hành GC-MS":
             st.download_button("📥 Tải Sequence.csv", data=csv, file_name=f"MassHunter_Seq_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary")
             
     with col_import:
-        st.subheader("2. Xử lý dữ liệu GC-MS (Đọc PDF Tự Động)")
-        st.info("💡 Bạn có thể thả trực tiếp file báo cáo định lượng PDF của Agilent MassHunter vào đây, hoặc dùng Excel/CSV.")
+        st.subheader("2. Xử lý dữ liệu GC-MS (Tự động tính & So sánh MDL)")
+        st.info("💡 Web sẽ tự động dùng thông số từ Thư viện MDL để kết luận KPH cho mẫu.")
 
         gc_file = st.file_uploader("Kéo thả báo cáo kết quả GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
 
         if gc_file is not None:
             calc_results = []
             try:
-                # ==========================================
-                # NẾU LÀ FILE PDF (Thuật toán quét text)
-                # ==========================================
+                # ĐỌC FILE PDF
                 if gc_file.name.endswith('.pdf'):
                     import PyPDF2
                     reader = PyPDF2.PdfReader(gc_file)
                     text = ""
-                    for page in reader.pages:
-                        text += page.extract_text() + "\n"
+                    for page in reader.pages: text += page.extract_text() + "\n"
 
                     lines = text.split('\n')
                     current_compound = None
-                    known_compounds = ['Benzene', 'Toluene-D8', 'Toluene', 'Ethylbenzene', 'm-Xylene', 'p-Xylene', 'o-Xylene', 'Styrene']
+                    known_compounds = ['Benzene', 'Toluene-D8', 'Toluene', 'Ethylbenzene', 'm-Xylene', 'p-Xylene', 'o-Xylene', 'Styrene', 'Acetaldehyde', 'Formaldehyde']
 
                     for line in lines:
                         parts = line.split()
@@ -376,87 +373,103 @@ elif menu == "⚙️ Vận hành GC-MS":
 
                             if len(floats) >= 3 and current_compound:
                                 final_conc = floats[-1]
-
-                                v_gas = parse_sample_volume(data_file)
+                                v_gas, nen_mau = parse_sample_matrix(data_file)
                                 if v_gas is not None:
-                                    final_result = calculate_air_concentration(raw_conc=final_conc, v_gas=v_gas)
+                                    final_result_str = evaluate_result(final_conc, v_gas, current_compound, nen_mau)
                                     calc_results.append({
                                         "Mã Mẫu": data_file,
+                                        "Nền Mẫu": nen_mau,
                                         "Tên Chất": current_compound,
-                                        "Thể Tích Khí (L)": v_gas,
                                         "Nồng độ GC (ng/ml)": final_conc,
-                                        "Kết quả Không khí": final_result
+                                        "Kết quả Thực Tế": final_result_str
                                     })
 
-                # ==========================================
-                # NẾU LÀ FILE EXCEL / CSV
-                # ==========================================
+                # ĐỌC FILE EXCEL / CSV
                 else:
-                    if gc_file.name.endswith('.csv'):
-                        df_gc = pd.read_csv(gc_file)
-                    else:
-                        df_gc = pd.read_excel(gc_file)
+                    if gc_file.name.endswith('.csv'): df_gc = pd.read_csv(gc_file)
+                    else: df_gc = pd.read_excel(gc_file)
 
                     df_gc.columns = [str(c).strip() for c in df_gc.columns]
 
                     if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns:
-                        compound_col = None
-                        for c in df_gc.columns:
-                            if c.lower() in ['name', 'compound', 'compound name', 'tên chất']:
-                                compound_col = c
-                                break
+                        compound_col = next((c for c in df_gc.columns if c.lower() in ['name', 'compound', 'compound name', 'tên chất']), None)
 
                         for _, row in df_gc.iterrows():
                             sample_name = str(row['Data File']).replace('.d', '')
                             raw_conc = pd.to_numeric(row['Final Conc.'], errors='coerce')
                             if pd.isna(raw_conc): continue
 
-                            v_gas = parse_sample_volume(sample_name)
+                            v_gas, nen_mau = parse_sample_matrix(sample_name)
                             if v_gas is not None:
-                                final_result = calculate_air_concentration(raw_conc=raw_conc, v_gas=v_gas)
-                                result_dict = {
-                                    "Mã Mẫu": sample_name,
-                                    "Tên Chất": row[compound_col] if compound_col else "N/A",
-                                    "Thể Tích Khí (L)": v_gas,
-                                    "Nồng độ GC (ng/ml)": raw_conc,
-                                    "Kết quả Không khí": final_result
-                                }
-                                calc_results.append(result_dict)
-                    else:
-                        st.error("❌ File Excel/CSV thiếu cột 'Data File' hoặc 'Final Conc.'")
+                                comp_name = row[compound_col] if compound_col else "N/A"
+                                final_result_str = evaluate_result(raw_conc, v_gas, comp_name, nen_mau)
+                                calc_results.append({
+                                    "Mã Mẫu": sample_name, "Nền Mẫu": nen_mau, "Tên Chất": comp_name,
+                                    "Nồng độ GC (ng/ml)": raw_conc, "Kết quả Thực Tế": final_result_str
+                                })
+                    else: st.error("❌ File Excel thiếu cột 'Data File' hoặc 'Final Conc.'")
 
-                # ==========================================
-                # HIỂN THỊ KẾT QUẢ
-                # ==========================================
+                # HIỂN THỊ KẾT QUẢ ĐÃ ĐÁNH GIÁ MDL
                 if calc_results:
-                    st.success(f"✔️ Đã trích xuất và tính toán thành công {len(calc_results)} dòng dữ liệu từ {gc_file.name}!")
-                    df_results = pd.DataFrame(calc_results)
-
-                    # Sắp xếp cột nếu có Tên Chất
-                    if "Tên Chất" in df_results.columns:
-                        df_results = df_results[["Mã Mẫu", "Tên Chất", "Thể Tích Khí (L)", "Nồng độ GC (ng/ml)", "Kết quả Không khí"]]
-
-                    st.dataframe(df_results, use_container_width=True)
-
-                    if st.button("🔄 Cập nhật kết quả vào Hệ thống", type="primary"):
-                        st.info("Đang tích hợp module đối chiếu LOQ (Giai đoạn tiếp theo).")
-                elif gc_file.name.endswith('.pdf'):
-                    st.warning("⚠️ Không tìm thấy mẫu KT/KXQ hoặc không nhận diện được tên chất trong file PDF.")
-
-            except Exception as e:
-                st.error(f"❌ Lỗi khi đọc file: {e}")
+                    st.success(f"✔️ Đã xử lý & đối chiếu MDL thành công {len(calc_results)} dữ liệu!")
+                    st.dataframe(pd.DataFrame(calc_results), use_container_width=True)
+                elif gc_file.name.endswith('.pdf'): st.warning("⚠️ Không tìm thấy thông tin hợp lệ trong PDF.")
+            except Exception as e: st.error(f"❌ Lỗi khi đọc file: {e}")
 
 # ---------------------------------------------------------
-elif menu == "🚀 Không gian phát triển":
-    st.title("🛠️ Tiện ích & Mở rộng tương lai")
+elif menu == "🚀 Tiện ích & Cấu hình":
+    st.title("🛠️ Tiện ích & Cấu hình Hệ thống")
     
-    st.markdown("Khu vực này để dành cho bạn tự do sáng tạo và code thêm các module tự động hóa khác cho Lab:")
+    tab_mdl, tab_report, tab_qr = st.tabs(["📚 Quản lý Thư viện MDL", "📝 Lập Biên Bản (Sắp ra mắt)", "🏷️ Sinh Mã QR"])
     
-    tab1, tab2, tab3 = st.tabs(["📝 In Phiếu Kết Quả", "🧪 Quản lý Hóa chất / Chuẩn", "🏷️ Sinh Mã QR"])
-    
-    with tab1:
-        st.write("Tại đây, bạn có thể lập trình code đọc kết quả từ bảng và điền tự động vào Form Word/Excel mẫu của công ty, sau đó xuất ra file PDF.")
-    with tab2:
-        st.write("Khu vực theo dõi tồn kho hóa chất, hạn sử dụng dung dịch chuẩn, tự động cảnh báo khi sắp hết hạn.")
-    with tab3:
-        st.write("Chức năng tạo mã vạch (Barcode) hàng loạt cho các mẫu mẻ mới nhận để dán lên khay lưu kho.")
+    with tab_mdl:
+        st.subheader("Cập nhật Thư viện Giới hạn Phát hiện (MDL)")
+        st.info("Kéo thả file Excel chứa bảng MDL (như file `Bang_MDL_Khi_Cac_Loai...xlsx`). Hệ thống sẽ tự quét các Sheet và gộp lại rồi bắn lên Google Sheets.")
+        
+        mdl_file = st.file_uploader("Tải lên file Excel Bảng MDL", type=["xlsx"])
+        if mdl_file:
+            try:
+                xls = pd.ExcelFile(mdl_file)
+                mdl_data = []
+                
+                for sheet in xls.sheet_names:
+                    df_sheet = pd.read_excel(xls, sheet_name=sheet)
+                    
+                    # Tự động tìm cột tên chất và cột MDL
+                    col_ten = next((c for c in df_sheet.columns if 'tên' in str(c).lower() or 'hợp chất' in str(c).lower()), None)
+                    col_mdl = next((c for c in df_sheet.columns if 'mdl' in str(c).lower()), None)
+                    
+                    if col_ten and col_mdl:
+                        # Rút trích đơn vị trong ngoặc (nếu có)
+                        unit_match = re.search(r'\((.*?)\)', str(col_mdl))
+                        unit = unit_match.group(1) if unit_match else "Chưa rõ"
+                        
+                        # Quy chuẩn mã Nền mẫu
+                        nen_mau = "KT" if "thải" in sheet.lower() else ("KXQ" if "xung quanh" in sheet.lower() else ("KLV" if "làm việc" in sheet.lower() else sheet))
+                        
+                        for _, row in df_sheet.iterrows():
+                            if pd.notna(row[col_ten]) and pd.notna(row[col_mdl]):
+                                mdl_data.append({
+                                    "Nền Mẫu": nen_mau,
+                                    "Tên Chất": str(row[col_ten]).strip(),
+                                    "MDL": str(row[col_mdl]).replace(',', '.').strip(),
+                                    "Đơn Vị": unit
+                                })
+                
+                if mdl_data:
+                    df_mdl_new = pd.DataFrame(mdl_data)
+                    st.success(f"✔️ Đã quét được {len(df_mdl_new)} chỉ tiêu MDL từ file.")
+                    st.dataframe(df_mdl_new, use_container_width=True)
+                    
+                    if st.button("🚀 Đẩy lên Google Sheets (Tạo/Ghi đè Thư viện)", type="primary"):
+                        # Đẩy trực tiếp tạo Tab mới tên là CauHinh_MDL
+                        conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL", data=df_mdl_new)
+                        st.session_state.df_mdl = df_mdl_new
+                        st.success("🎉 Đã lưu cấu hình MDL lên Cloud thành công! Tự động áp dụng cho các mẻ tính toán sau.")
+                else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên hợp chất / Cột MDL).")
+            except Exception as e: st.error(f"Lỗi đọc file: {e}")
+
+    with tab_report:
+        st.write("Tại đây, bạn có thể lập trình code đọc kết quả từ bảng và điền tự động vào Form Word/Excel.")
+    with tab_qr:
+        st.write("Chức năng tạo mã vạch (Barcode) hàng loạt cho các mẫu mẻ mới nhận.")
