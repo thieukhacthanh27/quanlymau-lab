@@ -130,7 +130,6 @@ if menu == "🏠 Trang chủ (Tổng quan)":
     cho_chay_may = len(df_current[df_current["Trạng Thái"] == "🟡 3. Chờ chạy máy"])
     ton_dong = len(df_current[(df_current["Ngày Nhận"] < today_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))])
     
-    # Cập nhật Logic đếm mẫu hoàn thành, lưu kho và tiêu hủy
     da_luu = len(df_current[df_current["Trạng Thái"] == "🟢 6. Lưu kho"])
     da_huy = len(df_current[df_current["Trạng Thái"] == "⚫ 7. Đã tiêu hủy"])
     tong_hoan_thanh = da_luu + da_huy
@@ -431,7 +430,7 @@ elif menu == "🚀 Tiện ích & Cấu hình":
     with tab_mdl:
         st.subheader("Tra cứu thông minh Thư viện MDL")
         
-        # 1. KHU VỰC TRA CỨU NHANH (FUZZY SEARCH)
+        # 1. KHU VỰC TRA CỨU NHANH (FUZZY SEARCH CÓ CHẤM ĐIỂM)
         search_mdl = st.text_input("🔍 Tra cứu MDL sát tên chất (VD: Benzen, Toluen, Xylen):")
         
         mdl_library = st.session_state.df_mdl
@@ -439,16 +438,23 @@ elif menu == "🚀 Tiện ích & Cấu hình":
             if not mdl_library.empty:
                 all_compounds = mdl_library["Tên Chất"].astype(str).unique()
                 
-                # Thuật toán tìm kiếm sát nghĩa (Fuzzy Matching)
-                close_matches = difflib.get_close_matches(search_mdl.lower(), [c.lower() for c in all_compounds], n=10, cutoff=0.4)
+                # Thuật toán tìm kiếm sát nghĩa
+                close_matches = difflib.get_close_matches(search_mdl.lower(), [c.lower() for c in all_compounds], n=20, cutoff=0.3)
                 
-                # Lọc kết quả: Chứa một phần từ khóa HOẶC nằm trong danh sách khớp sát nghĩa
+                # Lọc kết quả
                 mask_contains = mdl_library["Tên Chất"].astype(str).str.contains(search_mdl, case=False, na=False)
                 mask_fuzzy = mdl_library["Tên Chất"].astype(str).str.lower().isin(close_matches)
                 
-                search_result = mdl_library[mask_contains | mask_fuzzy]
+                search_result = mdl_library[mask_contains | mask_fuzzy].copy()
                 
                 if not search_result.empty:
+                    # Chấm điểm độ tương đồng để sắp xếp ưu tiên từ cao xuống thấp
+                    search_result["Score"] = search_result["Tên Chất"].apply(
+                        lambda x: difflib.SequenceMatcher(None, search_mdl.lower(), str(x).lower()).ratio()
+                    )
+                    # Đưa kết quả sát với từ khóa nhất lên trên cùng
+                    search_result = search_result.sort_values(by="Score", ascending=False).drop(columns=["Score"])
+                    
                     st.dataframe(search_result, use_container_width=True, hide_index=True)
                 else:
                     st.warning("⚠️ Không tìm thấy chất nào sát với từ khóa bạn nhập trong Thư viện.")
