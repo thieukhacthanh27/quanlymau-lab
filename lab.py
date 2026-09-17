@@ -340,76 +340,111 @@ elif menu == "⚙️ Vận hành GC-MS":
             st.download_button("📥 Tải Sequence.csv", data=csv, file_name=f"MassHunter_Seq_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary")
             
     with col_import:
-        st.subheader("2. Xử lý dữ liệu GC-MS")
-        st.info("Tải file kết quả định lượng Agilent Quant (Excel/CSV) chứa thông số Final Conc.")
-        
-        gc_file = st.file_uploader("Kéo thả báo cáo kết quả GC vào đây", type=["xlsx", "xls", "csv"])
-        
+        st.subheader("2. Xử lý dữ liệu GC-MS (Đọc PDF Tự Động)")
+        st.info("💡 Bạn có thể thả trực tiếp file báo cáo định lượng PDF của Agilent MassHunter vào đây, hoặc dùng Excel/CSV.")
+
+        gc_file = st.file_uploader("Kéo thả báo cáo kết quả GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
+
         if gc_file is not None:
+            calc_results = []
             try:
-                if gc_file.name.endswith('.csv'):
-                    df_gc = pd.read_csv(gc_file)
-                else:
-                    df_gc = pd.read_excel(gc_file)
-                
-                # Chuẩn hóa tên cột để tránh lỗi khoảng trắng
-                df_gc.columns = [str(c).strip() for c in df_gc.columns]
-                
-                if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns:
-                    calc_results = []
-                    
-                    # Thuật toán tìm cột Tên chất (Compound Name) nếu có
-                    compound_col = None
-                    for c in df_gc.columns:
-                        if c.lower() in ['name', 'compound', 'compound name', 'tên chất']:
-                            compound_col = c
-                            break
-                    
-                    for _, row in df_gc.iterrows():
-                        sample_name = str(row['Data File']).replace('.d', '')
-                        raw_conc = pd.to_numeric(row['Final Conc.'], errors='coerce')
-                        
-                        if pd.isna(raw_conc):
+                # ==========================================
+                # NẾU LÀ FILE PDF (Thuật toán quét text)
+                # ==========================================
+                if gc_file.name.endswith('.pdf'):
+                    import PyPDF2
+                    reader = PyPDF2.PdfReader(gc_file)
+                    text = ""
+                    for page in reader.pages:
+                        text += page.extract_text() + "\n"
+
+                    lines = text.split('\n')
+                    current_compound = None
+                    known_compounds = ['Benzene', 'Toluene-D8', 'Toluene', 'Ethylbenzene', 'm-Xylene', 'p-Xylene', 'o-Xylene', 'Styrene']
+
+                    for line in lines:
+                        parts = line.split()
+                        if not parts: continue
+
+                        if line.strip() in known_compounds:
+                            current_compound = line.strip()
                             continue
-                            
-                        # Chạy qua bộ lọc để lấy thể tích khí hút
-                        v_gas = parse_sample_volume(sample_name)
-                        
-                        if v_gas is not None:
-                            # Thực hiện tính toán
-                            final_result = calculate_air_concentration(raw_conc=raw_conc, v_gas=v_gas)
-                            
-                            result_dict = {
-                                "Mã Mẫu": sample_name,
-                                "Thể Tích Khí (L)": v_gas,
-                                "Nồng độ GC (ng/ml)": raw_conc,
-                                "Kết quả Không khí": final_result
-                            }
-                            # Thêm Tên chất vào bảng nếu file MassHunter có cột này
-                            if compound_col:
-                                result_dict["Tên Chất"] = row[compound_col]
-                                
-                            calc_results.append(result_dict)
-                    
-                    if calc_results:
-                        st.success(f"✔️ Đã trích xuất và tính toán thành công {len(calc_results)} dòng dữ liệu!")
-                        df_results = pd.DataFrame(calc_results)
-                        
-                        # Sắp xếp lại thứ tự cột cho đẹp mắt nếu có cột Tên Chất
-                        if compound_col and "Tên Chất" in df_results.columns:
-                            df_results = df_results[["Mã Mẫu", "Tên Chất", "Thể Tích Khí (L)", "Nồng độ GC (ng/ml)", "Kết quả Không khí"]]
-                            
-                        st.dataframe(df_results, use_container_width=True)
-                        
-                        if st.button("🔄 Cập nhật kết quả vào Hệ thống"):
-                            st.info("Đang tích hợp module đối chiếu LOQ (Tính năng sẽ ra mắt ở Giai đoạn tiếp theo).")
-                    else:
-                        st.warning("Không tìm thấy mẫu KT hoặc KXQ nào cần tính toán trong file này.")
+
+                        if len(parts) >= 5 and parts[0].endswith('.d') and 'Sample' in parts:
+                            data_file = parts[0].replace('.d', '')
+                            floats = [float(p) for p in parts if p.replace('.', '', 1).isdigit() and p.count('.') <= 1]
+
+                            if len(floats) >= 3 and current_compound:
+                                final_conc = floats[-1]
+
+                                v_gas = parse_sample_volume(data_file)
+                                if v_gas is not None:
+                                    final_result = calculate_air_concentration(raw_conc=final_conc, v_gas=v_gas)
+                                    calc_results.append({
+                                        "Mã Mẫu": data_file,
+                                        "Tên Chất": current_compound,
+                                        "Thể Tích Khí (L)": v_gas,
+                                        "Nồng độ GC (ng/ml)": final_conc,
+                                        "Kết quả Không khí": final_result
+                                    })
+
+                # ==========================================
+                # NẾU LÀ FILE EXCEL / CSV
+                # ==========================================
                 else:
-                    st.error("File tải lên không đúng định dạng chuẩn của Agilent (Thiếu cột 'Data File' hoặc 'Final Conc.').")
-                    
+                    if gc_file.name.endswith('.csv'):
+                        df_gc = pd.read_csv(gc_file)
+                    else:
+                        df_gc = pd.read_excel(gc_file)
+
+                    df_gc.columns = [str(c).strip() for c in df_gc.columns]
+
+                    if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns:
+                        compound_col = None
+                        for c in df_gc.columns:
+                            if c.lower() in ['name', 'compound', 'compound name', 'tên chất']:
+                                compound_col = c
+                                break
+
+                        for _, row in df_gc.iterrows():
+                            sample_name = str(row['Data File']).replace('.d', '')
+                            raw_conc = pd.to_numeric(row['Final Conc.'], errors='coerce')
+                            if pd.isna(raw_conc): continue
+
+                            v_gas = parse_sample_volume(sample_name)
+                            if v_gas is not None:
+                                final_result = calculate_air_concentration(raw_conc=raw_conc, v_gas=v_gas)
+                                result_dict = {
+                                    "Mã Mẫu": sample_name,
+                                    "Tên Chất": row[compound_col] if compound_col else "N/A",
+                                    "Thể Tích Khí (L)": v_gas,
+                                    "Nồng độ GC (ng/ml)": raw_conc,
+                                    "Kết quả Không khí": final_result
+                                }
+                                calc_results.append(result_dict)
+                    else:
+                        st.error("❌ File Excel/CSV thiếu cột 'Data File' hoặc 'Final Conc.'")
+
+                # ==========================================
+                # HIỂN THỊ KẾT QUẢ
+                # ==========================================
+                if calc_results:
+                    st.success(f"✔️ Đã trích xuất và tính toán thành công {len(calc_results)} dòng dữ liệu từ {gc_file.name}!")
+                    df_results = pd.DataFrame(calc_results)
+
+                    # Sắp xếp cột nếu có Tên Chất
+                    if "Tên Chất" in df_results.columns:
+                        df_results = df_results[["Mã Mẫu", "Tên Chất", "Thể Tích Khí (L)", "Nồng độ GC (ng/ml)", "Kết quả Không khí"]]
+
+                    st.dataframe(df_results, use_container_width=True)
+
+                    if st.button("🔄 Cập nhật kết quả vào Hệ thống", type="primary"):
+                        st.info("Đang tích hợp module đối chiếu LOQ (Giai đoạn tiếp theo).")
+                elif gc_file.name.endswith('.pdf'):
+                    st.warning("⚠️ Không tìm thấy mẫu KT/KXQ hoặc không nhận diện được tên chất trong file PDF.")
+
             except Exception as e:
-                st.error(f"Lỗi khi đọc file: {e}")
+                st.error(f"❌ Lỗi khi đọc file: {e}")
 
 # ---------------------------------------------------------
 elif menu == "🚀 Không gian phát triển":
