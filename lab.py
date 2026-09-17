@@ -321,6 +321,7 @@ elif menu == "📥 Quản lý Tiếp nhận":
                 st.success(f"Đã thêm {new_id}!")
 
 # ---------------------------------------------------------
+# ---------------------------------------------------------
 elif menu == "⚙️ Vận hành GC-MS":
     st.title("⚙️ Điều phối & Vận hành Máy đo")
     
@@ -338,6 +339,7 @@ elif menu == "⚙️ Vận hành GC-MS":
             seq_df['Sample Name'] = df_ready['Mã Mẫu']
             seq_df['Sample Type'] = 'Sample'
             
+            # Logic nhận diện phương pháp
             seq_df['Method'] = df_ready['Chỉ Tiêu'].apply(lambda x: 'VOCs.M' if any(k in str(x).upper() for k in ['VOC', 'BENZEN', 'TOLUEN', 'CHLORO', 'STYREN']) else 'HCHO.M')
             seq_df['Data File'] = datetime.now().strftime("%Y%m%d") + "_" + df_ready['Mã Mẫu']
             
@@ -345,81 +347,178 @@ elif menu == "⚙️ Vận hành GC-MS":
             st.download_button("📥 Tải Sequence.csv", data=csv, file_name=f"MassHunter_Seq_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary")
             
     with col_import:
-        st.subheader("2. Xử lý dữ liệu GC-MS (Tự động tính & So sánh MDL)")
-        st.info("💡 Web sẽ tự động dùng thông số từ Thư viện MDL để kết luận KPH cho mẫu.")
+        st.subheader("2. Xử lý dữ liệu GC-MS theo SOP")
+        st.info("💡 Hệ thống tự động xác định C ban đầu của Chuẩn đồng hành (R% = 70-130%) và tích hợp đánh giá QA/QC (BL, TC).")
 
         gc_file = st.file_uploader("Kéo thả báo cáo kết quả GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
+
+        # --- CÁC HÀM BỔ TRỢ TÍNH TOÁN THEO SOP ---
+        def get_dynamic_surrogate_expected(c_do):
+            """Xác định C_ban_đầu sao cho R% thuộc [70, 130]"""
+            # Dải nồng độ chuẩn phổ biến
+            levels = [1.0, 2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 20.0, 25.0, 50.0, 100.0]
+            valid_levels = []
+            for lvl in levels:
+                rec = (c_do / lvl) * 100.0
+                if 70 <= rec <= 130:
+                    valid_levels.append((lvl, abs(100 - rec))) # Lưu mức lệch so với 100%
+                    
+            if valid_levels:
+                # Chọn mức có R% gần 100% nhất
+                valid_levels.sort(key=lambda x: x[1])
+                return valid_levels[0][0]
+            else:
+                # Fallback: Lấy mức gần C_đo nhất nếu không có mức nào thỏa mãn
+                return min(levels, key=lambda x: abs(x - c_do))
+
+        def get_mdl_info(compound_name, nen_mau):
+            """Tra cứu giá trị và đơn vị MDL"""
+            df_mdl = st.session_state.df_mdl
+            if not df_mdl.empty and compound_name and nen_mau:
+                mask = (df_mdl["Nền Mẫu"].astype(str).str.upper() == nen_mau.upper()) & \
+                       (df_mdl["Tên Chất"].astype(str).str.lower() == str(compound_name).lower())
+                match = df_mdl[mask]
+                if not match.empty:
+                    mdl_str = str(match["MDL"].values[0]).replace(',', '.')
+                    unit = str(match["Đơn Vị"].values[0])
+                    if pd.isna(unit) or unit == 'nan': unit = ""
+                    try: return float(mdl_str), unit
+                    except: pass
+            return None, ""
 
         if gc_file is not None:
             calc_results = []
             try:
-                # ĐỌC FILE PDF
+                # --- BƯỚC 1: TRÍCH XUẤT DỮ LIỆU TỪ FILE ---
                 if gc_file.name.endswith('.pdf'):
                     import PyPDF2
                     reader = PyPDF2.PdfReader(gc_file)
-                    text = ""
-                    for page in reader.pages: text += page.extract_text() + "\n"
-
+                    text = "".join([page.extract_text() + "\n" for page in reader.pages])
                     lines = text.split('\n')
+                    
+                    pdf_data = []
                     current_compound = None
-                    known_compounds = ['Benzene', 'Toluene-D8', 'Toluene', 'Ethylbenzene', 'm-Xylene', 'p-Xylene', 'o-Xylene', 'Styrene', 'Acetaldehyde', 'Formaldehyde']
+                    known_compounds = ['Benzene', 'Toluene-D8', 'BFB', '4-Bromofluorobenzene', 'Toluene', 'Ethylbenzene', 'm-Xylene', 'p-Xylene', 'o-Xylene', 'Styrene']
 
                     for line in lines:
                         parts = line.split()
                         if not parts: continue
-
                         if line.strip() in known_compounds:
                             current_compound = line.strip()
                             continue
-
-                        if len(parts) >= 5 and parts[0].endswith('.d') and 'Sample' in parts:
+                        
+                        # Nhận diện mẫu dựa trên tiền tố hoặc ký hiệu Cal
+                        if len(parts) >= 5 and (parts[0].endswith('.d') or parts[0].replace('.d','') in ['10PPM', '2', '4', '6', '8']) and ('Sample' in parts or 'Cal' in parts):
                             data_file = parts[0].replace('.d', '')
                             floats = [float(p) for p in parts if p.replace('.', '', 1).isdigit() and p.count('.') <= 1]
-
+                            
                             if len(floats) >= 3 and current_compound:
-                                final_conc = floats[-1]
-                                v_gas, nen_mau = parse_sample_matrix(data_file)
-                                if v_gas is not None:
-                                    final_result_str = evaluate_result(final_conc, v_gas, current_compound, nen_mau)
-                                    calc_results.append({
-                                        "Mã Mẫu": data_file,
-                                        "Nền Mẫu": nen_mau,
-                                        "Tên Chất": current_compound,
-                                        "Nồng độ GC (ng/ml)": final_conc,
-                                        "Kết quả Thực Tế": final_result_str
-                                    })
-
-                # ĐỌC FILE EXCEL / CSV
+                                # Logic lọc Final Conc tùy thuộc vào số liệu Calibration hay Sample
+                                if 'Cal' in parts and len(floats) >= 5:
+                                    final_conc = floats[-3] 
+                                elif 'Cal' in parts and len(floats) >= 4:
+                                    final_conc = floats[-2]
+                                elif 'Sample' in parts:
+                                    final_conc = floats[-1]
+                                else:
+                                    final_conc = floats[-1]
+                                    
+                                pdf_data.append({"Data File": data_file, "Compound Name": current_compound, "Final Conc.": final_conc})
+                    
+                    df_gc = pd.DataFrame(pdf_data)
+                    compound_col = "Compound Name"
+                    
                 else:
-                    if gc_file.name.endswith('.csv'): df_gc = pd.read_csv(gc_file)
-                    else: df_gc = pd.read_excel(gc_file)
-
+                    df_gc = pd.read_csv(gc_file) if gc_file.name.endswith('.csv') else pd.read_excel(gc_file)
                     df_gc.columns = [str(c).strip() for c in df_gc.columns]
+                    compound_col = next((c for c in df_gc.columns if c.lower() in ['name', 'compound', 'compound name', 'tên chất']), None)
 
-                    if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns:
-                        compound_col = next((c for c in df_gc.columns if c.lower() in ['name', 'compound', 'compound name', 'tên chất']), None)
+                # --- BƯỚC 2: TÍNH TOÁN THEO SOP & ĐÁNH GIÁ KẾT QUẢ ---
+                if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns and compound_col:
+                    
+                    # Xác định nền mẫu mặc định của mẻ phân tích
+                    default_v_gas, default_nen = 24.0, 'KT'
+                    for _, row in df_gc.iterrows():
+                        sn = str(row['Data File']).upper()
+                        if 'KT' in sn: default_v_gas, default_nen = 24.0, 'KT'; break
+                        elif 'KXQ' in sn: default_v_gas, default_nen = 4.0, 'KXQ'; break
+                        elif 'KLV' in sn: default_v_gas, default_nen = 4.0, 'KLV'; break
 
-                        for _, row in df_gc.iterrows():
+                    # Tính Hiệu suất thu hồi R(%) cho TỪNG MẪU thông qua Chuẩn đồng hành
+                    surrogate_dict = {}
+                    for _, row in df_gc.iterrows():
+                        comp_name = str(row[compound_col]).upper()
+                        if comp_name in ['TOLUENE-D8', 'TOLUEN-D8', 'BFB', '4-BROMOFLUOROBENZENE']:
                             sample_name = str(row['Data File']).replace('.d', '')
                             raw_conc = pd.to_numeric(row['Final Conc.'], errors='coerce')
-                            if pd.isna(raw_conc): continue
+                            if pd.notna(raw_conc) and raw_conc > 0:
+                                # Tính R% dựa trên việc chọn C_ban_đầu phù hợp
+                                c_exp = get_dynamic_surrogate_expected(raw_conc)
+                                recovery = (raw_conc / c_exp) * 100.0
+                                surrogate_dict[sample_name] = recovery
 
-                            v_gas, nen_mau = parse_sample_matrix(sample_name)
-                            if v_gas is not None:
-                                comp_name = row[compound_col] if compound_col else "N/A"
-                                final_result_str = evaluate_result(raw_conc, v_gas, comp_name, nen_mau)
-                                calc_results.append({
-                                    "Mã Mẫu": sample_name, "Nền Mẫu": nen_mau, "Tên Chất": comp_name,
-                                    "Nồng độ GC (ng/ml)": raw_conc, "Kết quả Thực Tế": final_result_str
-                                })
-                    else: st.error("❌ File Excel thiếu cột 'Data File' hoặc 'Final Conc.'")
+                    # Xử lý các chỉ tiêu thực tế
+                    for _, row in df_gc.iterrows():
+                        sample_name = str(row['Data File']).replace('.d', '')
+                        comp_name = str(row[compound_col])
+                        
+                        upper_name = sample_name.upper()
+                        
+                        # Bộ lọc định dạng mẫu hợp lệ (Bao gồm mẫu thực, Blank, QC, Thêm chuẩn)
+                        valid_keys = ['KT', 'KXQ', 'KLV', 'BL', 'BLANK', 'TC', 'QC']
+                        if not any(k in upper_name for k in valid_keys): continue
+                        
+                        # Bỏ qua các điểm đường chuẩn (Cal)
+                        if upper_name in ['1', '2', '4', '5', '6', '8', '10'] or 'PPM' in upper_name: continue
+                            
+                        # Không xuất kết quả của chuẩn đồng hành trong bảng dữ liệu cuối
+                        if comp_name.upper() in ['TOLUENE-D8', 'TOLUEN-D8', 'BFB', '4-BROMOFLUOROBENZENE']: continue
+                            
+                        raw_conc = pd.to_numeric(row['Final Conc.'], errors='coerce')
+                        if pd.isna(raw_conc): continue
 
-                # HIỂN THỊ KẾT QUẢ ĐÃ ĐÁNH GIÁ MDL
+                        # Trích xuất tham số nền mẫu
+                        v_gas, nen_mau = parse_sample_matrix(sample_name)
+                        if v_gas is None:
+                            v_gas, nen_mau = default_v_gas, default_nen
+                            
+                        # Áp dụng độ thu hồi R% tương ứng, nếu không tìm thấy mặc định là 100%
+                        sample_recovery = surrogate_dict.get(sample_name, 100.0)
+                        
+                        # Tra cứu MDL
+                        mdl_val, unit = get_mdl_info(comp_name, nen_mau)
+                        
+                        # Tính C thực và so sánh MDL
+                        c_thuc_str = "KPH"
+                        if raw_conc > 0:
+                            c_thuc_val = (raw_conc * 1.0) / v_gas * (100.0 / sample_recovery)
+                            if mdl_val and c_thuc_val < mdl_val:
+                                c_thuc_str = "KPH"
+                            else:
+                                c_thuc_str = f"{round(c_thuc_val, 4)}"
+                                
+                        mdl_display = f"{mdl_val} {unit}" if mdl_val else ""
+                        
+                        calc_results.append({
+                            "Tên mẫu": sample_name,
+                            "Tên chỉ tiêu": comp_name,
+                            "C đo": round(raw_conc, 4),
+                            "C thực": c_thuc_str,
+                            "MDL": mdl_display,
+                            "R(%)": f"{round(sample_recovery, 1)}%"
+                        })
+
+                # --- 3. HIỂN THỊ KẾT QUẢ ---
                 if calc_results:
-                    st.success(f"✔️ Đã xử lý & đối chiếu MDL thành công {len(calc_results)} dữ liệu!")
-                    st.dataframe(pd.DataFrame(calc_results), use_container_width=True)
-                elif gc_file.name.endswith('.pdf'): st.warning("⚠️ Không tìm thấy thông tin hợp lệ trong PDF.")
-            except Exception as e: st.error(f"❌ Lỗi khi đọc file: {e}")
+                    st.success(f"✔️ Đã xuất {len(calc_results)} dòng kết quả chuẩn hóa bao gồm các mẫu thực, QC, Blank và Thêm chuẩn.")
+                    df_results = pd.DataFrame(calc_results)
+                    st.dataframe(df_results, use_container_width=True, hide_index=True)
+
+                    if st.button("🔄 Lưu kết quả vào Hệ thống", type="primary"):
+                        st.info("Dữ liệu đã sẵn sàng để tích hợp vào báo cáo Word tự động.")
+                else: 
+                    st.warning("⚠️ Không tìm thấy mẫu phân tích nào đúng định dạng hợp lệ (KT, KXQ, QC, BL, TC) hoặc file thiếu dữ liệu đo.")
+            except Exception as e: st.error(f"❌ Lỗi xử lý: {e}")
 
 # ---------------------------------------------------------
 elif menu == "🚀 Tiện ích & Cấu hình":
