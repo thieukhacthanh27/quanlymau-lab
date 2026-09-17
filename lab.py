@@ -16,6 +16,27 @@ STATUSES = [
 ]
 
 # ==========================================
+# HÀM BỔ SUNG: BỘ LỌC VÀ TÍNH TOÁN NỒNG ĐỘ
+# ==========================================
+def parse_sample_volume(sample_name):
+    """Bộ lọc tự động nhận diện thể tích khí hút dựa trên mã mẫu."""
+    name_upper = str(sample_name).upper()
+    if 'KT' in name_upper:
+        return 24.0  # Khí thải: 24L
+    elif 'KXQ' in name_upper:
+        return 4.0   # Không khí xung quanh: 4L
+    return None      # Các mẫu chuẩn (Cal), mẫu trắng bỏ qua tính toán
+
+def calculate_air_concentration(raw_conc, v_gas, v_desorb=1.0, recovery=100.0, blank_conc=0.0):
+    """Tính toán nồng độ thực tế (ug/m3 hoặc mg/Nm3)"""
+    net_conc = raw_conc - blank_conc
+    if net_conc <= 0:
+        return 0.0000
+    # Công thức: (Nồng độ GC * V giải hấp) / V khí hút * (100 / Độ thu hồi)
+    result = (net_conc * v_desorb) / v_gas * (100.0 / recovery)
+    return round(result, 4)
+
+# ==========================================
 # 2. KẾT NỐI & XỬ LÝ DỮ LIỆU
 # ==========================================
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -320,16 +341,58 @@ elif menu == "⚙️ Vận hành GC-MS":
             st.download_button("📥 Tải Sequence.csv", data=csv, file_name=f"MassHunter_Seq_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary")
             
     with col_import:
-        st.subheader("2. Xử lý dữ liệu GC (Chờ lập trình)")
-        st.markdown(
-            """
-            *Khu vực này được chuẩn bị sẵn cho giai đoạn 2:*
-            *   Tải file kết quả từ MassHunter lên.
-            *   Tự động tính toán hàm lượng dựa trên diện tích Peak.
-            *   Khớp dữ liệu nồng độ trực tiếp vào Google Sheets.
-            """
-        )
-        st.file_uploader("Kéo thả báo cáo MassHunter vào đây (Tính năng chưa kích hoạt)", disabled=True)
+        st.subheader("2. Xử lý dữ liệu GC-MS")
+        st.info("Tải file kết quả định lượng Agilent Quant (Excel/CSV) chứa thông số Final Conc.")
+        
+        gc_file = st.file_uploader("Kéo thả báo cáo kết quả GC vào đây", type=["xlsx", "xls", "csv"])
+        
+        if gc_file is not None:
+            try:
+                if gc_file.name.endswith('.csv'):
+                    df_gc = pd.read_csv(gc_file)
+                else:
+                    df_gc = pd.read_excel(gc_file)
+                
+                # Cần chuẩn hóa tên cột để tránh lỗi khoảng trắng
+                df_gc.columns = [str(c).strip() for c in df_gc.columns]
+                
+                if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns:
+                    calc_results = []
+                    
+                    for _, row in df_gc.iterrows():
+                        sample_name = str(row['Data File']).replace('.d', '')
+                        raw_conc = pd.to_numeric(row['Final Conc.'], errors='coerce')
+                        
+                        if pd.isna(raw_conc):
+                            continue
+                            
+                        # Chạy qua bộ lọc để lấy thể tích khí hút
+                        v_gas = parse_sample_volume(sample_name)
+                        
+                        if v_gas is not None:
+                            # Thực hiện tính toán
+                            final_result = calculate_air_concentration(raw_conc=raw_conc, v_gas=v_gas)
+                            calc_results.append({
+                                "Mã Mẫu Nhận Diện": sample_name,
+                                "Thể Tích Khí (L)": v_gas,
+                                "Nồng độ thô GC (ng/ml)": raw_conc,
+                                "Nồng độ thực tế không khí": final_result
+                            })
+                    
+                    if calc_results:
+                        st.success(f"✔️ Đã trích xuất và tính toán thành công {len(calc_results)} mẫu môi trường!")
+                        df_results = pd.DataFrame(calc_results)
+                        st.dataframe(df_results, use_container_width=True)
+                        
+                        if st.button("🔄 Cập nhật kết quả vào Hệ thống"):
+                            st.info("Đang tích hợp API chuyển trạng thái... (Có thể mở rộng thêm)")
+                    else:
+                        st.warning("Không tìm thấy mẫu KT hoặc KXQ nào cần tính toán trong file này.")
+                else:
+                    st.error("File tải lên không đúng định dạng chuẩn của Agilent (Thiếu cột 'Data File' hoặc 'Final Conc.').")
+                    
+            except Exception as e:
+                st.error(f"Lỗi khi đọc file: {e}")
 
 # ---------------------------------------------------------
 elif menu == "🚀 Không gian phát triển":
