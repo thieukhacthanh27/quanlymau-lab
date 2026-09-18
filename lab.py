@@ -276,7 +276,6 @@ elif menu == "📥 Quản lý Tiếp nhận":
                     
                     if len(samples_data) > 0:
                         st.success(f"✔️ Quét thành công **{len(samples_data)}** mẫu thuộc mẻ: **{ten_me_extract}**")
-                        
                         edited_preview = st.data_editor(
                             pd.DataFrame(samples_data),
                             column_config={
@@ -287,19 +286,15 @@ elif menu == "📥 Quản lý Tiếp nhận":
                             },
                             hide_index=True, use_container_width=True
                         )
-                        
                         batch_nguoi = st.selectbox("Người tiếp nhận:", ["Thành", "Kỹ thuật viên 2", "Kỹ thuật viên 3"])
                         selected_samples = edited_preview[edited_preview["Chọn"] == True]
                         
                         if st.button(f"🚀 Lưu {len(selected_samples)} mẫu đã chọn vào Hệ thống", type="primary"):
-                            if selected_samples.empty:
-                                st.warning("⚠️ Bạn chưa chọn mẫu nào để lưu!")
-                            else:
-                                new_rows = [{"Mã Mẫu": row["Mã Mẫu"], "Tên Mẻ": ten_me_extract, "Nền Mẫu": row["Nền Mẫu"], "Chỉ Tiêu": row["Chỉ Tiêu"], "Trạng Thái": STATUSES[0], "Người Giữ": batch_nguoi, "Ghi Chú": "Import Excel", "Giờ Nhận": datetime.now()} for _, row in selected_samples.iterrows()]
-                                st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame(new_rows)], ignore_index=True)
-                                save_data(st.session_state.df)
-                                st.success("Đã nạp thành công!")
-                                st.rerun()
+                            new_rows = [{"Mã Mẫu": row["Mã Mẫu"], "Tên Mẻ": ten_me_extract, "Nền Mẫu": row["Nền Mẫu"], "Chỉ Tiêu": row["Chỉ Tiêu"], "Trạng Thái": STATUSES[0], "Người Giữ": batch_nguoi, "Ghi Chú": "Import Excel", "Giờ Nhận": datetime.now()} for _, row in selected_samples.iterrows()]
+                            st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame(new_rows)], ignore_index=True)
+                            save_data(st.session_state.df)
+                            st.success("Đã nạp thành công!")
+                            st.rerun()
                     else: st.warning("Không có mã KHM nào hợp lệ bên dưới ô tiêu đề.")
                 else: st.error("Không tìm thấy ô 'KHM' trong file!")
             except Exception as e: st.error(f"Lỗi: {e}")
@@ -441,55 +436,48 @@ elif menu == "🚀 Tiện ích & Cấu hình":
     tab_limit, tab_report, tab_qr = st.tabs(["📚 Quản lý Thư viện MDL & LOQ", "📝 Lập Biên Bản", "🏷️ Sinh Mã QR"])
     
     with tab_limit:
-        st.subheader("Trình Quản lý Dữ liệu Giới hạn (MDL & LOQ)")
-        st.info("Chỉnh sửa trực tiếp trên bảng, xóa dòng hoặc thêm hàng mới. Bấm **Lưu thay đổi** để đồng bộ lên Google Sheets.")
+        st.subheader("1. Quản lý Thư viện Trực tiếp (Thêm/Sửa Cột & Hàng)")
+        st.info("Chỉnh sửa số liệu, xóa hoặc thêm chất trực tiếp trên bảng này. Bạn có thể gõ vào cột LOQ hoặc MDL tùy ý. Sau khi chỉnh sửa, bấm **Lưu thay đổi**.")
         
-        # Tạo bảng Data Editor để chỉnh sửa trực tiếp Thư viện
-        df_limit_current = st.session_state.df_limit.copy()
+        # Bảng Data Editor cho phép chỉnh sửa trực tiếp
+        df_current_limit = st.session_state.df_limit.copy()
         
-        # Đảm bảo bảng luôn có 1 dòng trống ở cuối để người dùng có thể thêm dữ liệu mới nếu bảng rỗng
-        if df_limit_current.empty:
-            df_limit_current = pd.DataFrame([{"Nền Mẫu": "", "Tên Chất": "", "MDL": "", "LOQ": "", "Đơn Vị": ""}])
+        # Đảm bảo bảng luôn có cấu trúc chuẩn kể cả khi trống
+        if df_current_limit.empty:
+            df_current_limit = pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
+            df_current_limit.loc[0] = ["", "", "", "", ""]
             
-        edited_limit_df = st.data_editor(
-            df_limit_current,
-            num_rows="dynamic",
+        edited_limit = st.data_editor(
+            df_current_limit, 
+            num_rows="dynamic", 
             use_container_width=True,
             key="limit_editor",
-            height=400
+            height=350
         )
         
-        col_btn1, col_btn2 = st.columns([1, 4])
-        with col_btn1:
-            if st.button("💾 Lưu thay đổi", type="primary"):
-                # Lọc bỏ các dòng trống (nếu người dùng bấm Add Row mà không nhập gì)
-                edited_limit_df = edited_limit_df.dropna(how='all')
+        if st.button("💾 Lưu thay đổi Thư viện (Ghi đè Tab CauHinh_MDL_LOQ)", type="primary"):
+            try:
+                st.cache_data.clear() # Xóa cache để kết nối nhận diện dữ liệu mới
+                # Lọc bỏ các dòng mà người dùng chưa nhập Tên Chất
+                edited_limit = edited_limit[edited_limit["Tên Chất"].str.strip() != ""] 
                 
-                # Cập nhật lên Google Sheets
-                try:
-                    conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=edited_limit_df)
-                    st.session_state.df_limit = edited_limit_df
-                    st.success("🎉 Đã lưu cấu hình lên Cloud thành công!")
-                except Exception as e:
-                    # Nếu báo lỗi không tìm thấy worksheet, tạo mới bằng lệnh clear rồi update
-                    try:
-                        conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=edited_limit_df)
-                        st.session_state.df_limit = edited_limit_df
-                        st.success("🎉 Đã tạo Tab mới và lưu cấu hình lên Cloud thành công!")
-                    except Exception as e2:
-                        st.error(f"Lỗi khi lưu lên Google Sheets: {e2}")
+                conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=edited_limit)
+                st.session_state.df_limit = edited_limit
+                st.success("🎉 Đã lưu thư viện lên Google Sheets thành công!")
+            except Exception as e:
+                st.error(f"⚠️ Lỗi kết nối Google Sheets: Không tìm thấy Trang tính '{e}'.\n\n👉 **Cách sửa:** Bạn hãy vào file Google Sheets của bạn, bấm dấu `+` để tạo một trang tính mới, sau đó đổi tên trang tính đó thành đúng chữ **`CauHinh_MDL_LOQ`** rồi thử bấm lại nút này nhé!")
 
         st.divider()
-
-        # Khu vực nhập liệu hàng loạt từ Excel vẫn được giữ nguyên như một Option dự phòng
-        st.subheader("Hoặc: Cập nhật hàng loạt từ file Excel")
+        st.subheader("2. Hoặc Cập nhật hàng loạt từ file Excel")
+        st.info("Kéo thả file Excel chứa bảng Giới hạn. Đảm bảo file có cột 'Tên chất' và 'MDL' hoặc 'LOQ'. Hệ thống sẽ gộp dữ liệu mới vào thư viện cũ.")
+        
         limit_file = st.file_uploader("Tải lên file Excel Bảng MDL/LOQ", type=["xlsx"])
         if limit_file:
             try:
                 xls = pd.ExcelFile(limit_file)
                 limit_data = []
                 for sheet in xls.sheet_names:
-                    # Tự động tìm hàng chứa tiêu đề (Scan tối đa 20 dòng đầu)
+                    # Scan 20 dòng đầu để tìm tiêu đề động
                     df_sheet = pd.read_excel(xls, sheet_name=sheet, header=None)
                     header_idx = -1
                     c_ten, c_mdl, c_loq = None, None, None
@@ -532,11 +520,25 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                     df_limit_new = pd.DataFrame(limit_data)
                     st.success(f"✔️ Đã quét được {len(df_limit_new)} chỉ tiêu từ file.")
                     st.dataframe(df_limit_new, use_container_width=True)
-                    if st.button("🚀 Ghi đè toàn bộ lên Google Sheets", type="primary"):
-                        conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=df_limit_new)
-                        st.session_state.df_limit = df_limit_new
-                        st.success("🎉 Đã lưu cấu hình lên Cloud thành công!")
-                else: st.error("Không tìm thấy cấu trúc bảng hợp lệ.")
+                    
+                    # Nút ghi thêm (Smart Append)
+                    if st.button("🚀 Ghi thêm vào Google Sheets (Bổ sung/Cập nhật)", type="primary"):
+                        try:
+                            st.cache_data.clear() # Cập nhật cache để tránh lỗi
+                            
+                            # Gộp dữ liệu cũ (hiện có trên Cloud) và dữ liệu mới
+                            combined_df = pd.concat([st.session_state.df_limit, df_limit_new], ignore_index=True)
+                            
+                            # Loại bỏ các dòng trùng lặp (Cùng Nền Mẫu và Tên Chất) -> Giữ lại dữ liệu mới tải lên
+                            combined_df = combined_df.drop_duplicates(subset=['Nền Mẫu', 'Tên Chất'], keep='last').reset_index(drop=True)
+                            
+                            conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=combined_df)
+                            st.session_state.df_limit = combined_df
+                            st.success(f"🎉 Đã ghi thêm thành công! Tổng số chỉ tiêu hiện tại trong Thư viện: {len(combined_df)}")
+                            
+                        except Exception as sheet_err:
+                            st.error(f"⚠️ Lỗi kết nối Google Sheets: {sheet_err}\n\n👉 **Cách sửa:** Bạn hãy vào file Google Sheets của bạn, bấm dấu `+` để tạo một trang tính mới, sau đó đổi tên trang tính đó thành đúng chữ **`CauHinh_MDL_LOQ`** rồi thử bấm lại nút này nhé!")
+                else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên / Cột MDL / Cột LOQ).")
             except Exception as e: st.error(f"Lỗi đọc file: {e}")
 
     with tab_report: st.write("Khu vực xuất Form Word/Excel.")
