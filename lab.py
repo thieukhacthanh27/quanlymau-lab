@@ -38,7 +38,7 @@ def save_data(df):
 
 def load_limit_config():
     try:
-        df_limit = conn.read(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", ttl=0) # Tắt cache để luôn lấy dữ liệu mới nhất
+        df_limit = conn.read(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", ttl=0) 
         return df_limit
     except:
         return pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
@@ -131,7 +131,8 @@ st.sidebar.divider()
 menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
     "🏠 Trang chủ (Tổng quan)", 
     "📥 Quản lý Tiếp nhận", 
-    "⚙️ Vận hành GC-MS",
+    "⚙️ Vận hành GC-MS (Agilent - VOCs)",
+    "🧬 Vận hành Thermo (OCP/OPP/PCB)",
     "🚀 Tiện ích & Cấu hình"
 ])
 
@@ -313,8 +314,8 @@ elif menu == "📥 Quản lý Tiếp nhận":
                 st.success(f"Đã thêm {new_id}!")
 
 # ---------------------------------------------------------
-elif menu == "⚙️ Vận hành GC-MS":
-    st.title("⚙️ Điều phối & Vận hành Máy đo")
+elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
+    st.title("⚙️ Điều phối & Vận hành Máy đo (Agilent)")
     
     col_seq, col_import = st.columns(2)
     with col_seq:
@@ -330,7 +331,7 @@ elif menu == "⚙️ Vận hành GC-MS":
             
     with col_import:
         st.subheader("2. Xử lý dữ liệu GC-MS theo SOP")
-        st.info("💡 Web phân loại song song mẫu Khí (So với MDL) và mẫu Nước (So với LOQ). Bù trừ R% tự động.")
+        st.info("💡 Hệ thống phân loại mẫu Khí/Nước, tự dò C_ban_đầu, bù trừ R% và đối chiếu MDL/LOQ phù hợp.")
         
         gc_file = st.file_uploader("Kéo thả báo cáo GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
 
@@ -367,7 +368,7 @@ elif menu == "⚙️ Vận hành GC-MS":
                 # --- BƯỚC TÍNH TOÁN & ÁP MỨC GIỚI HẠN ---
                 if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns and compound_col:
                     
-                    # 1. Quét tìm Độ thu hồi (Recovery) cho từng mẫu dựa trên AI đoán nồng độ
+                    # 1. Quét tìm Độ thu hồi (Recovery)
                     surrogate_dict = {}
                     for _, row in df_gc.iterrows():
                         comp_name = str(row[compound_col]).upper()
@@ -379,7 +380,7 @@ elif menu == "⚙️ Vận hành GC-MS":
                                 recovery = (raw_conc / c_exp) * 100.0
                                 surrogate_dict[sample_name] = recovery
 
-                    # 2. Suy luận loại mẫu mặc định nếu không tra được mã
+                    # 2. Suy luận loại mẫu mặc định
                     default_v_gas, default_nen, default_loai = 24.0, 'KT', 'Khí'
                     for _, row in df_gc.iterrows():
                         sn = str(row['Data File']).upper()
@@ -388,12 +389,11 @@ elif menu == "⚙️ Vận hành GC-MS":
                         elif 'KLV' in sn: default_v_gas, default_nen, default_loai = 4.0, 'KLV', 'Khí'; break
                         elif any(k in sn for k in ['NS', 'NT', 'NM', 'NN']): default_v_gas, default_nen, default_loai = 1.0, 'NS', 'Nước'; break
 
-                    # 3. Tính C thực tế cho các chất
+                    # 3. Tính C thực tế
                     for _, row in df_gc.iterrows():
                         sample_name, comp_name = str(row['Data File']).replace('.d', ''), str(row[compound_col])
                         upper_name = sample_name.upper()
                         
-                        # Chỉ duyệt mẫu hợp lệ
                         if not any(k in upper_name for k in ['KT', 'KXQ', 'KLV', 'NS', 'NT', 'NM', 'NN', 'BL', 'BLANK', 'TC', 'QC']): continue
                         if upper_name in ['1', '2', '4', '5', '6', '8', '10'] or 'PPM' in upper_name: continue
                         if comp_name.upper() in ['TOLUENE-D8', 'TOLUEN-D8', 'BFB', '4-BROMOFLUOROBENZENE']: continue
@@ -405,14 +405,10 @@ elif menu == "⚙️ Vận hành GC-MS":
                         if v_param is None: v_param, nen_mau, loai_mau = default_v_gas, default_nen, default_loai
                             
                         sample_recovery = surrogate_dict.get(sample_name, 100.0)
-                        
-                        # Tra cứu song song MDL và LOQ
                         mdl_val, loq_val, unit = get_limit_info(comp_name, nen_mau)
                         
-                        # Đánh giá C thực tế dựa trên Loại mẫu
                         c_thuc_str = evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recovery=sample_recovery)
                         
-                        # Hiển thị Limit tham chiếu tương ứng
                         limit_display = ""
                         if loai_mau == 'Khí' and mdl_val is not None: limit_display = f"MDL: {mdl_val} {unit}"
                         elif loai_mau == 'Nước' and loq_val is not None: limit_display = f"LOQ: {loq_val} {unit}"
@@ -430,6 +426,25 @@ elif menu == "⚙️ Vận hành GC-MS":
             except Exception as e: st.error(f"❌ Lỗi xử lý: {e}")
 
 # ---------------------------------------------------------
+elif menu == "🧬 Vận hành Thermo (OCP/OPP/PCB)":
+    st.title("🧬 Hệ thống Thermo GC-MS")
+    st.caption("Module chuyên biệt xử lý dữ liệu OCP, OPP, PCB và Phenol")
+    
+    col_seq, col_import = st.columns(2)
+    with col_seq:
+        st.subheader("1. Xuất Sequence Thermo")
+        st.info("Sẽ tích hợp thuật toán xuất file Sequence định dạng tương thích phần mềm Thermo (TraceFinder/Chromeleon).")
+        st.write("Đang chờ định cấu hình cột dữ liệu theo chuẩn Thermo...")
+        
+    with col_import:
+        st.subheader("2. Xử lý kết quả Thermo")
+        st.info("Khu vực chờ tích hợp thuật toán đọc file xuất từ máy Thermo. Sẵn sàng kết nối với Thư viện Giới hạn chung.")
+        thermo_file = st.file_uploader("Kéo thả báo cáo Thermo (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
+        
+        if thermo_file:
+            st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report Thermo. Vui lòng cung cấp file mẫu (Template) ở lần làm việc tiếp theo để hoàn thiện module này!")
+
+# ---------------------------------------------------------
 elif menu == "🚀 Tiện ích & Cấu hình":
     st.title("🛠️ Tiện ích & Cấu hình Hệ thống")
     
@@ -439,10 +454,8 @@ elif menu == "🚀 Tiện ích & Cấu hình":
         st.subheader("1. Quản lý Thư viện Trực tiếp (Thêm/Sửa Cột & Hàng)")
         st.info("Chỉnh sửa số liệu, xóa hoặc thêm chất trực tiếp trên bảng này. Bạn có thể gõ vào cột LOQ hoặc MDL tùy ý. Sau khi chỉnh sửa, bấm **Lưu thay đổi**.")
         
-        # Bảng Data Editor cho phép chỉnh sửa trực tiếp
         df_current_limit = st.session_state.df_limit.copy()
         
-        # Đảm bảo bảng luôn có cấu trúc chuẩn kể cả khi trống
         if df_current_limit.empty:
             df_current_limit = pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
             df_current_limit.loc[0] = ["", "", "", "", ""]
@@ -457,8 +470,7 @@ elif menu == "🚀 Tiện ích & Cấu hình":
         
         if st.button("💾 Lưu thay đổi Thư viện (Ghi đè Tab CauHinh_MDL_LOQ)", type="primary"):
             try:
-                st.cache_data.clear() # Xóa cache để kết nối nhận diện dữ liệu mới
-                # Lọc bỏ các dòng mà người dùng chưa nhập Tên Chất
+                st.cache_data.clear() 
                 edited_limit = edited_limit[edited_limit["Tên Chất"].str.strip() != ""] 
                 
                 conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=edited_limit)
@@ -477,7 +489,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                 xls = pd.ExcelFile(limit_file)
                 limit_data = []
                 for sheet in xls.sheet_names:
-                    # Scan 20 dòng đầu để tìm tiêu đề động
                     df_sheet = pd.read_excel(xls, sheet_name=sheet, header=None)
                     header_idx = -1
                     c_ten, c_mdl, c_loq = None, None, None
@@ -521,15 +532,10 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                     st.success(f"✔️ Đã quét được {len(df_limit_new)} chỉ tiêu từ file.")
                     st.dataframe(df_limit_new, use_container_width=True)
                     
-                    # Nút ghi thêm (Smart Append)
                     if st.button("🚀 Ghi thêm vào Google Sheets (Bổ sung/Cập nhật)", type="primary"):
                         try:
-                            st.cache_data.clear() # Cập nhật cache để tránh lỗi
-                            
-                            # Gộp dữ liệu cũ (hiện có trên Cloud) và dữ liệu mới
+                            st.cache_data.clear() 
                             combined_df = pd.concat([st.session_state.df_limit, df_limit_new], ignore_index=True)
-                            
-                            # Loại bỏ các dòng trùng lặp (Cùng Nền Mẫu và Tên Chất) -> Giữ lại dữ liệu mới tải lên
                             combined_df = combined_df.drop_duplicates(subset=['Nền Mẫu', 'Tên Chất'], keep='last').reset_index(drop=True)
                             
                             conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=combined_df)
