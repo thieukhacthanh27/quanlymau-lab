@@ -418,7 +418,19 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
 
                 if calc_results:
                     st.success(f"✔️ Đã xuất {len(calc_results)} dòng kết quả. Tự động áp dụng SOP Khí/Nước.")
-                    st.dataframe(pd.DataFrame(calc_results), use_container_width=True, hide_index=True)
+                    
+                    df_results = pd.DataFrame(calc_results)
+                    st.dataframe(df_results, use_container_width=True, hide_index=True)
+                    
+                    # Thêm nút tải file CSV để dùng cho Lập Biên Bản
+                    csv_results = df_results.to_csv(index=False).encode('utf-8-sig')
+                    st.download_button(
+                        label="📥 Tải Kết quả (CSV) để Lập Biên Bản",
+                        data=csv_results,
+                        file_name=f"Ket_Qua_GC_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                        mime="text/csv",
+                        type="primary"
+                    )
                 else: 
                     st.warning("⚠️ File không chứa mẫu hợp lệ (KT, KXQ, NS, NT...) hoặc thiếu dữ liệu.")
             except Exception as e: st.error(f"❌ Lỗi xử lý: {e}")
@@ -564,5 +576,88 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                 else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên / Cột MDL / Cột LOQ).")
             except Exception as e: st.error(f"Lỗi đọc file: {e}")
 
-    with tab_report: st.write("Khu vực xuất Form Word/Excel.")
+    with tab_report: 
+        st.subheader("📝 Lập Biên Bản Xử Lý Mẫu Tự Động")
+        st.info("Tải lên file Word Template (đã gắn thẻ `{{...}}`) và File CSV kết quả đã tính toán để hệ thống tự động điền số liệu.")
+        
+        col_tpl, col_data = st.columns(2)
+        with col_tpl:
+            template_file = st.file_uploader("1. Tải file Word mẫu (.docx)", type=["docx"])
+        with col_data:
+            data_file = st.file_uploader("2. Tải file Kết quả (.csv)", type=["xlsx", "csv"])
+
+        if template_file and data_file:
+            try:
+                # Đọc dữ liệu Excel/CSV
+                df_kq = pd.read_excel(data_file) if data_file.name.endswith('.xlsx') else pd.read_csv(data_file)
+                
+                if "Tên mẫu" in df_kq.columns:
+                    danh_sach_mau = []
+                    grouped = df_kq.groupby("Tên mẫu")
+                    
+                    for ten_mau, group in grouped:
+                        first_row = group.iloc[0]
+                        mau_dict = {
+                            "ngay": datetime.now().strftime("%d/%m/%Y"),
+                            "ky_hieu": ten_mau,
+                            "c_surr": 10.0, 
+                            "de": first_row.get("R(%)", ""),
+                            "ghi_chu": ""
+                        }
+                        
+                        # Quét qua từng chỉ tiêu trong mẫu để gán giá trị
+                        for _, row in group.iterrows():
+                            chi_tieu = str(row.get("Tên chỉ tiêu", "")).upper()
+                            c_do = row.get("C đo", "")
+                            kq = row.get("C thực", "")
+                            
+                            # Rút gọn tên chất thành mã (VD: 1,1,1-Trichloroethane -> 111trichloroethane)
+                            slug = re.sub(r'\W+', '', chi_tieu.lower())
+                            mau_dict[f"cdo_{slug}"] = c_do
+                            mau_dict[f"kq_{slug}"] = kq
+                            
+                            # Gắn thêm một số thẻ Hardcode thủ công theo chuẩn VOCs quen thuộc để bạn dễ dùng
+                            if "BENZENE" in chi_tieu or "BENZEN" in chi_tieu:
+                                mau_dict["cdo_benzen"] = c_do
+                                mau_dict["kq_benzen"] = kq
+                            elif "TOLUENE" in chi_tieu or "TOLUEN" in chi_tieu:
+                                mau_dict["cdo_toluen"] = c_do
+                                mau_dict["kq_toluen"] = kq
+                            elif "XYLENE" in chi_tieu or "XYLEN" in chi_tieu:
+                                mau_dict["cdo_xylen"] = c_do
+                                mau_dict["kq_xylen"] = kq
+                                
+                        danh_sach_mau.append(mau_dict)
+
+                    context = {
+                        "danh_sach_mau": danh_sach_mau,
+                    }
+
+                    if st.button("🚀 Bắt đầu Lập Biên Bản", type="primary"):
+                        try:
+                            from docxtpl import DocxTemplate
+                            import io
+                            
+                            doc = DocxTemplate(template_file)
+                            doc.render(context)
+                            
+                            # Lưu file Word vào bộ nhớ đệm để tải xuống
+                            bio = io.BytesIO()
+                            doc.save(bio)
+                            bio.seek(0)
+                            
+                            st.success("🎉 Biên bản đã được tạo thành công!")
+                            st.download_button(
+                                label="📥 Tải xuống Biên Bản (.docx)",
+                                data=bio,
+                                file_name=f"Bien_Ban_VOCs_{datetime.now().strftime('%Y%m%d_%H%M')}.docx",
+                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            )
+                        except ImportError:
+                            st.error("⚠️ Hệ thống chưa được cài đặt thư viện 'docxtpl'. Hãy nhớ thêm 'docxtpl' vào file requirements.txt trên Github của bạn nhé!")
+                else:
+                    st.error("⚠️ File kết quả không có cột 'Tên mẫu'. Vui lòng dùng đúng file tải về từ hệ thống GC-MS của phần mềm này.")
+            except Exception as e:
+                st.error(f"❌ Có lỗi xảy ra trong quá trình xử lý Biên Bản: {e}")
+
     with tab_qr: st.write("Chức năng tạo mã vạch (Barcode) hàng loạt.")
