@@ -18,7 +18,7 @@ STATUSES = [
 ]
 
 # ==========================================
-# 2. KẾT NỐI DATABASE & THƯ VIỆN MDL
+# 2. KẾT NỐI DATABASE & THƯ VIỆN KÉP (MDL & LOQ)
 # ==========================================
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -36,61 +36,105 @@ def save_data(df):
     conn.update(spreadsheet=SHEET_URL, data=df_save)
     st.cache_data.clear()
 
-def load_mdl_config():
-    """Tải thư viện MDL từ Tab CauHinh_MDL"""
+def load_limit_config():
+    """Tải thư viện kép chứa cả MDL và LOQ từ Tab CauHinh_MDL_LOQ"""
     try:
-        df_mdl = conn.read(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL", ttl=60)
-        return df_mdl
+        df_limit = conn.read(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", ttl=60)
+        return df_limit
     except:
-        return pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "Đơn Vị"])
+        return pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
 
 if "df" not in st.session_state:
     st.session_state.df = load_data()
-if "df_mdl" not in st.session_state:
-    st.session_state.df_mdl = load_mdl_config()
+if "df_limit" not in st.session_state:
+    st.session_state.df_limit = load_limit_config()
 
 # ==========================================
-# 3. HÀM BỔ SUNG: XỬ LÝ SỐ LIỆU & ĐÁNH GIÁ
+# 3. HÀM BỔ SUNG: XỬ LÝ SỐ LIỆU THEO SOP (KHÍ & NƯỚC)
 # ==========================================
 def parse_sample_matrix(sample_name):
-    """Bộ lọc tự động nhận diện thể tích và Ký hiệu nền mẫu dựa trên mã."""
+    """Phân loại mẫu thành Khí (thể tích V_gas) hoặc Nước (hệ số 1)"""
     name_upper = str(sample_name).upper()
-    if 'KT' in name_upper:
-        return 24.0, 'KT'
-    elif 'KXQ' in name_upper:
-        return 4.0, 'KXQ'
-    elif 'KLV' in name_upper:
-        return 4.0, 'KLV'
-    return None, None
+    
+    # Nhóm mẫu Khí
+    if 'KT' in name_upper: return 24.0, 'KT', 'Khí'
+    elif 'KXQ' in name_upper: return 4.0, 'KXQ', 'Khí'
+    elif 'KLV' in name_upper: return 4.0, 'KLV', 'Khí'
+    
+    # Nhóm mẫu Nước (Sinh hoạt, Thải, Mặt, Ngầm)
+    elif any(k in name_upper for k in ['NS', 'NT', 'NM', 'NN']):
+        return 1.0, 'NS', 'Nước' 
+        
+    return None, None, None
 
-def evaluate_result(raw_conc, v_gas, compound_name, nen_mau, v_desorb=1.0, recovery=100.0):
-    """Tính toán thực tế và tự động so sánh với Thư viện MDL"""
+def get_dynamic_surrogate_expected(c_do):
+    """Tự động nội suy nồng độ C_ban_đầu của chuẩn đồng hành"""
+    levels = [1.0, 2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 20.0, 25.0, 50.0, 100.0]
+    valid_levels = []
+    for lvl in levels:
+        rec = (c_do / lvl) * 100.0
+        if 70 <= rec <= 130:
+            valid_levels.append((lvl, abs(100 - rec)))
+    if valid_levels:
+        valid_levels.sort(key=lambda x: x[1])
+        return valid_levels[0][0]
+    return min(levels, key=lambda x: abs(x - c_do))
+
+def get_limit_info(compound_name, nen_mau):
+    """Tra cứu song song MDL và LOQ dựa trên tên chất (có Fuzzy Match)"""
+    df_limit = st.session_state.df_limit
+    if not df_limit.empty and compound_name and nen_mau:
+        # Gom nhóm nước chung thành mã NS để dễ quản lý thư viện
+        search_nen = "NS" if nen_mau in ['NT', 'NM', 'NN'] else nen_mau
+        
+        mask_exact = (df_limit["Nền Mẫu"].astype(str).str.upper() == search_nen.upper()) & \
+                     (df_limit["Tên Chất"].astype(str).str.lower() == str(compound_name).lower())
+        match = df_limit[mask_exact]
+        
+        # Fuzzy search nếu không khớp 100%
+        if match.empty:
+            all_comps = df_limit[df_limit["Nền Mẫu"].astype(str).str.upper() == search_nen.upper()]["Tên Chất"].astype(str).tolist()
+            close_matches = difflib.get_close_matches(str(compound_name).lower(), [c.lower() for c in all_comps], n=1, cutoff=0.7)
+            if close_matches:
+                match = df_limit[(df_limit["Nền Mẫu"].astype(str).str.upper() == search_nen.upper()) & (df_limit["Tên Chất"].astype(str).str.lower() == close_matches[0])]
+
+        if not match.empty:
+            def parse_val(col_name):
+                if col_name in match.columns:
+                    val = str(match[col_name].values[0]).replace(',', '.')
+                    try: return float(val)
+                    except: return None
+                return None
+
+            mdl_val = parse_val("MDL")
+            loq_val = parse_val("LOQ")
+            unit = str(match["Đơn Vị"].values[0]) if "Đơn Vị" in match.columns else ""
+            if pd.isna(unit) or unit == 'nan': unit = ""
+            
+            return mdl_val, loq_val, unit
+    return None, None, ""
+
+def evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recovery=100.0):
+    """Tính toán C_thực theo SOP và so sánh với Giới hạn (MDL/LOQ) tương ứng"""
     if pd.isna(raw_conc) or raw_conc <= 0:
         return "KPH"
         
-    result = (raw_conc * v_desorb) / v_gas * (100.0 / recovery)
-    
-    df_mdl = st.session_state.df_mdl
-    if not df_mdl.empty and compound_name and nen_mau:
-        mask = (df_mdl["Nền Mẫu"].astype(str).str.upper() == nen_mau.upper()) & \
-               (df_mdl["Tên Chất"].astype(str).str.lower() == str(compound_name).lower())
-        match = df_mdl[mask]
-        
-        if not match.empty:
-            mdl_str = str(match["MDL"].values[0]).replace(',', '.')
-            try:
-                mdl_val = float(mdl_str)
-                unit = str(match["Đơn Vị"].values[0])
-                if pd.isna(unit) or unit == 'nan': unit = ""
-                
-                if result < mdl_val:
-                    return f"KPH (MDL={mdl_val} {unit})"
-                else:
-                    return f"{round(result, 4)} {unit}"
-            except:
-                pass
-                
-    return round(result, 4)
+    if loai_mau == 'Khí':
+        # Công thức mẫu Khí: (C_đo * V_giải_hấp) / V_khí * (100 / R%)
+        c_thuc_val = (raw_conc * 1.0) / v_param * (100.0 / recovery)
+        if mdl_val is not None and c_thuc_val < mdl_val:
+            return f"KPH (< MDL: {mdl_val} {unit})"
+            
+    elif loai_mau == 'Nước':
+        # Công thức mẫu Nước chuẩn SOP VOCs-NS: C_thực = C_đo * (100 / R%)
+        c_thuc_val = raw_conc * (100.0 / recovery)
+        if loq_val is not None and c_thuc_val < loq_val:
+            return f"< LOQ ({loq_val} {unit})"
+            
+    else:
+        c_thuc_val = raw_conc
+
+    return f"{round(c_thuc_val, 4)}"
 
 # ==========================================
 # 4. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
@@ -111,7 +155,7 @@ st.sidebar.markdown("**Hỗ trợ nhanh:**")
 if st.sidebar.button("🔄 Cập nhật dữ liệu tức thì"):
     st.cache_data.clear()
     st.session_state.df = load_data()
-    st.session_state.df_mdl = load_mdl_config() 
+    st.session_state.df_limit = load_limit_config() 
     st.rerun()
 
 df_current = st.session_state.df.copy()
@@ -144,9 +188,7 @@ if menu == "🏠 Trang chủ (Tổng quan)":
     col_date, col_status, col_search = st.columns([1, 1.5, 2])
     with col_date: selected_date = st.date_input("📅 Chọn Ngày:", today_date)
     with col_status: filter_status = st.multiselect("Lọc trạng thái:", STATUSES, default=[])
-    with col_search: search_query = st.text_input("🔍 Tìm kiếm (Mã mẫu, Tên mẻ, Chỉ tiêu):", placeholder="Gõ 'VOCs', '2026.07.017' hoặc 'NS...'")
-
-    st.subheader(f"📋 Danh sách công việc ({selected_date.strftime('%d/%m/%Y')})")
+    with col_search: search_query = st.text_input("🔍 Tìm kiếm (Mã mẫu, Tên mẻ, Chỉ tiêu):")
 
     mask_ton_dong = (df_current["Ngày Nhận"] < selected_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))
     mask_trong_ngay = (df_current["Ngày Nhận"] == selected_date)
@@ -191,8 +233,7 @@ if menu == "🏠 Trang chủ (Tổng quan)":
         deleted_indices = list(set(original_indices) - set(remaining_indices))
         
         if deleted_indices:
-            st.session_state.df = st.session_state.df.drop(index=deleted_indices)
-            st.session_state.df = st.session_state.df.reset_index(drop=True)
+            st.session_state.df = st.session_state.df.drop(index=deleted_indices).reset_index(drop=True)
             
         save_data(st.session_state.df)
         st.success("Đã đồng bộ lên cơ sở dữ liệu chung!")
@@ -205,13 +246,12 @@ elif menu == "📥 Quản lý Tiếp nhận":
     tab_excel, tab_thu_cong = st.tabs(["📁 Tải file Excel tự động", "✍️ Nhập thủ công (Mẫu lẻ)"])
     
     with tab_excel:
-        st.info("💡 Kéo thả file Excel để hệ thống tự động trích xuất Tên Mẻ, Mã Mẫu, **Nhận diện Nền Mẫu** và Chỉ Tiêu.")
+        st.info("💡 Kéo thả file Excel để hệ thống tự động trích xuất Tên Mẻ, Mã Mẫu, Nhận diện Nền Mẫu và Chỉ Tiêu.")
         uploaded_file = st.file_uploader("Kéo thả file KetQuaMeThuNghiem...xlsx vào đây", type=["xlsx", "xls"])
         
         if uploaded_file is not None:
             try:
                 df_upload = pd.read_excel(uploaded_file, sheet_name=0)
-                
                 ten_me_extract = "Không xác định"
                 for r in range(min(5, len(df_upload))):
                     for c in range(len(df_upload.columns)):
@@ -221,18 +261,11 @@ elif menu == "📥 Quản lý Tiếp nhận":
                             break
                     if ten_me_extract != "Không xác định": break
                 
-                if ten_me_extract == "Không xác định":
-                    for col in df_upload.columns:
-                        if str(col).startswith("Số:"):
-                            ten_me_extract = str(col).replace("Số:", "").strip()
-                            break
-                
                 khm_col_idx, header_row_idx = None, None
                 for r in range(min(20, len(df_upload))):
                     for c in range(len(df_upload.columns)):
                         if str(df_upload.iloc[r, c]).strip() == 'KHM':
-                            khm_col_idx = c
-                            header_row_idx = r
+                            khm_col_idx, header_row_idx = c, r
                             break
                     if khm_col_idx is not None: break
                         
@@ -249,78 +282,46 @@ elif menu == "📥 Quản lý Tiếp nhận":
                         if len(khm_val) > 3 and khm_val.lower() != 'nan':
                             khm_upper = khm_val.upper()
                             if khm_upper.startswith(("KT", "KKXQ", "KLV")): nen_mau_auto = "Khí"
-                            elif khm_upper.startswith(("NS", "NT", "NM", "NU")): nen_mau_auto = "Nước"
+                            elif khm_upper.startswith(("NS", "NT", "NM", "NN")): nen_mau_auto = "Nước"
                             else: nen_mau_auto = "Chưa xác định"
 
-                            sample_params = []
-                            for c, param_name in params_info:
-                                cell_val = df_upload.iloc[r, c]
-                                if pd.notna(cell_val) and str(cell_val).strip() != '':
-                                    sample_params.append(param_name)
-                            
+                            sample_params = [param_name for c, param_name in params_info if pd.notna(df_upload.iloc[r, c]) and str(df_upload.iloc[r, c]).strip() != '']
                             chuoi_chi_tieu = ", ".join(sample_params) if sample_params else "Chưa xác định"
-                            samples_data.append({
-                                "Chọn": True, "Mã Mẫu": khm_val, "Nền Mẫu": nen_mau_auto, "Chỉ Tiêu": chuoi_chi_tieu
-                            })
+                            samples_data.append({"Chọn": True, "Mã Mẫu": khm_val, "Nền Mẫu": nen_mau_auto, "Chỉ Tiêu": chuoi_chi_tieu})
                     
                     if len(samples_data) > 0:
                         st.success(f"✔️ Quét thành công **{len(samples_data)}** mẫu thuộc mẻ: **{ten_me_extract}**")
-                        st.caption("☑️ Máy đã tự đoán Nền Mẫu. Nếu sai, bạn có thể click vào ô để chọn lại trước khi lưu.")
-                        
-                        df_preview = pd.DataFrame(samples_data)
                         edited_preview = st.data_editor(
-                            df_preview,
-                            column_config={
-                                "Chọn": st.column_config.CheckboxColumn("Nhập mẫu?", default=True),
-                                "Mã Mẫu": st.column_config.TextColumn("Mã Mẫu", disabled=True),
-                                "Nền Mẫu": st.column_config.SelectboxColumn("Nền Mẫu", options=["Nước", "Khí", "Chưa xác định"]),
-                                "Chỉ Tiêu": st.column_config.TextColumn("Chỉ Tiêu", disabled=True)
-                            },
-                            hide_index=True, use_container_width=True, key="preview_editor"
+                            pd.DataFrame(samples_data),
+                            column_config={"Chọn": st.column_config.CheckboxColumn("Nhập mẫu?", default=True), "Mã Mẫu": st.column_config.TextColumn(disabled=True), "Chỉ Tiêu": st.column_config.TextColumn(disabled=True)},
+                            hide_index=True, use_container_width=True
                         )
-                        
                         batch_nguoi = st.selectbox("Người tiếp nhận:", ["Thành", "Kỹ thuật viên 2", "Kỹ thuật viên 3"])
                         selected_samples = edited_preview[edited_preview["Chọn"] == True]
                         
                         if st.button(f"🚀 Lưu {len(selected_samples)} mẫu đã chọn vào Hệ thống", type="primary"):
-                            if selected_samples.empty:
-                                st.warning("⚠️ Bạn chưa chọn mẫu nào để lưu!")
-                            else:
-                                new_rows = []
-                                for _, row in selected_samples.iterrows():
-                                    new_rows.append({
-                                        "Mã Mẫu": row["Mã Mẫu"], "Tên Mẻ": ten_me_extract, "Nền Mẫu": row["Nền Mẫu"], 
-                                        "Chỉ Tiêu": row["Chỉ Tiêu"], "Trạng Thái": STATUSES[0], "Người Giữ": batch_nguoi, 
-                                        "Ghi Chú": "Import từ Excel", "Giờ Nhận": datetime.now()
-                                    })
-                                st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame(new_rows)], ignore_index=True)
-                                save_data(st.session_state.df)
-                                st.success(f"Tuyệt vời! Đã nạp thành công {len(selected_samples)} mẫu.")
-                                st.rerun()
+                            new_rows = [{"Mã Mẫu": row["Mã Mẫu"], "Tên Mẻ": ten_me_extract, "Nền Mẫu": row["Nền Mẫu"], "Chỉ Tiêu": row["Chỉ Tiêu"], "Trạng Thái": STATUSES[0], "Người Giữ": batch_nguoi, "Ghi Chú": "Import Excel", "Giờ Nhận": datetime.now()} for _, row in selected_samples.iterrows()]
+                            st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame(new_rows)], ignore_index=True)
+                            save_data(st.session_state.df)
+                            st.success("Đã nạp thành công!")
+                            st.rerun()
                     else: st.warning("Không có mã KHM nào hợp lệ bên dưới ô tiêu đề.")
                 else: st.error("Không tìm thấy ô 'KHM' trong file!")
             except Exception as e: st.error(f"Lỗi đọc file: {e}")
 
     with tab_thu_cong:
         with st.form("add_sample_form", clear_on_submit=True):
-            new_id = st.text_input("Mã Mẫu (VD: NT-1509-01)*")
-            new_name = st.text_input("Tên Mẻ (VD: 2026.07.017)")
+            new_id, new_name = st.text_input("Mã Mẫu (VD: NS-1509-01)*"), st.text_input("Tên Mẻ (VD: 2026.07.017)")
             col_t1, col_t2 = st.columns(2)
             with col_t1: new_nen = st.selectbox("Nền Mẫu", ["Nước", "Khí"])
             with col_t2: new_chi_tieu = st.text_input("Chỉ tiêu đo")
             new_nguoi = st.text_input("Người tiếp nhận (Ký tên)")
             
             if st.form_submit_button("Thêm Mẫu lẻ") and new_id:
-                new_row = pd.DataFrame([{
-                    "Mã Mẫu": new_id, "Tên Mẻ": new_name, "Nền Mẫu": new_nen, 
-                    "Chỉ Tiêu": new_chi_tieu, "Trạng Thái": STATUSES[0], 
-                    "Người Giữ": new_nguoi, "Ghi Chú": "", "Giờ Nhận": datetime.now() 
-                }])
-                st.session_state.df = pd.concat([st.session_state.df, new_row], ignore_index=True)
+                st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([{"Mã Mẫu": new_id, "Tên Mẻ": new_name, "Nền Mẫu": new_nen, "Chỉ Tiêu": new_chi_tieu, "Trạng Thái": STATUSES[0], "Người Giữ": new_nguoi, "Ghi Chú": "", "Giờ Nhận": datetime.now()}])], ignore_index=True)
                 save_data(st.session_state.df)
                 st.success(f"Đã thêm {new_id}!")
 
-# ---------------------------------------------------------
 # ---------------------------------------------------------
 elif menu == "⚙️ Vận hành GC-MS":
     st.title("⚙️ Điều phối & Vận hành Máy đo")
@@ -328,123 +329,55 @@ elif menu == "⚙️ Vận hành GC-MS":
     col_seq, col_import = st.columns(2)
     with col_seq:
         st.subheader("1. Xuất Sequence chạy máy")
-        st.info("Gom tự động các mẫu đang ở trạng thái '🟡 3. Chờ chạy máy'.")
-        
         df_ready = st.session_state.df[st.session_state.df["Trạng Thái"] == "🟡 3. Chờ chạy máy"]
         st.write(f"Hiện đang có **{len(df_ready)}** mẫu chờ chạy.")
         
         if not df_ready.empty:
-            seq_df = pd.DataFrame()
-            seq_df['Vial'] = range(1, len(df_ready) + 1)
-            seq_df['Sample Name'] = df_ready['Mã Mẫu']
-            seq_df['Sample Type'] = 'Sample'
-            
-            # Logic nhận diện phương pháp
+            seq_df = pd.DataFrame({'Vial': range(1, len(df_ready) + 1), 'Sample Name': df_ready['Mã Mẫu'], 'Sample Type': 'Sample'})
             seq_df['Method'] = df_ready['Chỉ Tiêu'].apply(lambda x: 'VOCs.M' if any(k in str(x).upper() for k in ['VOC', 'BENZEN', 'TOLUEN', 'CHLORO', 'STYREN']) else 'HCHO.M')
             seq_df['Data File'] = datetime.now().strftime("%Y%m%d") + "_" + df_ready['Mã Mẫu']
-            
-            csv = seq_df.to_csv(index=False).encode('utf-8')
-            st.download_button("📥 Tải Sequence.csv", data=csv, file_name=f"MassHunter_Seq_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary")
+            st.download_button("📥 Tải Sequence.csv", data=seq_df.to_csv(index=False).encode('utf-8'), file_name=f"MassHunter_Seq_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary")
             
     with col_import:
         st.subheader("2. Xử lý dữ liệu GC-MS theo SOP")
-        st.info("💡 Hệ thống tự động xác định C ban đầu của Chuẩn đồng hành (R% = 70-130%) và tích hợp đánh giá QA/QC (BL, TC).")
-
-        gc_file = st.file_uploader("Kéo thả báo cáo kết quả GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
-
-        # --- CÁC HÀM BỔ TRỢ TÍNH TOÁN THEO SOP ---
-        def get_dynamic_surrogate_expected(c_do):
-            """Xác định C_ban_đầu sao cho R% thuộc [70, 130]"""
-            # Dải nồng độ chuẩn phổ biến
-            levels = [1.0, 2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 20.0, 25.0, 50.0, 100.0]
-            valid_levels = []
-            for lvl in levels:
-                rec = (c_do / lvl) * 100.0
-                if 70 <= rec <= 130:
-                    valid_levels.append((lvl, abs(100 - rec))) # Lưu mức lệch so với 100%
-                    
-            if valid_levels:
-                # Chọn mức có R% gần 100% nhất
-                valid_levels.sort(key=lambda x: x[1])
-                return valid_levels[0][0]
-            else:
-                # Fallback: Lấy mức gần C_đo nhất nếu không có mức nào thỏa mãn
-                return min(levels, key=lambda x: abs(x - c_do))
-
-        def get_mdl_info(compound_name, nen_mau):
-            """Tra cứu giá trị và đơn vị MDL"""
-            df_mdl = st.session_state.df_mdl
-            if not df_mdl.empty and compound_name and nen_mau:
-                mask = (df_mdl["Nền Mẫu"].astype(str).str.upper() == nen_mau.upper()) & \
-                       (df_mdl["Tên Chất"].astype(str).str.lower() == str(compound_name).lower())
-                match = df_mdl[mask]
-                if not match.empty:
-                    mdl_str = str(match["MDL"].values[0]).replace(',', '.')
-                    unit = str(match["Đơn Vị"].values[0])
-                    if pd.isna(unit) or unit == 'nan': unit = ""
-                    try: return float(mdl_str), unit
-                    except: pass
-            return None, ""
+        st.info("💡 Web phân loại song song mẫu Khí (So với MDL) và mẫu Nước (So với LOQ). Bù trừ R% tự động.")
+        
+        gc_file = st.file_uploader("Kéo thả báo cáo GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
 
         if gc_file is not None:
             calc_results = []
             try:
-                # --- BƯỚC 1: TRÍCH XUẤT DỮ LIỆU TỪ FILE ---
+                # --- TIỀN XỬ LÝ DỮ LIỆU TỪ FILE ---
                 if gc_file.name.endswith('.pdf'):
                     import PyPDF2
-                    reader = PyPDF2.PdfReader(gc_file)
-                    text = "".join([page.extract_text() + "\n" for page in reader.pages])
-                    lines = text.split('\n')
-                    
-                    pdf_data = []
-                    current_compound = None
+                    text = "".join([page.extract_text() + "\n" for page in PyPDF2.PdfReader(gc_file).pages])
+                    pdf_data, current_compound = [], None
                     known_compounds = ['Benzene', 'Toluene-D8', 'BFB', '4-Bromofluorobenzene', 'Toluene', 'Ethylbenzene', 'm-Xylene', 'p-Xylene', 'o-Xylene', 'Styrene']
 
-                    for line in lines:
+                    for line in text.split('\n'):
                         parts = line.split()
                         if not parts: continue
-                        if line.strip() in known_compounds:
+                        if line.strip() in known_compounds: 
                             current_compound = line.strip()
                             continue
                         
-                        # Nhận diện mẫu dựa trên tiền tố hoặc ký hiệu Cal
                         if len(parts) >= 5 and (parts[0].endswith('.d') or parts[0].replace('.d','') in ['10PPM', '2', '4', '6', '8']) and ('Sample' in parts or 'Cal' in parts):
                             data_file = parts[0].replace('.d', '')
                             floats = [float(p) for p in parts if p.replace('.', '', 1).isdigit() and p.count('.') <= 1]
-                            
                             if len(floats) >= 3 and current_compound:
-                                # Logic lọc Final Conc tùy thuộc vào số liệu Calibration hay Sample
-                                if 'Cal' in parts and len(floats) >= 5:
-                                    final_conc = floats[-3] 
-                                elif 'Cal' in parts and len(floats) >= 4:
-                                    final_conc = floats[-2]
-                                elif 'Sample' in parts:
-                                    final_conc = floats[-1]
-                                else:
-                                    final_conc = floats[-1]
-                                    
+                                final_conc = floats[-3] if 'Cal' in parts and len(floats) >= 5 else (floats[-2] if 'Cal' in parts and len(floats) >= 4 else floats[-1])
                                 pdf_data.append({"Data File": data_file, "Compound Name": current_compound, "Final Conc.": final_conc})
                     
-                    df_gc = pd.DataFrame(pdf_data)
-                    compound_col = "Compound Name"
-                    
+                    df_gc, compound_col = pd.DataFrame(pdf_data), "Compound Name"
                 else:
                     df_gc = pd.read_csv(gc_file) if gc_file.name.endswith('.csv') else pd.read_excel(gc_file)
                     df_gc.columns = [str(c).strip() for c in df_gc.columns]
                     compound_col = next((c for c in df_gc.columns if c.lower() in ['name', 'compound', 'compound name', 'tên chất']), None)
 
-                # --- BƯỚC 2: TÍNH TOÁN THEO SOP & ĐÁNH GIÁ KẾT QUẢ ---
+                # --- BƯỚC TÍNH TOÁN & ÁP MỨC GIỚI HẠN ---
                 if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns and compound_col:
                     
-                    # Xác định nền mẫu mặc định của mẻ phân tích
-                    default_v_gas, default_nen = 24.0, 'KT'
-                    for _, row in df_gc.iterrows():
-                        sn = str(row['Data File']).upper()
-                        if 'KT' in sn: default_v_gas, default_nen = 24.0, 'KT'; break
-                        elif 'KXQ' in sn: default_v_gas, default_nen = 4.0, 'KXQ'; break
-                        elif 'KLV' in sn: default_v_gas, default_nen = 4.0, 'KLV'; break
-
-                    # Tính Hiệu suất thu hồi R(%) cho TỪNG MẪU thông qua Chuẩn đồng hành
+                    # 1. Quét tìm Độ thu hồi (Recovery) cho từng mẫu dựa trên AI đoán nồng độ
                     surrogate_dict = {}
                     for _, row in df_gc.iterrows():
                         comp_name = str(row[compound_col]).upper()
@@ -452,161 +385,139 @@ elif menu == "⚙️ Vận hành GC-MS":
                             sample_name = str(row['Data File']).replace('.d', '')
                             raw_conc = pd.to_numeric(row['Final Conc.'], errors='coerce')
                             if pd.notna(raw_conc) and raw_conc > 0:
-                                # Tính R% dựa trên việc chọn C_ban_đầu phù hợp
                                 c_exp = get_dynamic_surrogate_expected(raw_conc)
                                 recovery = (raw_conc / c_exp) * 100.0
                                 surrogate_dict[sample_name] = recovery
 
-                    # Xử lý các chỉ tiêu thực tế
+                    # 2. Suy luận loại mẫu mặc định nếu không tra được mã
+                    default_v_gas, default_nen, default_loai = 24.0, 'KT', 'Khí'
                     for _, row in df_gc.iterrows():
-                        sample_name = str(row['Data File']).replace('.d', '')
-                        comp_name = str(row[compound_col])
-                        
+                        sn = str(row['Data File']).upper()
+                        if 'KT' in sn: default_v_gas, default_nen, default_loai = 24.0, 'KT', 'Khí'; break
+                        elif 'KXQ' in sn: default_v_gas, default_nen, default_loai = 4.0, 'KXQ', 'Khí'; break
+                        elif 'KLV' in sn: default_v_gas, default_nen, default_loai = 4.0, 'KLV', 'Khí'; break
+                        elif any(k in sn for k in ['NS', 'NT', 'NM', 'NN']): default_v_gas, default_nen, default_loai = 1.0, 'NS', 'Nước'; break
+
+                    # 3. Tính C thực tế cho các chất
+                    for _, row in df_gc.iterrows():
+                        sample_name, comp_name = str(row['Data File']).replace('.d', ''), str(row[compound_col])
                         upper_name = sample_name.upper()
                         
-                        # Bộ lọc định dạng mẫu hợp lệ (Bao gồm mẫu thực, Blank, QC, Thêm chuẩn)
-                        valid_keys = ['KT', 'KXQ', 'KLV', 'BL', 'BLANK', 'TC', 'QC']
-                        if not any(k in upper_name for k in valid_keys): continue
-                        
-                        # Bỏ qua các điểm đường chuẩn (Cal)
+                        # Chỉ duyệt mẫu hợp lệ
+                        if not any(k in upper_name for k in ['KT', 'KXQ', 'KLV', 'NS', 'NT', 'NM', 'NN', 'BL', 'BLANK', 'TC', 'QC']): continue
                         if upper_name in ['1', '2', '4', '5', '6', '8', '10'] or 'PPM' in upper_name: continue
-                            
-                        # Không xuất kết quả của chuẩn đồng hành trong bảng dữ liệu cuối
                         if comp_name.upper() in ['TOLUENE-D8', 'TOLUEN-D8', 'BFB', '4-BROMOFLUOROBENZENE']: continue
                             
                         raw_conc = pd.to_numeric(row['Final Conc.'], errors='coerce')
                         if pd.isna(raw_conc): continue
 
-                        # Trích xuất tham số nền mẫu
-                        v_gas, nen_mau = parse_sample_matrix(sample_name)
-                        if v_gas is None:
-                            v_gas, nen_mau = default_v_gas, default_nen
+                        v_param, nen_mau, loai_mau = parse_sample_matrix(sample_name)
+                        if v_param is None: v_param, nen_mau, loai_mau = default_v_gas, default_nen, default_loai
                             
-                        # Áp dụng độ thu hồi R% tương ứng, nếu không tìm thấy mặc định là 100%
                         sample_recovery = surrogate_dict.get(sample_name, 100.0)
                         
-                        # Tra cứu MDL
-                        mdl_val, unit = get_mdl_info(comp_name, nen_mau)
+                        # Tra cứu song song MDL và LOQ
+                        mdl_val, loq_val, unit = get_limit_info(comp_name, nen_mau)
                         
-                        # Tính C thực và so sánh MDL
-                        c_thuc_str = "KPH"
-                        if raw_conc > 0:
-                            c_thuc_val = (raw_conc * 1.0) / v_gas * (100.0 / sample_recovery)
-                            if mdl_val and c_thuc_val < mdl_val:
-                                c_thuc_str = "KPH"
-                            else:
-                                c_thuc_str = f"{round(c_thuc_val, 4)}"
-                                
-                        mdl_display = f"{mdl_val} {unit}" if mdl_val else ""
+                        # Đánh giá C thực tế dựa trên Loại mẫu
+                        c_thuc_str = evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recovery=sample_recovery)
+                        
+                        # Hiển thị Limit tham chiếu tương ứng
+                        limit_display = ""
+                        if loai_mau == 'Khí' and mdl_val is not None: limit_display = f"MDL: {mdl_val} {unit}"
+                        elif loai_mau == 'Nước' and loq_val is not None: limit_display = f"LOQ: {loq_val} {unit}"
                         
                         calc_results.append({
-                            "Tên mẫu": sample_name,
-                            "Tên chỉ tiêu": comp_name,
-                            "C đo": round(raw_conc, 4),
-                            "C thực": c_thuc_str,
-                            "MDL": mdl_display,
-                            "R(%)": f"{round(sample_recovery, 1)}%"
+                            "Tên mẫu": sample_name, "Tên chỉ tiêu": comp_name, "C đo": round(raw_conc, 4), 
+                            "C thực": c_thuc_str, "Giới hạn": limit_display, "R(%)": f"{round(sample_recovery, 1)}%"
                         })
 
-                # --- 3. HIỂN THỊ KẾT QUẢ ---
                 if calc_results:
-                    st.success(f"✔️ Đã xuất {len(calc_results)} dòng kết quả chuẩn hóa bao gồm các mẫu thực, QC, Blank và Thêm chuẩn.")
-                    df_results = pd.DataFrame(calc_results)
-                    st.dataframe(df_results, use_container_width=True, hide_index=True)
-
-                    if st.button("🔄 Lưu kết quả vào Hệ thống", type="primary"):
-                        st.info("Dữ liệu đã sẵn sàng để tích hợp vào báo cáo Word tự động.")
+                    st.success(f"✔️ Đã xuất {len(calc_results)} dòng kết quả. Tự động áp dụng SOP Khí/Nước.")
+                    st.dataframe(pd.DataFrame(calc_results), use_container_width=True, hide_index=True)
                 else: 
-                    st.warning("⚠️ Không tìm thấy mẫu phân tích nào đúng định dạng hợp lệ (KT, KXQ, QC, BL, TC) hoặc file thiếu dữ liệu đo.")
+                    st.warning("⚠️ File không chứa mẫu hợp lệ (KT, KXQ, NS, NT...) hoặc thiếu dữ liệu.")
             except Exception as e: st.error(f"❌ Lỗi xử lý: {e}")
 
 # ---------------------------------------------------------
 elif menu == "🚀 Tiện ích & Cấu hình":
     st.title("🛠️ Tiện ích & Cấu hình Hệ thống")
     
-    tab_mdl, tab_report, tab_qr = st.tabs(["📚 Quản lý Thư viện MDL", "📝 Lập Biên Bản (Sắp ra mắt)", "🏷️ Sinh Mã QR"])
+    tab_limit, tab_report, tab_qr = st.tabs(["📚 Thư viện Cấu hình MDL/LOQ", "📝 Lập Biên Bản (Sắp ra mắt)", "🏷️ Sinh Mã QR"])
     
-    with tab_mdl:
-        st.subheader("Tra cứu thông minh Thư viện MDL")
+    with tab_limit:
+        st.subheader("Tra cứu thông minh Thư viện Cấu hình (MDL & LOQ)")
+        search_limit = st.text_input("🔍 Tra cứu giới hạn sát tên chất (VD: Benzen, Toluen, Xylen):")
         
-        # 1. KHU VỰC TRA CỨU NHANH (FUZZY SEARCH CÓ CHẤM ĐIỂM)
-        search_mdl = st.text_input("🔍 Tra cứu MDL sát tên chất (VD: Benzen, Toluen, Xylen):")
-        
-        mdl_library = st.session_state.df_mdl
-        if search_mdl:
-            if not mdl_library.empty:
-                all_compounds = mdl_library["Tên Chất"].astype(str).unique()
+        limit_library = st.session_state.df_limit
+        if search_limit:
+            if not limit_library.empty:
+                all_compounds = limit_library["Tên Chất"].astype(str).unique()
+                close_matches = difflib.get_close_matches(search_limit.lower(), [c.lower() for c in all_compounds], n=20, cutoff=0.3)
                 
-                # Thuật toán tìm kiếm sát nghĩa
-                close_matches = difflib.get_close_matches(search_mdl.lower(), [c.lower() for c in all_compounds], n=20, cutoff=0.3)
+                mask_contains = limit_library["Tên Chất"].astype(str).str.contains(search_limit, case=False, na=False)
+                mask_fuzzy = limit_library["Tên Chất"].astype(str).str.lower().isin(close_matches)
                 
-                # Lọc kết quả
-                mask_contains = mdl_library["Tên Chất"].astype(str).str.contains(search_mdl, case=False, na=False)
-                mask_fuzzy = mdl_library["Tên Chất"].astype(str).str.lower().isin(close_matches)
-                
-                search_result = mdl_library[mask_contains | mask_fuzzy].copy()
-                
+                search_result = limit_library[mask_contains | mask_fuzzy].copy()
                 if not search_result.empty:
-                    # Chấm điểm độ tương đồng để sắp xếp ưu tiên từ cao xuống thấp
-                    search_result["Score"] = search_result["Tên Chất"].apply(
-                        lambda x: difflib.SequenceMatcher(None, search_mdl.lower(), str(x).lower()).ratio()
-                    )
-                    # Đưa kết quả sát với từ khóa nhất lên trên cùng
-                    search_result = search_result.sort_values(by="Score", ascending=False).drop(columns=["Score"])
-                    
-                    st.dataframe(search_result, use_container_width=True, hide_index=True)
-                else:
-                    st.warning("⚠️ Không tìm thấy chất nào sát với từ khóa bạn nhập trong Thư viện.")
-            else:
-                st.info("Thư viện MDL hiện đang trống.")
+                    # Sắp xếp theo mức độ sát nghĩa với từ khóa
+                    search_result["Score"] = search_result["Tên Chất"].apply(lambda x: difflib.SequenceMatcher(None, search_limit.lower(), str(x).lower()).ratio())
+                    st.dataframe(search_result.sort_values(by="Score", ascending=False).drop(columns=["Score"]), use_container_width=True, hide_index=True)
+                else: 
+                    st.warning("⚠️ Không tìm thấy chất nào sát với từ khóa bạn nhập.")
+            else: st.info("Thư viện hiện đang trống.")
         else:
-            if not mdl_library.empty:
-                with st.expander("Xem toàn bộ Thư viện MDL hiện tại", expanded=False):
-                    st.dataframe(mdl_library, use_container_width=True, hide_index=True)
+            if not limit_library.empty:
+                with st.expander("Xem toàn bộ Thư viện MDL & LOQ hiện tại", expanded=False):
+                    st.dataframe(limit_library, use_container_width=True, hide_index=True)
 
         st.divider()
-
-        # 2. KHU VỰC CẬP NHẬT THƯ VIỆN
-        st.subheader("Cập nhật Thư viện Giới hạn Phát hiện (MDL)")
-        st.info("Kéo thả file Excel chứa bảng MDL (như file `Bang_MDL_Khi_Cac_Loai...xlsx`). Hệ thống sẽ tự quét các Sheet và gộp lại rồi bắn lên Google Sheets.")
+        st.subheader("Cập nhật Thư viện Giới hạn (Khí & Nước)")
+        st.info("Kéo thả file Excel chứa bảng Giới hạn. Code sẽ tự động lùng sục cột 'MDL' và 'LOQ' để gộp lại tải lên Google Sheets (Tab `CauHinh_MDL_LOQ`).")
         
-        mdl_file = st.file_uploader("Tải lên file Excel Bảng MDL", type=["xlsx"])
-        if mdl_file:
+        limit_file = st.file_uploader("Tải lên file Excel Bảng MDL/LOQ", type=["xlsx"])
+        if limit_file:
             try:
-                xls = pd.ExcelFile(mdl_file)
-                mdl_data = []
-                
+                xls = pd.ExcelFile(limit_file)
+                limit_data = []
                 for sheet in xls.sheet_names:
                     df_sheet = pd.read_excel(xls, sheet_name=sheet)
-                    
                     col_ten = next((c for c in df_sheet.columns if 'tên' in str(c).lower() or 'hợp chất' in str(c).lower()), None)
                     col_mdl = next((c for c in df_sheet.columns if 'mdl' in str(c).lower()), None)
+                    col_loq = next((c for c in df_sheet.columns if 'loq' in str(c).lower()), None)
                     
-                    if col_ten and col_mdl:
-                        unit_match = re.search(r'\((.*?)\)', str(col_mdl))
-                        unit = unit_match.group(1) if unit_match else "Chưa rõ"
-                        nen_mau = "KT" if "thải" in sheet.lower() else ("KXQ" if "xung quanh" in sheet.lower() else ("KLV" if "làm việc" in sheet.lower() else sheet))
+                    if col_ten and (col_mdl or col_loq):
+                        unit = "Chưa rõ"
+                        if col_loq:
+                            unit_match = re.search(r'\((.*?)\)', str(col_loq))
+                            if unit_match: unit = unit_match.group(1)
+                        if unit == "Chưa rõ" and col_mdl:
+                            unit_match = re.search(r'\((.*?)\)', str(col_mdl))
+                            if unit_match: unit = unit_match.group(1)
+
+                        # Phân biệt nền mẫu để gắn Tag
+                        nen_mau = "KT" if "thải" in sheet.lower() else ("KXQ" if "xung quanh" in sheet.lower() else ("KLV" if "làm việc" in sheet.lower() else ("NS" if "nước" in sheet.lower() else sheet)))
                         
                         for _, row in df_sheet.iterrows():
-                            if pd.notna(row[col_ten]) and pd.notna(row[col_mdl]):
-                                mdl_data.append({
-                                    "Nền Mẫu": nen_mau,
-                                    "Tên Chất": str(row[col_ten]).strip(),
-                                    "MDL": str(row[col_mdl]).replace(',', '.').strip(),
-                                    "Đơn Vị": unit
+                            val_mdl = str(row[col_mdl]).replace(',', '.').strip() if col_mdl and pd.notna(row[col_mdl]) else ""
+                            val_loq = str(row[col_loq]).replace(',', '.').strip() if col_loq and pd.notna(row[col_loq]) else ""
+                            
+                            if pd.notna(row[col_ten]) and (val_mdl or val_loq):
+                                limit_data.append({
+                                    "Nền Mẫu": nen_mau, "Tên Chất": str(row[col_ten]).strip(), 
+                                    "MDL": val_mdl, "LOQ": val_loq, "Đơn Vị": unit
                                 })
                 
-                if mdl_data:
-                    df_mdl_new = pd.DataFrame(mdl_data)
-                    st.success(f"✔️ Đã quét được {len(df_mdl_new)} chỉ tiêu MDL từ file.")
-                    st.dataframe(df_mdl_new, use_container_width=True)
-                    
+                if limit_data:
+                    df_limit_new = pd.DataFrame(limit_data)
+                    st.success(f"✔️ Đã quét được {len(df_limit_new)} chỉ tiêu từ file.")
+                    st.dataframe(df_limit_new, use_container_width=True)
                     if st.button("🚀 Đẩy lên Google Sheets (Tạo/Ghi đè Thư viện)", type="primary"):
-                        conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL", data=df_mdl_new)
-                        st.session_state.df_mdl = df_mdl_new
-                        st.success("🎉 Đã lưu cấu hình MDL lên Cloud thành công! Tự động áp dụng cho các mẻ tính toán sau.")
-                else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên hợp chất / Cột MDL).")
+                        conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=df_limit_new)
+                        st.session_state.df_limit = df_limit_new
+                        st.success("🎉 Đã lưu cấu hình lên Cloud thành công!")
+                else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên / Cột MDL / Cột LOQ).")
             except Exception as e: st.error(f"Lỗi đọc file: {e}")
 
     with tab_report: st.write("Khu vực xuất Form Word/Excel.")
-    with tab_qr: st.write("Chức năng tạo mã vạch (Barcode) hàng loạt cho các mẫu mẻ mới nhận.")
+    with tab_qr: st.write("Chức năng tạo mã vạch (Barcode) hàng loạt.")
