@@ -125,13 +125,14 @@ def evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recover
 # 4. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
 st.sidebar.title("🔬 LIMS HATICO")
-st.sidebar.caption("Phần mềm Quản lý Phòng Lab GC-MS")
+st.sidebar.caption("Phần mềm Quản lý Phòng Lab GC-MS & GC-FID")
 st.sidebar.divider()
 
 menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
     "🏠 Trang chủ (Tổng quan)", 
     "📥 Quản lý Tiếp nhận", 
     "⚙️ Vận hành GC-MS (Agilent - VOCs)",
+    "🔥 Vận hành GC-FID (Agilent)",
     "🧬 Vận hành Thermo (OCP/OPP/PCB)",
     "🚀 Tiện ích & Cấu hình"
 ])
@@ -368,7 +369,6 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                 # --- BƯỚC TÍNH TOÁN & ÁP MỨC GIỚI HẠN ---
                 if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns and compound_col:
                     
-                    # 1. Quét tìm Độ thu hồi (Recovery)
                     surrogate_dict = {}
                     for _, row in df_gc.iterrows():
                         comp_name = str(row[compound_col]).upper()
@@ -380,7 +380,6 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                                 recovery = (raw_conc / c_exp) * 100.0
                                 surrogate_dict[sample_name] = recovery
 
-                    # 2. Suy luận loại mẫu mặc định
                     default_v_gas, default_nen, default_loai = 24.0, 'KT', 'Khí'
                     for _, row in df_gc.iterrows():
                         sn = str(row['Data File']).upper()
@@ -389,7 +388,6 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                         elif 'KLV' in sn: default_v_gas, default_nen, default_loai = 4.0, 'KLV', 'Khí'; break
                         elif any(k in sn for k in ['NS', 'NT', 'NM', 'NN']): default_v_gas, default_nen, default_loai = 1.0, 'NS', 'Nước'; break
 
-                    # 3. Tính C thực tế
                     for _, row in df_gc.iterrows():
                         sample_name, comp_name = str(row['Data File']).replace('.d', ''), str(row[compound_col])
                         upper_name = sample_name.upper()
@@ -424,6 +422,25 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                 else: 
                     st.warning("⚠️ File không chứa mẫu hợp lệ (KT, KXQ, NS, NT...) hoặc thiếu dữ liệu.")
             except Exception as e: st.error(f"❌ Lỗi xử lý: {e}")
+
+# ---------------------------------------------------------
+elif menu == "🔥 Vận hành GC-FID (Agilent)":
+    st.title("🔥 Hệ thống GC-FID (Agilent)")
+    st.caption("Module chuyên biệt xử lý dữ liệu từ đầu dò FID (Ví dụ: Tổng Hydrocacbon Dầu mỏ - TPH, Methanol, Ethanol, v.v.)")
+    
+    col_seq, col_import = st.columns(2)
+    with col_seq:
+        st.subheader("1. Xuất Sequence GC-FID")
+        st.info("Sẽ tích hợp thuật toán xuất file Sequence định dạng cho máy GC-FID Agilent.")
+        st.write("Đang chờ định cấu hình phương pháp và chỉ tiêu cho máy FID...")
+        
+    with col_import:
+        st.subheader("2. Xử lý kết quả GC-FID")
+        st.info("Khu vực chờ tích hợp thuật toán đọc file báo cáo từ máy GC-FID (ChemStation / OpenLab / MassHunter).")
+        fid_file = st.file_uploader("Kéo thả báo cáo GC-FID (PDF/Excel/CSV/TXT)", type=["pdf", "xlsx", "xls", "csv", "txt"])
+        
+        if fid_file:
+            st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report FID. Vui lòng cung cấp file mẫu (Template) xuất từ máy GC-FID ở lần làm việc tiếp theo để hoàn thiện module này!")
 
 # ---------------------------------------------------------
 elif menu == "🧬 Vận hành Thermo (OCP/OPP/PCB)":
