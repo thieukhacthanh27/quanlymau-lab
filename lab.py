@@ -49,7 +49,7 @@ if "df_limit" not in st.session_state:
     st.session_state.df_limit = load_limit_config()
 
 # ==========================================
-# 3. HÀM BỔ SUNG: XỬ LÝ SỐ LIỆU THEO SOP (KHÍ & NƯỚC)
+# 3. HÀM BỔ SUNG: XỬ LÝ SỐ LIỆU THEO SOP
 # ==========================================
 def parse_sample_matrix(sample_name):
     name_upper = str(sample_name).upper()
@@ -125,7 +125,7 @@ def evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recover
 # 4. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
 st.sidebar.title("🔬 LIMS HATICO")
-st.sidebar.caption("Phần mềm Quản lý Phòng Lab GC-MS & GC-FID")
+st.sidebar.caption("Phần mềm Quản lý Phòng Lab")
 st.sidebar.divider()
 
 menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
@@ -166,7 +166,7 @@ if menu == "🏠 Trang chủ (Tổng quan)":
     tong_hoan_thanh = da_luu + da_huy
     
     col1.metric("📥 Tổng nhận hôm nay", tong_hom_nay)
-    col2.metric("⏳ Đang chờ chạy GC", cho_chay_may)
+    col2.metric("⏳ Đang chờ chạy", cho_chay_may)
     col3.metric("⚠️ Tồn đọng chưa xử lý", ton_dong, delta="-Cần xử lý", delta_color="inverse")
     col4.metric("✅ Đã hoàn thành", tong_hoan_thanh, f"Lưu kho: {da_luu} | Hủy: {da_huy}", delta_color="off")
     
@@ -226,7 +226,6 @@ if menu == "🏠 Trang chủ (Tổng quan)":
         st.success("Đã đồng bộ lên cơ sở dữ liệu chung!")
         st.rerun()
 
-# ---------------------------------------------------------
 elif menu == "📥 Quản lý Tiếp nhận":
     st.title("📥 Khu vực Tiếp nhận mẫu mới")
     
@@ -314,7 +313,6 @@ elif menu == "📥 Quản lý Tiếp nhận":
                 save_data(st.session_state.df)
                 st.success(f"Đã thêm {new_id}!")
 
-# ---------------------------------------------------------
 elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
     st.title("⚙️ Điều phối & Vận hành Máy đo (Agilent)")
     
@@ -339,7 +337,6 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
         if gc_file is not None:
             calc_results = []
             try:
-                # --- AI HỌC TỪ VỰNG TỪ THƯ VIỆN ĐỂ ĐỌC FILE PDF ---
                 dynamic_compounds = []
                 if not st.session_state.df_limit.empty and "Tên Chất" in st.session_state.df_limit.columns:
                     dynamic_compounds = st.session_state.df_limit["Tên Chất"].dropna().astype(str).str.strip().tolist()
@@ -347,7 +344,6 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                 surrogate_compounds = ['Toluene-D8', 'Toluen-D8', 'BFB', '4-Bromofluorobenzene', 'Chlorobenzene-d5']
                 known_compounds_upper = set(c.upper() for c in dynamic_compounds + surrogate_compounds)
 
-                # --- TIỀN XỬ LÝ DỮ LIỆU TỪ FILE ---
                 if gc_file.name.endswith('.pdf'):
                     import PyPDF2
                     text = "".join([page.extract_text() + "\n" for page in PyPDF2.PdfReader(gc_file).pages])
@@ -377,7 +373,6 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                     df_gc.columns = [str(c).strip() for c in df_gc.columns]
                     compound_col = next((c for c in df_gc.columns if c.lower() in ['name', 'compound', 'compound name', 'tên chất']), None)
 
-                # --- BƯỚC TÍNH TOÁN & ÁP MỨC GIỚI HẠN ---
                 if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns and compound_col:
                     
                     surrogate_dict = {}
@@ -431,13 +426,9 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                     st.success(f"✔️ Đã xuất {len(calc_results)} dòng kết quả. Tự động áp dụng SOP Khí/Nước.")
                     
                     df_results = pd.DataFrame(calc_results)
-                    
-                    # SẮP XẾP LẠI BẢNG: Gom nhóm theo Tên Mẫu, sau đó đến Tên Chỉ Tiêu
                     df_results = df_results.sort_values(by=["Tên mẫu", "Tên chỉ tiêu"]).reset_index(drop=True)
-                    
                     st.dataframe(df_results, use_container_width=True, hide_index=True)
                     
-                    # Nút tải file CSV
                     csv_results = df_results.to_csv(index=False).encode('utf-8-sig')
                     st.download_button(
                         label="📥 Tải Kết quả (CSV) để Lập Biên Bản",
@@ -450,26 +441,22 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                     st.warning("⚠️ File không chứa mẫu hợp lệ (KT, KXQ, NS, NT...) hoặc thiếu dữ liệu.")
             except Exception as e: st.error(f"❌ Lỗi xử lý: {e}")
 
-# ---------------------------------------------------------
 elif menu == "🔥 Vận hành GC-FID (Agilent)":
     st.title("🔥 Hệ thống GC-FID (Agilent)")
-    st.caption("Module chuyên biệt xử lý dữ liệu từ đầu dò FID (Ví dụ: Tổng Hydrocacbon Dầu mỏ - TPH, Methanol, Ethanol, v.v.)")
+    st.caption("Module chuyên biệt xử lý dữ liệu từ đầu dò FID")
     
     col_seq, col_import = st.columns(2)
     with col_seq:
         st.subheader("1. Xuất Sequence GC-FID")
         st.info("Sẽ tích hợp thuật toán xuất file Sequence định dạng cho máy GC-FID Agilent.")
-        st.write("Đang chờ định cấu hình phương pháp và chỉ tiêu cho máy FID...")
         
     with col_import:
         st.subheader("2. Xử lý kết quả GC-FID")
-        st.info("Khu vực chờ tích hợp thuật toán đọc file báo cáo từ máy GC-FID (ChemStation / OpenLab / MassHunter).")
+        st.info("Khu vực chờ tích hợp thuật toán đọc file báo cáo từ máy GC-FID.")
         fid_file = st.file_uploader("Kéo thả báo cáo GC-FID (PDF/Excel/CSV/TXT)", type=["pdf", "xlsx", "xls", "csv", "txt"])
-        
         if fid_file:
-            st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report FID. Vui lòng cung cấp file mẫu (Template) xuất từ máy GC-FID ở lần làm việc tiếp theo để hoàn thiện module này!")
+            st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report FID.")
 
-# ---------------------------------------------------------
 elif menu == "🧬 Vận hành Thermo (OCP/OPP/PCB)":
     st.title("🧬 Hệ thống Thermo GC-MS")
     st.caption("Module chuyên biệt xử lý dữ liệu OCP, OPP, PCB và Phenol")
@@ -477,18 +464,15 @@ elif menu == "🧬 Vận hành Thermo (OCP/OPP/PCB)":
     col_seq, col_import = st.columns(2)
     with col_seq:
         st.subheader("1. Xuất Sequence Thermo")
-        st.info("Sẽ tích hợp thuật toán xuất file Sequence định dạng tương thích phần mềm Thermo (TraceFinder/Chromeleon).")
-        st.write("Đang chờ định cấu hình cột dữ liệu theo chuẩn Thermo...")
+        st.info("Sẽ tích hợp thuật toán xuất file Sequence định dạng tương thích phần mềm Thermo.")
         
     with col_import:
         st.subheader("2. Xử lý kết quả Thermo")
-        st.info("Khu vực chờ tích hợp thuật toán đọc file xuất từ máy Thermo. Sẵn sàng kết nối với Thư viện Giới hạn chung.")
+        st.info("Khu vực chờ tích hợp thuật toán đọc file xuất từ máy Thermo.")
         thermo_file = st.file_uploader("Kéo thả báo cáo Thermo (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
-        
         if thermo_file:
-            st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report Thermo. Vui lòng cung cấp file mẫu (Template) ở lần làm việc tiếp theo để hoàn thiện module này!")
+            st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report Thermo.")
 
-# ---------------------------------------------------------
 elif menu == "🚀 Tiện ích & Cấu hình":
     st.title("🛠️ Tiện ích & Cấu hình Hệ thống")
     
@@ -521,7 +505,7 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                 st.session_state.df_limit = edited_limit
                 st.success("🎉 Đã lưu thư viện lên Google Sheets thành công!")
             except Exception as e:
-                st.error(f"⚠️ Lỗi kết nối Google Sheets: Không tìm thấy Trang tính '{e}'.\n\n👉 **Cách sửa:** Bạn hãy vào file Google Sheets của bạn, bấm dấu `+` để tạo một trang tính mới, sau đó đổi tên trang tính đó thành đúng chữ **`CauHinh_MDL_LOQ`** rồi thử bấm lại nút này nhé!")
+                st.error(f"⚠️ Lỗi kết nối Google Sheets: {e}")
 
         st.divider()
         st.subheader("2. Hoặc Cập nhật hàng loạt từ file Excel")
@@ -585,19 +569,18 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                             conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=combined_df)
                             st.session_state.df_limit = combined_df
                             st.success(f"🎉 Đã ghi thêm thành công! Tổng số chỉ tiêu hiện tại trong Thư viện: {len(combined_df)}")
-                            
                         except Exception as sheet_err:
-                            st.error(f"⚠️ Lỗi kết nối Google Sheets: {sheet_err}\n\n👉 **Cách sửa:** Bạn hãy vào file Google Sheets của bạn, bấm dấu `+` để tạo một trang tính mới, sau đó đổi tên trang tính đó thành đúng chữ **`CauHinh_MDL_LOQ`** rồi thử bấm lại nút này nhé!")
+                            st.error(f"⚠️ Lỗi kết nối Google Sheets: {sheet_err}")
                 else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên / Cột MDL / Cột LOQ).")
             except Exception as e: st.error(f"Lỗi đọc file: {e}")
 
     with tab_report: 
         st.subheader("📝 Lập Biên Bản Xử Lý Mẫu Tự Động")
-        st.info("Tải lên file Word Template (đã gắn thẻ `{{...}}`) và File CSV kết quả đã tính toán để hệ thống tự động điền số liệu.")
+        st.info("Tải lên file Word Template (đã gắn thẻ `{{...}}`) hoặc File Excel Template và File CSV kết quả đã tính toán để hệ thống tự động điền số liệu.")
         
         col_tpl, col_data = st.columns(2)
         with col_tpl:
-            template_file = st.file_uploader("1. Tải file Word mẫu (.docx)", type=["docx"])
+            template_file = st.file_uploader("1. Tải file Mẫu (.docx, .xlsx)", type=["docx", "xlsx"])
         with col_data:
             data_file = st.file_uploader("2. Tải file Kết quả (.csv)", type=["xlsx", "csv"])
 
@@ -605,68 +588,116 @@ elif menu == "🚀 Tiện ích & Cấu hình":
             try:
                 df_kq = pd.read_excel(data_file) if data_file.name.endswith('.xlsx') else pd.read_csv(data_file)
                 
-                if "Tên mẫu" in df_kq.columns:
-                    danh_sach_mau = []
-                    grouped = df_kq.groupby("Tên mẫu")
-                    
-                    for ten_mau, group in grouped:
-                        first_row = group.iloc[0]
-                        mau_dict = {
-                            "ngay": datetime.now().strftime("%d/%m/%Y"),
-                            "ky_hieu": ten_mau,
-                            "c_surr": 10.0, 
-                            "de": first_row.get("R(%)", ""),
-                            "ghi_chu": ""
-                        }
+                if "Tên mẫu" not in df_kq.columns or "Tên chỉ tiêu" not in df_kq.columns:
+                    st.error("⚠️ File kết quả không đúng chuẩn. Vui lòng dùng đúng file tải về từ phần mềm này.")
+                else:
+                    if template_file.name.endswith('.docx'):
+                        # ----- XỬ LÝ TEMPLATE WORD -----
+                        danh_sach_mau = []
+                        grouped = df_kq.groupby("Tên mẫu")
                         
-                        for _, row in group.iterrows():
-                            chi_tieu = str(row.get("Tên chỉ tiêu", "")).upper()
-                            c_do = row.get("C đo", "")
-                            kq = row.get("C thực", "")
-                            
-                            slug = re.sub(r'\W+', '', chi_tieu.lower())
-                            mau_dict[f"cdo_{slug}"] = c_do
-                            mau_dict[f"kq_{slug}"] = kq
-                            
-                            if "BENZENE" in chi_tieu or "BENZEN" in chi_tieu:
-                                mau_dict["cdo_benzen"] = c_do
-                                mau_dict["kq_benzen"] = kq
-                            elif "TOLUENE" in chi_tieu or "TOLUEN" in chi_tieu:
-                                mau_dict["cdo_toluen"] = c_do
-                                mau_dict["kq_toluen"] = kq
-                            elif "XYLENE" in chi_tieu or "XYLEN" in chi_tieu:
-                                mau_dict["cdo_xylen"] = c_do
-                                mau_dict["kq_xylen"] = kq
+                        # Chuẩn bị dữ liệu dạng list phẳng cho mẫu Khí thải (Vòng lặp từng dòng)
+                        ket_qua_list = []
+                        for _, row in df_kq.iterrows():
+                            ten_mau_str = str(row.get("Tên mẫu", ""))
+                            v_khi = "24,0" if "KT" in ten_mau_str.upper() else ("4,0" if any(k in ten_mau_str.upper() for k in ["KXQ", "KLV"]) else "")
+                            h_phantram = str(row.get("R(%)", "")).replace('%', '').strip()
+                            try: c_surr_sau = str(round((float(h_phantram) / 100) * 10.0, 2)).replace('.', ',')
+                            except: c_surr_sau = ""
                                 
-                        danh_sach_mau.append(mau_dict)
+                            ket_qua_list.append({
+                                "ngay": datetime.now().strftime("%d/%m/%Y"),
+                                "ten_mau": ten_mau_str,
+                                "chi_tieu": str(row.get("Tên chỉ tiêu", "")),
+                                "c_surr": c_surr_sau,
+                                "h_phantram": str(h_phantram).replace('.', ','),
+                                "v_khi": v_khi,
+                                "c_do": str(row.get("C đo", "")).replace('.', ','),
+                                "kq_thuc": str(row.get("C thực", "")).replace('.', ',')
+                            })
 
-                    context = {
-                        "danh_sach_mau": danh_sach_mau,
-                    }
+                        # Chuẩn bị dữ liệu nhóm cho mẫu Nước (Vòng lặp bảng)
+                        for ten_mau, group in grouped:
+                            first_row = group.iloc[0]
+                            mau_dict = {
+                                "ngay": datetime.now().strftime("%d/%m/%Y"),
+                                "ky_hieu": ten_mau,
+                                "c_surr": "10,0", 
+                                "de": str(first_row.get("R(%)", "")).replace('.', ','),
+                                "ghi_chu": ""
+                            }
+                            
+                            for _, row in group.iterrows():
+                                chi_tieu = str(row.get("Tên chỉ tiêu", "")).upper()
+                                slug = re.sub(r'\W+', '', chi_tieu.lower())
+                                mau_dict[f"cdo_{slug}"] = str(row.get("C đo", "")).replace('.', ',')
+                                mau_dict[f"kq_{slug}"] = str(row.get("C thực", "")).replace('.', ',')
+                                
+                                if "BENZENE" in chi_tieu or "BENZEN" in chi_tieu:
+                                    mau_dict["cdo_benzen"] = mau_dict[f"cdo_{slug}"]
+                                    mau_dict["kq_benzen"] = mau_dict[f"kq_{slug}"]
+                                elif "TOLUENE" in chi_tieu or "TOLUEN" in chi_tieu:
+                                    mau_dict["cdo_toluen"] = mau_dict[f"cdo_{slug}"]
+                                    mau_dict["kq_toluen"] = mau_dict[f"kq_{slug}"]
+                                    
+                            danh_sach_mau.append(mau_dict)
 
-                    if st.button("🚀 Bắt đầu Lập Biên Bản", type="primary"):
-                        try:
-                            from docxtpl import DocxTemplate
+                        if st.button("🚀 Bắt đầu Lập Biên Bản Word", type="primary"):
+                            try:
+                                from docxtpl import DocxTemplate
+                                import io
+                                
+                                doc = DocxTemplate(template_file)
+                                doc.render({"danh_sach_mau": danh_sach_mau, "ket_qua": ket_qua_list})
+                                
+                                bio = io.BytesIO()
+                                doc.save(bio)
+                                bio.seek(0)
+                                
+                                st.success("🎉 Biên bản Word đã được tạo thành công!")
+                                st.download_button("📥 Tải xuống Biên Bản (.docx)", data=bio, file_name=f"Bien_Ban_{datetime.now().strftime('%Y%m%d_%H%M')}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                            except ImportError:
+                                st.error("⚠️ Hệ thống chưa cài thư viện 'docxtpl'. Hãy thêm 'docxtpl' vào requirements.txt!")
+                                
+                    elif template_file.name.endswith('.xlsx'):
+                        # ----- XỬ LÝ TEMPLATE EXCEL -----
+                        st.info("💡 Hướng dẫn: Gõ chữ **`{{bang_ket_qua}}`** vào ô Excel nơi bạn muốn chèn bảng kết quả.")
+                        if st.button("🚀 Bắt đầu Lập Biên Bản Excel", type="primary"):
+                            import openpyxl
                             import io
                             
-                            doc = DocxTemplate(template_file)
-                            doc.render(context)
+                            wb = openpyxl.load_workbook(template_file)
+                            ws = wb.active
                             
+                            # Tìm vị trí gắn thẻ {{bang_ket_qua}}
+                            start_r, start_c = None, None
+                            for r in range(1, ws.max_row + 1):
+                                for c in range(1, ws.max_column + 1):
+                                    val = str(ws.cell(row=r, column=c).value)
+                                    if "{{bang_ket_qua}}" in val:
+                                        start_r, start_c = r, c
+                                        ws.cell(row=r, column=c).value = "" # Xóa thẻ
+                                        break
+                                if start_r: break
+                                
+                            if start_r and start_c:
+                                headers = df_kq.columns.tolist()
+                                # Ghi tiêu đề
+                                for c_idx, h in enumerate(headers):
+                                    ws.cell(row=start_r, column=start_c + c_idx).value = h
+                                    
+                                # Ghi dữ liệu
+                                for r_idx, row_data in enumerate(df_kq.values):
+                                    for c_idx, cell_value in enumerate(row_data):
+                                        ws.cell(row=start_r + 1 + r_idx, column=start_c + c_idx).value = cell_value
+                                        
                             bio = io.BytesIO()
-                            doc.save(bio)
+                            wb.save(bio)
                             bio.seek(0)
                             
-                            st.success("🎉 Biên bản đã được tạo thành công!")
-                            st.download_button(
-                                label="📥 Tải xuống Biên Bản (.docx)",
-                                data=bio,
-                                file_name=f"Bien_Ban_VOCs_{datetime.now().strftime('%Y%m%d_%H%M')}.docx",
-                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                            )
-                        except ImportError:
-                            st.error("⚠️ Hệ thống chưa được cài đặt thư viện 'docxtpl'. Hãy nhớ thêm 'docxtpl' vào file requirements.txt trên Github của bạn nhé!")
-                else:
-                    st.error("⚠️ File kết quả không có cột 'Tên mẫu'. Vui lòng dùng đúng file tải về từ hệ thống GC-MS của phần mềm này.")
+                            st.success("🎉 Biên bản Excel đã được tạo thành công!")
+                            st.download_button("📥 Tải xuống Biên Bản (.xlsx)", data=bio, file_name=f"Bien_Ban_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                            
             except Exception as e:
                 st.error(f"❌ Có lỗi xảy ra trong quá trình xử lý Biên Bản: {e}")
 
