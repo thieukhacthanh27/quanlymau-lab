@@ -384,7 +384,7 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                             if pd.notna(raw_conc) and raw_conc > 0:
                                 c_exp = get_dynamic_surrogate_expected(raw_conc)
                                 recovery = (raw_conc / c_exp) * 100.0
-                                surrogate_dict[sample_name] = recovery
+                                surrogate_dict[sample_name] = {"recovery": recovery, "c_exp": c_exp, "c_do": raw_conc}
 
                     default_v_gas, default_nen, default_loai = 24.0, 'KT', 'Khí'
                     for _, row in df_gc.iterrows():
@@ -408,7 +408,11 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                         v_param, nen_mau, loai_mau = parse_sample_matrix(sample_name)
                         if v_param is None: v_param, nen_mau, loai_mau = default_v_gas, default_nen, default_loai
                             
-                        sample_recovery = surrogate_dict.get(sample_name, 100.0)
+                        surr_info = surrogate_dict.get(sample_name, {"recovery": 100.0, "c_exp": "", "c_do": ""})
+                        sample_recovery = surr_info["recovery"]
+                        c_surr_truoc = surr_info["c_exp"]
+                        c_surr_sau = surr_info["c_do"]
+                        
                         mdl_val, loq_val, unit = get_limit_info(comp_name, nen_mau)
                         
                         c_thuc_str = evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recovery=sample_recovery)
@@ -419,7 +423,8 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                         
                         calc_results.append({
                             "Tên mẫu": sample_name, "Tên chỉ tiêu": comp_name, "C đo": round(raw_conc, 4), 
-                            "C thực": c_thuc_str, "Giới hạn": limit_display, "R(%)": f"{round(sample_recovery, 1)}%"
+                            "C thực": c_thuc_str, "Giới hạn": limit_display, "R(%)": f"{round(sample_recovery, 1)}%",
+                            "C_surr_truoc": c_surr_truoc, "C_surr_sau": c_surr_sau
                         })
 
                 if calc_results:
@@ -427,7 +432,9 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                     
                     df_results = pd.DataFrame(calc_results)
                     df_results = df_results.sort_values(by=["Tên mẫu", "Tên chỉ tiêu"]).reset_index(drop=True)
-                    st.dataframe(df_results, use_container_width=True, hide_index=True)
+                    
+                    display_cols = ["Tên mẫu", "Tên chỉ tiêu", "C đo", "C thực", "Giới hạn", "R(%)"]
+                    st.dataframe(df_results[display_cols], use_container_width=True, hide_index=True)
                     
                     csv_results = df_results.to_csv(index=False).encode('utf-8-sig')
                     st.download_button(
@@ -584,6 +591,12 @@ elif menu == "🚀 Tiện ích & Cấu hình":
         with col_data:
             data_file = st.file_uploader("2. Tải file Kết quả (.csv)", type=["xlsx", "csv"])
 
+        # CẢNH BÁO NẾU NGƯỜI DÙNG CHƯA TẢI ĐỦ 2 FILE
+        if template_file is not None and data_file is None:
+            st.warning("👉 Bạn cần tải thêm **File Kết Quả (.csv)** vào ô số 2 thì nút Lập Biên Bản mới hiện ra nhé!")
+        elif data_file is not None and template_file is None:
+            st.warning("👉 Bạn cần tải thêm **File Mẫu (.docx hoặc .xlsx)** vào ô số 1 thì nút Lập Biên Bản mới hiện ra nhé!")
+
         if template_file and data_file:
             try:
                 df_kq = pd.read_excel(data_file) if data_file.name.endswith('.xlsx') else pd.read_csv(data_file)
@@ -591,57 +604,63 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                 if "Tên mẫu" not in df_kq.columns or "Tên chỉ tiêu" not in df_kq.columns:
                     st.error("⚠️ File kết quả không đúng chuẩn. Vui lòng dùng đúng file tải về từ phần mềm này.")
                 else:
-                    if template_file.name.endswith('.docx'):
-                        # ----- XỬ LÝ TEMPLATE WORD -----
-                        danh_sach_mau = []
-                        grouped = df_kq.groupby("Tên mẫu")
+                    # ----- TẠO DANH SÁCH CHO MẪU KHÍ THẢI -----
+                    ket_qua_list = []
+                    for _, row in df_kq.iterrows():
+                        ten_mau_str = str(row.get("Tên mẫu", ""))
+                        v_khi = "24,0" if "KT" in ten_mau_str.upper() else ("4,0" if any(k in ten_mau_str.upper() for k in ["KXQ", "KLV"]) else "")
+                        h_phantram = str(row.get("R(%)", "")).replace('%', '').strip()
                         
-                        # Chuẩn bị dữ liệu dạng list phẳng cho mẫu Khí thải (Vòng lặp từng dòng)
-                        ket_qua_list = []
-                        for _, row in df_kq.iterrows():
-                            ten_mau_str = str(row.get("Tên mẫu", ""))
-                            v_khi = "24,0" if "KT" in ten_mau_str.upper() else ("4,0" if any(k in ten_mau_str.upper() for k in ["KXQ", "KLV"]) else "")
-                            h_phantram = str(row.get("R(%)", "")).replace('%', '').strip()
+                        c_surr_truoc = str(row.get("C_surr_truoc", "")).replace('.', ',')
+                        c_surr_sau = str(row.get("C_surr_sau", "")).replace('.', ',')
+                        
+                        if c_surr_sau == "" and h_phantram != "":
                             try: c_surr_sau = str(round((float(h_phantram) / 100) * 10.0, 2)).replace('.', ',')
-                            except: c_surr_sau = ""
-                                
-                            ket_qua_list.append({
-                                "ngay": datetime.now().strftime("%d/%m/%Y"),
-                                "ten_mau": ten_mau_str,
-                                "chi_tieu": str(row.get("Tên chỉ tiêu", "")),
-                                "c_surr": c_surr_sau,
-                                "h_phantram": str(h_phantram).replace('.', ','),
-                                "v_khi": v_khi,
-                                "c_do": str(row.get("C đo", "")).replace('.', ','),
-                                "kq_thuc": str(row.get("C thực", "")).replace('.', ',')
-                            })
-
-                        # Chuẩn bị dữ liệu nhóm cho mẫu Nước (Vòng lặp bảng)
-                        for ten_mau, group in grouped:
-                            first_row = group.iloc[0]
-                            mau_dict = {
-                                "ngay": datetime.now().strftime("%d/%m/%Y"),
-                                "ky_hieu": ten_mau,
-                                "c_surr": "10,0", 
-                                "de": str(first_row.get("R(%)", "")).replace('.', ','),
-                                "ghi_chu": ""
-                            }
+                            except: pass
                             
-                            for _, row in group.iterrows():
-                                chi_tieu = str(row.get("Tên chỉ tiêu", "")).upper()
-                                slug = re.sub(r'\W+', '', chi_tieu.lower())
-                                mau_dict[f"cdo_{slug}"] = str(row.get("C đo", "")).replace('.', ',')
-                                mau_dict[f"kq_{slug}"] = str(row.get("C thực", "")).replace('.', ',')
-                                
-                                if "BENZENE" in chi_tieu or "BENZEN" in chi_tieu:
-                                    mau_dict["cdo_benzen"] = mau_dict[f"cdo_{slug}"]
-                                    mau_dict["kq_benzen"] = mau_dict[f"kq_{slug}"]
-                                elif "TOLUENE" in chi_tieu or "TOLUEN" in chi_tieu:
-                                    mau_dict["cdo_toluen"] = mau_dict[f"cdo_{slug}"]
-                                    mau_dict["kq_toluen"] = mau_dict[f"kq_{slug}"]
-                                    
-                            danh_sach_mau.append(mau_dict)
+                        ket_qua_list.append({
+                            "ngay": datetime.now().strftime("%d/%m/%Y"),
+                            "ten_mau": ten_mau_str,
+                            "chi_tieu": str(row.get("Tên chỉ tiêu", "")),
+                            "c_surr_truoc": c_surr_truoc,
+                            "c_surr_sau": c_surr_sau,
+                            "h_phantram": str(h_phantram).replace('.', ','),
+                            "v_khi": v_khi,
+                            "c_do": str(row.get("C đo", "")).replace('.', ','),
+                            "kq_thuc": str(row.get("C thực", "")).replace('.', ',')
+                        })
 
+                    # ----- TẠO DANH SÁCH CHO MẪU NƯỚC -----
+                    danh_sach_mau = []
+                    grouped = df_kq.groupby("Tên mẫu")
+                    for ten_mau, group in grouped:
+                        first_row = group.iloc[0]
+                        mau_dict = {
+                            "ngay": datetime.now().strftime("%d/%m/%Y"),
+                            "ky_hieu": ten_mau,
+                            "c_surr_truoc": str(first_row.get("C_surr_truoc", "")).replace('.', ','), 
+                            "c_surr_sau": str(first_row.get("C_surr_sau", "")).replace('.', ','), 
+                            "de": str(first_row.get("R(%)", "")).replace('.', ','),
+                            "ghi_chu": ""
+                        }
+                        
+                        for _, row in group.iterrows():
+                            chi_tieu = str(row.get("Tên chỉ tiêu", "")).upper()
+                            slug = re.sub(r'\W+', '', chi_tieu.lower())
+                            mau_dict[f"cdo_{slug}"] = str(row.get("C đo", "")).replace('.', ',')
+                            mau_dict[f"kq_{slug}"] = str(row.get("C thực", "")).replace('.', ',')
+                            
+                            if "BENZENE" in chi_tieu or "BENZEN" in chi_tieu:
+                                mau_dict["cdo_benzen"] = mau_dict[f"cdo_{slug}"]
+                                mau_dict["kq_benzen"] = mau_dict[f"kq_{slug}"]
+                            elif "TOLUENE" in chi_tieu or "TOLUEN" in chi_tieu:
+                                mau_dict["cdo_toluen"] = mau_dict[f"cdo_{slug}"]
+                                mau_dict["kq_toluen"] = mau_dict[f"kq_{slug}"]
+                                
+                        danh_sach_mau.append(mau_dict)
+
+                    # ----- XỬ LÝ TEMPLATE WORD -----
+                    if template_file.name.endswith('.docx'):
                         if st.button("🚀 Bắt đầu Lập Biên Bản Word", type="primary"):
                             try:
                                 from docxtpl import DocxTemplate
@@ -659,45 +678,100 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                             except ImportError:
                                 st.error("⚠️ Hệ thống chưa cài thư viện 'docxtpl'. Hãy thêm 'docxtpl' vào requirements.txt!")
                                 
+                    # ----- XỬ LÝ TEMPLATE EXCEL -----
                     elif template_file.name.endswith('.xlsx'):
-                        # ----- XỬ LÝ TEMPLATE EXCEL -----
-                        st.info("💡 Hướng dẫn: Gõ chữ **`{{bang_ket_qua}}`** vào ô Excel nơi bạn muốn chèn bảng kết quả.")
+                        st.info("💡 Hướng dẫn: Gõ các thẻ như `{{ row.ten_mau }}`, `{{ row.kq_thuc }}` vào đúng một hàng mẫu. Hệ thống sẽ tự động nhân bản định dạng.")
                         if st.button("🚀 Bắt đầu Lập Biên Bản Excel", type="primary"):
                             import openpyxl
+                            from copy import copy
                             import io
                             
                             wb = openpyxl.load_workbook(template_file)
                             ws = wb.active
                             
-                            # Tìm vị trí gắn thẻ {{bang_ket_qua}}
-                            start_r, start_c = None, None
+                            # Tìm vị trí dòng chứa thẻ template
+                            template_row_idx = None
+                            template_cells = []
                             for r in range(1, ws.max_row + 1):
                                 for c in range(1, ws.max_column + 1):
-                                    val = str(ws.cell(row=r, column=c).value)
-                                    if "{{bang_ket_qua}}" in val:
-                                        start_r, start_c = r, c
-                                        ws.cell(row=r, column=c).value = "" # Xóa thẻ
+                                    val = str(ws.cell(row=r, column=c).value or "")
+                                    if "{{" in val:
+                                        template_row_idx = r
+                                        template_cells = [ws.cell(row=r, column=col).value for col in range(1, ws.max_column + 1)]
                                         break
-                                if start_r: break
-                                
-                            if start_r and start_c:
-                                headers = df_kq.columns.tolist()
-                                # Ghi tiêu đề
-                                for c_idx, h in enumerate(headers):
-                                    ws.cell(row=start_r, column=start_c + c_idx).value = h
+                                if template_row_idx:
+                                    break
                                     
-                                # Ghi dữ liệu
-                                for r_idx, row_data in enumerate(df_kq.values):
-                                    for c_idx, cell_value in enumerate(row_data):
-                                        ws.cell(row=start_r + 1 + r_idx, column=start_c + c_idx).value = cell_value
+                            if template_row_idx:
+                                # Nhận diện template Mẫu Nước hay Mẫu Khí
+                                is_nuoc = any(isinstance(v, str) and ("kq_benzen" in v or "kq_toluen" in v or "mau.ky_hieu" in v) for v in template_cells)
+                                data_loop = danh_sach_mau if is_nuoc else ket_qua_list
+                                
+                                # Lưu lại định dạng (Style) của dòng mẫu
+                                original_styles = []
+                                for col in range(1, ws.max_column + 1):
+                                    cell_obj = ws.cell(row=template_row_idx, column=col)
+                                    original_styles.append({
+                                        "font": copy(cell_obj.font),
+                                        "border": copy(cell_obj.border),
+                                        "fill": copy(cell_obj.fill),
+                                        "number_format": copy(cell_obj.number_format),
+                                        "alignment": copy(cell_obj.alignment)
+                                    })
+                                
+                                current_row = template_row_idx
+                                for item in data_loop:
+                                    for col_idx, cell_val in enumerate(template_cells, start=1):
+                                        new_val = cell_val
+                                        if cell_val and isinstance(cell_val, str):
+                                            # Dọn dẹp thẻ Word lỡ copy nhầm
+                                            new_val = re.sub(r'\{%p.*?%\}', '', new_val).strip()
+                                            new_val = re.sub(r'\{%.*?%\}', '', new_val).strip()
+                                            
+                                            # Thay thế số liệu
+                                            matches = re.findall(r'\{\{\s*(?:row\.|mau\.)?(\w+)\s*\}\}', new_val)
+                                            for m in matches:
+                                                replacement = str(item.get(m, ""))
+                                                new_val = re.sub(r'\{\{\s*(?:row\.|mau\.)?' + m + r'\s*\}\}', replacement, new_val)
+                                                
+                                            # Ép kiểu thành số cho Excel
+                                            if isinstance(new_val, str) and re.match(r'^-?\d+(?:,\d+)?$', new_val.strip()):
+                                                try:
+                                                    new_val = float(new_val.strip().replace(',', '.'))
+                                                except: pass
+                                            
+                                            if new_val == "": new_val = None
+                                                
+                                        # Ghi giá trị
+                                        new_cell = ws.cell(row=current_row, column=col_idx)
+                                        new_cell.value = new_val
                                         
-                            bio = io.BytesIO()
-                            wb.save(bio)
-                            bio.seek(0)
-                            
-                            st.success("🎉 Biên bản Excel đã được tạo thành công!")
-                            st.download_button("📥 Tải xuống Biên Bản (.xlsx)", data=bio, file_name=f"Bien_Ban_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                            
+                                        # Copy định dạng (Style)
+                                        if current_row > template_row_idx:
+                                            style = original_styles[col_idx - 1]
+                                            new_cell.font = copy(style["font"])
+                                            new_cell.border = copy(style["border"])
+                                            new_cell.fill = copy(style["fill"])
+                                            new_cell.number_format = copy(style["number_format"])
+                                            new_cell.alignment = copy(style["alignment"])
+                                            
+                                    current_row += 1
+                                    
+                                # Dọn dẹp các thẻ rác ở các dòng bên dưới
+                                for r in range(current_row, current_row + 5):
+                                    for c in range(1, ws.max_column + 1):
+                                        val = str(ws.cell(row=r, column=c).value or "")
+                                        if "{%" in val or "{{" in val:
+                                            ws.cell(row=r, column=c).value = None
+                                            
+                                bio = io.BytesIO()
+                                wb.save(bio)
+                                bio.seek(0)
+                                
+                                st.success("🎉 Biên bản Excel đã được tạo thành công!")
+                                st.download_button("📥 Tải xuống Biên Bản (.xlsx)", data=bio, file_name=f"Bien_Ban_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                            else:
+                                st.error("⚠️ Không tìm thấy thẻ {{...}} nào trong file Excel Template. Hãy chắc chắn bạn đã gắn thẻ vào một dòng mẫu.")
             except Exception as e:
                 st.error(f"❌ Có lỗi xảy ra trong quá trình xử lý Biên Bản: {e}")
 
