@@ -344,10 +344,7 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                 if not st.session_state.df_limit.empty and "Tên Chất" in st.session_state.df_limit.columns:
                     dynamic_compounds = st.session_state.df_limit["Tên Chất"].dropna().astype(str).str.strip().tolist()
                 
-                # Bổ sung các chuẩn đồng hành (Surrogates) bắt buộc phải có để tính R%
                 surrogate_compounds = ['Toluene-D8', 'Toluen-D8', 'BFB', '4-Bromofluorobenzene', 'Chlorobenzene-d5']
-                
-                # Tạo tập hợp các tên chất in hoa để so sánh nhanh và không phân biệt chữ hoa/thường
                 known_compounds_upper = set(c.upper() for c in dynamic_compounds + surrogate_compounds)
 
                 # --- TIỀN XỬ LÝ DỮ LIỆU TỪ FILE ---
@@ -361,12 +358,10 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                         if not parts: continue
                         
                         clean_line = line.strip()
-                        # Thuật toán so khớp với từ điển động vừa học
                         if clean_line.upper() in known_compounds_upper: 
                             current_compound = clean_line
                             continue
                         
-                        # Logic bóc tách dữ liệu mẫu (Sample/Cal)
                         data_file_raw = parts[0].replace('.d', '')
                         if len(parts) >= 5 and (parts[0].endswith('.d') or data_file_raw in ['10PPM', '10a', '2', '4', '6', '8']) and ('Sample' in parts or 'Cal' in parts):
                             data_file = data_file_raw
@@ -436,9 +431,13 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                     st.success(f"✔️ Đã xuất {len(calc_results)} dòng kết quả. Tự động áp dụng SOP Khí/Nước.")
                     
                     df_results = pd.DataFrame(calc_results)
+                    
+                    # SẮP XẾP LẠI BẢNG: Gom nhóm theo Tên Mẫu, sau đó đến Tên Chỉ Tiêu
+                    df_results = df_results.sort_values(by=["Tên mẫu", "Tên chỉ tiêu"]).reset_index(drop=True)
+                    
                     st.dataframe(df_results, use_container_width=True, hide_index=True)
                     
-                    # Thêm nút tải file CSV để dùng cho Lập Biên Bản
+                    # Nút tải file CSV
                     csv_results = df_results.to_csv(index=False).encode('utf-8-sig')
                     st.download_button(
                         label="📥 Tải Kết quả (CSV) để Lập Biên Bản",
