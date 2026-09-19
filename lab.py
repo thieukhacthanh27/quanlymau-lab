@@ -332,30 +332,46 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
             
     with col_import:
         st.subheader("2. Xử lý dữ liệu GC-MS theo SOP")
-        st.info("💡 Hệ thống phân loại mẫu Khí/Nước, tự dò C_ban_đầu, bù trừ R% và đối chiếu MDL/LOQ phù hợp.")
+        st.info("💡 Hệ thống AI tự quét thư viện LOQ/MDL để nhận diện danh sách các chất cần bóc tách từ file báo cáo.")
         
         gc_file = st.file_uploader("Kéo thả báo cáo GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
 
         if gc_file is not None:
             calc_results = []
             try:
+                # --- AI HỌC TỪ VỰNG TỪ THƯ VIỆN ĐỂ ĐỌC FILE PDF ---
+                dynamic_compounds = []
+                if not st.session_state.df_limit.empty and "Tên Chất" in st.session_state.df_limit.columns:
+                    dynamic_compounds = st.session_state.df_limit["Tên Chất"].dropna().astype(str).str.strip().tolist()
+                
+                # Bổ sung các chuẩn đồng hành (Surrogates) bắt buộc phải có để tính R%
+                surrogate_compounds = ['Toluene-D8', 'Toluen-D8', 'BFB', '4-Bromofluorobenzene', 'Chlorobenzene-d5']
+                
+                # Tạo tập hợp các tên chất in hoa để so sánh nhanh và không phân biệt chữ hoa/thường
+                known_compounds_upper = set(c.upper() for c in dynamic_compounds + surrogate_compounds)
+
                 # --- TIỀN XỬ LÝ DỮ LIỆU TỪ FILE ---
                 if gc_file.name.endswith('.pdf'):
                     import PyPDF2
                     text = "".join([page.extract_text() + "\n" for page in PyPDF2.PdfReader(gc_file).pages])
                     pdf_data, current_compound = [], None
-                    known_compounds = ['Benzene', 'Toluene-D8', 'BFB', '4-Bromofluorobenzene', 'Toluene', 'Ethylbenzene', 'm-Xylene', 'p-Xylene', 'o-Xylene', 'Styrene']
 
                     for line in text.split('\n'):
                         parts = line.split()
                         if not parts: continue
-                        if line.strip() in known_compounds: 
-                            current_compound = line.strip()
+                        
+                        clean_line = line.strip()
+                        # Thuật toán so khớp với từ điển động vừa học
+                        if clean_line.upper() in known_compounds_upper: 
+                            current_compound = clean_line
                             continue
                         
-                        if len(parts) >= 5 and (parts[0].endswith('.d') or parts[0].replace('.d','') in ['10PPM', '2', '4', '6', '8']) and ('Sample' in parts or 'Cal' in parts):
-                            data_file = parts[0].replace('.d', '')
-                            floats = [float(p) for p in parts if p.replace('.', '', 1).isdigit() and p.count('.') <= 1]
+                        # Logic bóc tách dữ liệu mẫu (Sample/Cal)
+                        data_file_raw = parts[0].replace('.d', '')
+                        if len(parts) >= 5 and (parts[0].endswith('.d') or data_file_raw in ['10PPM', '10a', '2', '4', '6', '8']) and ('Sample' in parts or 'Cal' in parts):
+                            data_file = data_file_raw
+                            floats = [float(p.replace(',', '.')) for p in parts if p.replace('.', '', 1).replace(',', '', 1).isdigit() and (p.count('.') + p.count(',') <= 1)]
+                            
                             if len(floats) >= 3 and current_compound:
                                 final_conc = floats[-3] if 'Cal' in parts and len(floats) >= 5 else (floats[-2] if 'Cal' in parts and len(floats) >= 4 else floats[-1])
                                 pdf_data.append({"Data File": data_file, "Compound Name": current_compound, "Final Conc.": final_conc})
@@ -393,7 +409,7 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                         upper_name = sample_name.upper()
                         
                         if not any(k in upper_name for k in ['KT', 'KXQ', 'KLV', 'NS', 'NT', 'NM', 'NN', 'BL', 'BLANK', 'TC', 'QC']): continue
-                        if upper_name in ['1', '2', '4', '5', '6', '8', '10'] or 'PPM' in upper_name: continue
+                        if upper_name in ['1', '2', '4', '5', '6', '8', '10', '10A'] or 'PPM' in upper_name: continue
                         if comp_name.upper() in ['TOLUENE-D8', 'TOLUEN-D8', 'BFB', '4-BROMOFLUOROBENZENE']: continue
                             
                         raw_conc = pd.to_numeric(row['Final Conc.'], errors='coerce')
@@ -588,7 +604,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
 
         if template_file and data_file:
             try:
-                # Đọc dữ liệu Excel/CSV
                 df_kq = pd.read_excel(data_file) if data_file.name.endswith('.xlsx') else pd.read_csv(data_file)
                 
                 if "Tên mẫu" in df_kq.columns:
@@ -605,18 +620,15 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                             "ghi_chu": ""
                         }
                         
-                        # Quét qua từng chỉ tiêu trong mẫu để gán giá trị
                         for _, row in group.iterrows():
                             chi_tieu = str(row.get("Tên chỉ tiêu", "")).upper()
                             c_do = row.get("C đo", "")
                             kq = row.get("C thực", "")
                             
-                            # Rút gọn tên chất thành mã (VD: 1,1,1-Trichloroethane -> 111trichloroethane)
                             slug = re.sub(r'\W+', '', chi_tieu.lower())
                             mau_dict[f"cdo_{slug}"] = c_do
                             mau_dict[f"kq_{slug}"] = kq
                             
-                            # Gắn thêm một số thẻ Hardcode thủ công theo chuẩn VOCs quen thuộc để bạn dễ dùng
                             if "BENZENE" in chi_tieu or "BENZEN" in chi_tieu:
                                 mau_dict["cdo_benzen"] = c_do
                                 mau_dict["kq_benzen"] = kq
@@ -641,7 +653,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                             doc = DocxTemplate(template_file)
                             doc.render(context)
                             
-                            # Lưu file Word vào bộ nhớ đệm để tải xuống
                             bio = io.BytesIO()
                             doc.save(bio)
                             bio.seek(0)
