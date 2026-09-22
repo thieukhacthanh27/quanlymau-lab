@@ -13,6 +13,87 @@ from streamlit_gsheets import GSheetsConnection
 # ==========================================
 st.set_page_config(page_title="GC HATICO - Lab GC", page_icon="🔬", layout="wide")
 
+# -- GÓI GIAO DIỆN TÙY CHỈNH (CUSTOM CSS) --
+st.markdown("""
+<style>
+    /* Chỉnh nền chung của app */
+    .stApp {
+        background-color: #F8FAFC;
+    }
+    
+    /* Thiết kế lại các thẻ Thống kê (Metric Cards) */
+    div[data-testid="stMetric"] {
+        background-color: #ffffff;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 15px 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        transition: transform 0.2s ease;
+    }
+    div[data-testid="stMetric"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Chỉnh màu tiêu đề các Header */
+    h1, h2, h3 {
+        color: #0F172A;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    h1 { font-weight: 800; font-size: 2.2rem; }
+    h2 { font-weight: 700; color: #1E293B; }
+    
+    /* Thiết kế Nút bấm (Buttons) */
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    button[kind="primary"] {
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+        border: none !important;
+        color: white !important;
+        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+    }
+    button[kind="primary"]:hover {
+        background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%) !important;
+        box-shadow: 0 6px 8px rgba(37, 99, 235, 0.3);
+    }
+    
+    /* Thiết kế Tab (Thẻ điều hướng) */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        padding-bottom: 5px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 8px 8px 0px 0px;
+        padding: 10px 24px;
+        background-color: #E2E8F0;
+        border: none;
+        color: #475569;
+        font-weight: 600;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #DBEAFE !important;
+        color: #1E40AF !important;
+        border-bottom: 3px solid #2563EB !important;
+    }
+    
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #F1F5F9;
+        border-right: 1px solid #E2E8F0;
+    }
+    
+    /* Bảng dữ liệu Dataframe */
+    [data-testid="stDataFrame"] {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+</style>
+""", unsafe_allow_html=True)
+
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1F2wFnxboWTFWDMGUuBDRGB901a5EKgvazHxkCgBjjRU/edit?usp=sharing"
 
 STATUSES = [
@@ -25,8 +106,9 @@ STATUSES = [
 # ==========================================
 conn = st.connection("gsheets", type=GSheetsConnection)
 
+@st.cache_data(ttl=0)
 def load_data():
-    df = conn.read(spreadsheet=SHEET_URL, ttl=0)
+    df = conn.read(spreadsheet=SHEET_URL)
     if df.empty or len(df.columns) == 0 or "Mã Mẫu" not in df.columns:
         df = pd.DataFrame(columns=["Mã Mẫu", "Tên Mẻ", "Nền Mẫu", "Chỉ Tiêu", "Trạng Thái", "Người Giữ", "Ghi Chú", "Giờ Nhận"])
         conn.update(spreadsheet=SHEET_URL, data=df)
@@ -39,9 +121,10 @@ def save_data(df):
     conn.update(spreadsheet=SHEET_URL, data=df_save)
     st.cache_data.clear()
 
+@st.cache_data(ttl=0)
 def load_limit_config():
     try:
-        df_limit = conn.read(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", ttl=0) 
+        df_limit = conn.read(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ") 
         return df_limit
     except:
         return pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
@@ -137,7 +220,6 @@ def lab_norm(value):
 def lab_local_answer(question, df):
     q = lab_norm(question)
     
-    # 1. Các câu hỏi lý thuyết cứng
     if any(x in q for x in ['c ban dau', 'thu hoi', 'r%', 'csurr', 'duong chuan']):
         return "💡 **R(%) = (C_surr_sau / C_surr_trước) × 100**.\nHệ thống tự động chọn C ban đầu từ danh sách mức cố định sao cho R(%) rơi vào 70–130%."
     if any(x in q for x in ['cong thuc', 'cach tinh']):
@@ -145,40 +227,27 @@ def lab_local_answer(question, df):
     if any(x in q for x in ['bien ban', 'huong dan', 'cach nhap', 'loi', 'mdl', 'loq']):
         return "💡 **Hướng dẫn:**\n- Tiếp nhận mẫu ở Tab 2.\n- Tính kết quả ở Tab 3 (GC-MS).\n- Thư viện ở Tab cuối (CauHinh_MDL_LOQ).\n- Tính xong sang Tab Cuối ném file Word/Excel vào để Lập Biên Bản tự động."
 
-    # 2. Xây dựng truy vấn động trên DataFrame (Dynamic Query Engine)
     filters = []
-    
-    # Quét tìm Mã Mẫu (VD: NS-01, KT-123)
     code = re.search(r'\b(?:ns|nt|nm|nn|kt|kxq|kkxq|klv)[.\-]?\d[\w.\-]*', q)
     if code: filters.append(('Mã Mẫu', code.group()))
-    
-    # Quét tìm Mã Mẻ (VD: 2026.08.012)
     batch = re.search(r'\b\d{4}\.\d{2}\.\d{3}\b', q)
     if batch: filters.append(('Tên Mẻ', batch.group()))
-        
-    # Quét tìm Trạng Thái
     status_words = [('cho chay', '3'), ('dang chay', '4'), ('cho xu ly', '1'), ('dang xu ly', '2'), ('tinh so lieu', '5'), ('luu kho', '6'), ('tieu huy', '7')]
     for phrase, status in status_words:
         if phrase in q: filters.append(('Trạng Thái', status))
-            
-    # Quét Nền Mẫu
     if 'mau nuoc' in q: filters.append(('Nền Mẫu', 'Nước'))
     elif 'mau khi' in q: filters.append(('Nền Mẫu', 'Khí'))
 
-    # Thực thi Lọc
     res_df = df.copy()
     for field, val in filters:
         if field == 'Trạng Thái':
             res_df = res_df[res_df[field].str.contains(val, na=False)]
         else:
-            # Lọc linh hoạt bỏ qua chữ hoa chữ thường
             res_df = res_df[res_df[field].astype(str).str.lower().str.contains(val.lower(), na=False)]
 
-    # 3. Trả lời theo ngữ cảnh Dữ liệu đã lọc
     if not filters and not any(x in q for x in ['tong', 'bao nhieu', 'thong ke', 'danh sach', 'nhom theo', 'cua ai', 'ai dang giu']):
         return "🤔 Mình chưa hiểu ý bạn. Bạn có thể hỏi cụ thể:\n- *Tra mẫu NS-150826-004*\n- *Có bao nhiêu mẫu chờ chạy?*\n- *Ai đang giữ nhiều mẫu nhất?*"
 
-    # Phân nhóm theo Yêu cầu (Group By)
     if any(phrase in q for phrase in ['theo nguoi', 'ai dang giu', 'cua ai']):
         users = res_df['Người Giữ'].replace("", "Chưa phân công").dropna().value_counts()
         ans = f"👥 **Phân bổ mẫu ({len(res_df)} mẫu):**\n"
@@ -190,7 +259,6 @@ def lab_local_answer(question, df):
         for st_name, count in stats.items(): ans += f"- {st_name}: {count} mẫu\n"
         return ans
 
-    # Trả về kết quả cụ thể (Hiển thị max 10 dòng)
     if len(res_df) == 0:
         return "❌ Không tìm thấy mẫu nào khớp với dữ liệu bạn tìm kiếm."
     elif len(res_df) == 1:
@@ -207,7 +275,7 @@ def lab_local_answer(question, df):
 # 4. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
 st.sidebar.title("🔬 LIMS HATICO")
-st.sidebar.caption("Phần mềm Quản lý Phòng Lab")
+st.sidebar.caption("Phần mềm Quản lý Phòng Lab Hiện đại")
 st.sidebar.divider()
 
 menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
@@ -270,19 +338,18 @@ today_date = datetime.today().date()
 # ==========================================
 
 if menu == "🏠 Trang chủ (Tổng quan)":
-    st.title("📊 Bảng Điều Khiển Trung Tâm")
+    st.markdown("<h1 class='main-title'>📊 Bảng Điều Khiển Trung Tâm</h1>", unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     tong_hom_nay = len(df_current[df_current["Ngày Nhận"] == today_date])
     cho_chay_may = len(df_current[df_current["Trạng Thái"] == "🟡 3. Chờ chạy máy"])
     ton_dong = len(df_current[(df_current["Ngày Nhận"] < today_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))])
-    
     da_luu = len(df_current[df_current["Trạng Thái"] == "🟢 6. Lưu kho"])
     da_huy = len(df_current[df_current["Trạng Thái"] == "⚫ 7. Đã tiêu hủy"])
     tong_hoan_thanh = da_luu + da_huy
     
     col1.metric("📥 Tổng nhận hôm nay", tong_hom_nay)
-    col2.metric("⏳ Đang chờ chạy", cho_chay_may)
+    col2.metric("⏳ Đang chờ chạy GC", cho_chay_may)
     col3.metric("⚠️ Tồn đọng chưa xử lý", ton_dong, delta="-Cần xử lý", delta_color="inverse")
     col4.metric("✅ Đã hoàn thành", tong_hoan_thanh, f"Lưu kho: {da_luu} | Hủy: {da_huy}", delta_color="off")
     
@@ -310,7 +377,7 @@ if menu == "🏠 Trang chủ (Tổng quan)":
     if filter_status:
         df_display = df_display[df_display["Trạng Thái"].isin(filter_status)]
 
-    st.caption("Mẹo: Chọn dòng và bấm Delete trên bàn phím để xóa. Sau khi chỉnh sửa, hãy bấm nút Lưu bên dưới.")
+    st.caption("✨ Mẹo: Chọn dòng và bấm Delete trên bàn phím để xóa. Bấm đúp để sửa dữ liệu.")
     edited_df = st.data_editor(
         df_display,
         column_config={
@@ -321,7 +388,7 @@ if menu == "🏠 Trang chủ (Tổng quan)":
             "Ngày Nhận": None 
         },
         disabled=["Mã Mẫu", "Tên Mẻ", "Chỉ Tiêu", "Phân Loại", "Giờ Nhận"], 
-        use_container_width=True, num_rows="dynamic", key="data_editor", height=400
+        use_container_width=True, num_rows="dynamic", key="data_editor", height=450
     )
 
     if st.button("💾 Lưu các thay đổi vào Hệ thống", type="primary"):
@@ -339,16 +406,16 @@ if menu == "🏠 Trang chủ (Tổng quan)":
             st.session_state.df = st.session_state.df.drop(index=deleted_indices).reset_index(drop=True)
             
         save_data(st.session_state.df)
-        st.success("Đã đồng bộ lên cơ sở dữ liệu chung!")
+        st.success("✅ Đã đồng bộ thành công lên cơ sở dữ liệu chung!")
         st.rerun()
 
 elif menu == "📥 Quản lý Tiếp nhận":
-    st.title("📥 Khu vực Tiếp nhận mẫu mới")
+    st.markdown("<h1 class='main-title'>📥 Khu vực Tiếp nhận mẫu mới</h1>", unsafe_allow_html=True)
     
     tab_excel, tab_thu_cong = st.tabs(["📁 Tải file Excel tự động", "✍️ Nhập thủ công (Mẫu lẻ)"])
     
     with tab_excel:
-        st.info("💡 Hệ thống nhận diện ô bị bôi xám (#808080) là chỉ tiêu không cần phân tích và tự động loại bỏ.")
+        st.info("💡 **Hệ thống AI:** Tự động nhận diện ô bị bôi xám (#808080) là chỉ tiêu không cần phân tích và loại bỏ.")
         uploaded_file = st.file_uploader("Kéo thả file KetQuaMeThuNghiem...xlsx vào đây", type=["xlsx", "xls"])
         
         if uploaded_file is not None:
@@ -390,9 +457,7 @@ elif menu == "📥 Quản lý Tiếp nhận":
                             color = fill.fgColor
                             
                             is_gray = fill.patternType == 'solid' and color.type == 'rgb' and str(color.rgb)[-6:].upper() == '808080'
-                            
-                            if not is_gray:
-                                selected_params.append(param_name)
+                            if not is_gray: selected_params.append(param_name)
                                 
                         chuoi_chi_tieu = "; ".join(selected_params) if selected_params else "Chưa xác định"
                         samples_data.append({"Chọn": True, "Mã Mẫu": khm_val, "Nền Mẫu": nen_mau_auto, "Chỉ Tiêu": chuoi_chi_tieu})
@@ -416,7 +481,7 @@ elif menu == "📥 Quản lý Tiếp nhận":
                             new_rows = [{"Mã Mẫu": row["Mã Mẫu"], "Tên Mẻ": batch, "Nền Mẫu": row["Nền Mẫu"], "Chỉ Tiêu": row["Chỉ Tiêu"], "Trạng Thái": STATUSES[0], "Người Giữ": batch_nguoi, "Ghi Chú": "Import Excel", "Giờ Nhận": datetime.now()} for _, row in selected_samples.iterrows()]
                             st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame(new_rows)], ignore_index=True)
                             save_data(st.session_state.df)
-                            st.success("Đã nạp thành công!")
+                            st.success("✅ Đã nạp thành công vào hệ thống!")
                             st.rerun()
                     else: st.warning("Không tìm thấy dữ liệu mẫu hợp lệ bên dưới ô KHM.")
                 else: st.error("Không tìm thấy ô 'KHM' trong file Excel!")
@@ -424,7 +489,9 @@ elif menu == "📥 Quản lý Tiếp nhận":
 
     with tab_thu_cong:
         with st.form("add_sample_form", clear_on_submit=True):
-            new_id, new_name = st.text_input("Mã Mẫu (VD: NS-1509-01)*"), st.text_input("Tên Mẻ (VD: 2026.07.017)")
+            st.subheader("Bổ sung Mẫu Lẻ")
+            new_id = st.text_input("Mã Mẫu (VD: NS-1509-01)*")
+            new_name = st.text_input("Tên Mẻ (VD: 2026.07.017)")
             col_t1, col_t2 = st.columns(2)
             with col_t1: new_nen = st.selectbox("Nền Mẫu", ["Nước", "Khí"])
             with col_t2: new_chi_tieu = st.text_input("Chỉ tiêu đo")
@@ -433,10 +500,10 @@ elif menu == "📥 Quản lý Tiếp nhận":
             if st.form_submit_button("Thêm Mẫu lẻ") and new_id:
                 st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([{"Mã Mẫu": new_id, "Tên Mẻ": new_name, "Nền Mẫu": new_nen, "Chỉ Tiêu": new_chi_tieu, "Trạng Thái": STATUSES[0], "Người Giữ": new_nguoi, "Ghi Chú": "", "Giờ Nhận": datetime.now()}])], ignore_index=True)
                 save_data(st.session_state.df)
-                st.success(f"Đã thêm {new_id}!")
+                st.success(f"✅ Đã thêm mẫu {new_id} thành công!")
 
 elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
-    st.title("⚙️ Điều phối & Vận hành Máy đo (Agilent)")
+    st.markdown("<h1 class='main-title'>⚙️ Điều phối & Vận hành Máy đo (Agilent)</h1>", unsafe_allow_html=True)
     
     col_seq, col_import = st.columns(2)
     with col_seq:
@@ -452,7 +519,7 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
             
     with col_import:
         st.subheader("2. Xử lý dữ liệu GC-MS theo SOP")
-        st.info("💡 Hệ thống tự động tính C_surr_truoc và C_surr_sau để xuất Biên Bản.")
+        st.info("💡 Tự động tính C_surr_truoc và C_surr_sau để xuất Biên Bản.")
         
         gc_file = st.file_uploader("Kéo thả báo cáo GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
 
@@ -574,7 +641,7 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
             except Exception as e: st.error(f"❌ Lỗi xử lý: {e}")
 
 elif menu == "🔥 Vận hành GC-FID (Agilent)":
-    st.title("🔥 Hệ thống GC-FID (Agilent)")
+    st.markdown("<h1 class='main-title'>🔥 Hệ thống GC-FID (Agilent)</h1>", unsafe_allow_html=True)
     st.caption("Module chuyên biệt xử lý dữ liệu từ đầu dò FID")
     
     col_seq, col_import = st.columns(2)
@@ -590,7 +657,7 @@ elif menu == "🔥 Vận hành GC-FID (Agilent)":
             st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report FID.")
 
 elif menu == "🧬 Vận hành Thermo (OCP/OPP/PCB)":
-    st.title("🧬 Hệ thống Thermo GC-MS")
+    st.markdown("<h1 class='main-title'>🧬 Hệ thống Thermo GC-MS</h1>", unsafe_allow_html=True)
     st.caption("Module chuyên biệt xử lý dữ liệu OCP, OPP, PCB và Phenol")
     
     col_seq, col_import = st.columns(2)
@@ -606,7 +673,7 @@ elif menu == "🧬 Vận hành Thermo (OCP/OPP/PCB)":
             st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report Thermo.")
 
 elif menu == "🚀 Tiện ích & Cấu hình":
-    st.title("🛠️ Tiện ích & Cấu hình Hệ thống")
+    st.markdown("<h1 class='main-title'>🛠️ Tiện ích & Cấu hình Hệ thống</h1>", unsafe_allow_html=True)
     
     tab_limit, tab_report, tab_qr = st.tabs(["📚 Quản lý Thư viện MDL & LOQ", "📝 Lập Biên Bản", "🏷️ Sinh Mã QR"])
     
@@ -631,7 +698,7 @@ elif menu == "🚀 Tiện ích & Cấu hình":
             height=350
         )
         
-        if st.button("💾 Lưu thay đổi Thư viện (Ghi đè Tab CauHinh_MDL_LOQ)", type="primary"):
+        if st.button("💾 Lưu thay đổi Thư viện", type="primary"):
             try:
                 st.cache_data.clear() 
                 edited_limit = edited_limit[edited_limit["Tên Chất"].str.strip() != ""] 
@@ -698,7 +765,7 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                     st.success(f"✔️ Đã quét được {len(df_limit_new)} chỉ tiêu từ file.")
                     st.dataframe(df_limit_new, use_container_width=True)
                     
-                    if st.button("🚀 Ghi thêm vào Google Sheets (Bổ sung/Cập nhật)", type="primary"):
+                    if st.button("🚀 Ghi thêm vào Google Sheets (Bổ sung)", type="primary"):
                         try:
                             st.cache_data.clear() 
                             combined_df = pd.concat([st.session_state.df_limit, df_limit_new], ignore_index=True)
@@ -723,7 +790,7 @@ elif menu == "🚀 Tiện ích & Cấu hình":
         with col_tpl:
             template_file = st.file_uploader("1. Tải file Mẫu Thiết Kế (.docx, .xlsx)", type=["docx", "xlsx"])
         with col_data:
-            data_file = st.file_uploader("2. Tải file Kết quả (.csv) [Chỉ nạp nếu bạn tính lại file cũ. Mặc định máy tự lấy kết quả vừa chạy ở tab GC-MS]", type=["xlsx", "csv"])
+            data_file = st.file_uploader("2. Tải file Kết quả (.csv) [Tùy chọn]", type=["xlsx", "csv"])
 
         if template_file:
             try:
