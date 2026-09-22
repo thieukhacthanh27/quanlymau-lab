@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import re
 import difflib
+import io
 from streamlit_gsheets import GSheetsConnection
 
 # ==========================================
@@ -49,8 +50,11 @@ if "df_limit" not in st.session_state:
     st.session_state.df_limit = load_limit_config()
 
 # ==========================================
-# 3. HÀM BỔ SUNG: XỬ LÝ SỐ LIỆU THEO SOP
+# 3. CÁC HÀM BỔ SUNG & XỬ LÝ SỐ LIỆU
 # ==========================================
+def clean_str(value):
+    return "" if pd.isna(value) else str(value).strip()
+
 def parse_sample_matrix(sample_name):
     name_upper = str(sample_name).upper()
     if 'KT' in name_upper: return 24.0, 'KT', 'Khí'
@@ -141,6 +145,8 @@ st.sidebar.divider()
 st.sidebar.markdown("**Hỗ trợ nhanh:**")
 if st.sidebar.button("🔄 Cập nhật dữ liệu tức thì"):
     st.cache_data.clear()
+    if 'results' in st.session_state:
+        st.session_state.results_stale = True
     st.session_state.df = load_data()
     st.session_state.df_limit = load_limit_config() 
     st.rerun()
@@ -232,51 +238,59 @@ elif menu == "📥 Quản lý Tiếp nhận":
     tab_excel, tab_thu_cong = st.tabs(["📁 Tải file Excel tự động", "✍️ Nhập thủ công (Mẫu lẻ)"])
     
     with tab_excel:
-        st.info("💡 Kéo thả file Excel để hệ thống tự động trích xuất Tên Mẻ, Mã Mẫu, Nhận diện Nền Mẫu và Chỉ Tiêu.")
+        st.info("💡 Hệ thống nhận diện ô bị bôi xám (#808080) là chỉ tiêu không cần phân tích và tự động loại bỏ.")
         uploaded_file = st.file_uploader("Kéo thả file KetQuaMeThuNghiem...xlsx vào đây", type=["xlsx", "xls"])
         
         if uploaded_file is not None:
             try:
-                df_upload = pd.read_excel(uploaded_file, sheet_name=0)
-                ten_me_extract = "Không xác định"
-                for r in range(min(5, len(df_upload))):
-                    for c in range(len(df_upload.columns)):
-                        val = str(df_upload.iloc[r, c]).strip()
-                        if val.startswith("Số:"):
-                            ten_me_extract = val.replace("Số:", "").strip()
-                            break
-                    if ten_me_extract != "Không xác định": break
+                import openpyxl
+                wb = openpyxl.load_workbook(io.BytesIO(uploaded_file.getvalue()), data_only=True)
+                ws = wb['Kết quả'] if 'Kết quả' in wb.sheetnames else wb.worksheets[0]
                 
-                khm_col_idx, header_row_idx = None, None
-                for r in range(min(20, len(df_upload))):
-                    for c in range(len(df_upload.columns)):
-                        if str(df_upload.iloc[r, c]).strip() == 'KHM':
-                            khm_col_idx, header_row_idx = c, r
-                            break
-                    if khm_col_idx is not None: break
-                        
-                if khm_col_idx is not None:
+                batch, header_row, khm_col = "Không xác định", None, None
+                
+                for row in ws.iter_rows(min_row=1, max_row=min(30, ws.max_row)):
+                    for cell in row:
+                        val = clean_str(cell.value)
+                        if val.startswith('Số:'):
+                            batch = val.replace("Số:", "").strip()
+                        if val.upper() == 'KHM':
+                            header_row, khm_col = cell.row, cell.column
+                            
+                if header_row is not None:
                     params_info = []
-                    for c in range(khm_col_idx + 1, len(df_upload.columns)):
-                        header_val = str(df_upload.iloc[header_row_idx, c]).strip()
-                        if header_val.lower() == 'ghi chú' or header_val == 'nan' or header_val == '': break
-                        params_info.append((c, header_val))
+                    for col in range(khm_col + 1, ws.max_column + 1):
+                        header_val = clean_str(ws.cell(header_row, col).value)
+                        if header_val.casefold() == 'ghi chú' or not header_val: break
+                        
+                        # Làm sạch tên chỉ tiêu
+                        header_val = re.sub(r'^\d+\.\s*', '', header_val)
+                        header_val = re.sub(r'\s*\(chọn cái này\)', '', header_val, flags=re.I).strip()
+                        params_info.append((col, header_val))
                     
                     samples_data = []
-                    for r in range(header_row_idx + 1, len(df_upload)):
-                        khm_val = str(df_upload.iloc[r, khm_col_idx]).strip()
-                        if len(khm_val) > 3 and khm_val.lower() != 'nan':
-                            khm_upper = khm_val.upper()
-                            if khm_upper.startswith(("KT", "KKXQ", "KLV")): nen_mau_auto = "Khí"
-                            elif khm_upper.startswith(("NS", "NT", "NM", "NN")): nen_mau_auto = "Nước"
-                            else: nen_mau_auto = "Chưa xác định"
+                    for r in range(header_row + 1, ws.max_row + 1):
+                        khm_val = clean_str(ws.cell(r, khm_col).value)
+                        if len(khm_val) < 3 or khm_val.lower() == 'nan': continue
+                        
+                        nen_mau_auto = "Khí" if khm_val.upper().startswith(("KT", "KKXQ", "KLV")) else ("Nước" if khm_val.upper().startswith(("NS", "NT", "NM", "NN")) else "Chưa xác định")
 
-                            sample_params = [param_name for c, param_name in params_info if pd.notna(df_upload.iloc[r, c]) and str(df_upload.iloc[r, c]).strip() != '']
-                            chuoi_chi_tieu = ", ".join(sample_params) if sample_params else "Chưa xác định"
-                            samples_data.append({"Chọn": True, "Mã Mẫu": khm_val, "Nền Mẫu": nen_mau_auto, "Chỉ Tiêu": chuoi_chi_tieu})
+                        selected_params = []
+                        for col_idx, param_name in params_info:
+                            fill = ws.cell(r, col_idx).fill
+                            color = fill.fgColor
+                            
+                            # Kiểm tra xem ô có bị bôi xám hay không (Mã Hex màu xám: 808080)
+                            is_gray = fill.patternType == 'solid' and color.type == 'rgb' and str(color.rgb)[-6:].upper() == '808080'
+                            
+                            if not is_gray:
+                                selected_params.append(param_name)
+                                
+                        chuoi_chi_tieu = "; ".join(selected_params) if selected_params else "Chưa xác định"
+                        samples_data.append({"Chọn": True, "Mã Mẫu": khm_val, "Nền Mẫu": nen_mau_auto, "Chỉ Tiêu": chuoi_chi_tieu})
                     
                     if len(samples_data) > 0:
-                        st.success(f"✔️ Quét thành công **{len(samples_data)}** mẫu thuộc mẻ: **{ten_me_extract}**")
+                        st.success(f"✔️ Quét thành công **{len(samples_data)}** mẫu thuộc mẻ: **{batch}**")
                         edited_preview = st.data_editor(
                             pd.DataFrame(samples_data),
                             column_config={
@@ -291,14 +305,14 @@ elif menu == "📥 Quản lý Tiếp nhận":
                         selected_samples = edited_preview[edited_preview["Chọn"] == True]
                         
                         if st.button(f"🚀 Lưu {len(selected_samples)} mẫu đã chọn vào Hệ thống", type="primary"):
-                            new_rows = [{"Mã Mẫu": row["Mã Mẫu"], "Tên Mẻ": ten_me_extract, "Nền Mẫu": row["Nền Mẫu"], "Chỉ Tiêu": row["Chỉ Tiêu"], "Trạng Thái": STATUSES[0], "Người Giữ": batch_nguoi, "Ghi Chú": "Import Excel", "Giờ Nhận": datetime.now()} for _, row in selected_samples.iterrows()]
+                            new_rows = [{"Mã Mẫu": row["Mã Mẫu"], "Tên Mẻ": batch, "Nền Mẫu": row["Nền Mẫu"], "Chỉ Tiêu": row["Chỉ Tiêu"], "Trạng Thái": STATUSES[0], "Người Giữ": batch_nguoi, "Ghi Chú": "Import Excel", "Giờ Nhận": datetime.now()} for _, row in selected_samples.iterrows()]
                             st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame(new_rows)], ignore_index=True)
                             save_data(st.session_state.df)
                             st.success("Đã nạp thành công!")
                             st.rerun()
-                    else: st.warning("Không có mã KHM nào hợp lệ bên dưới ô tiêu đề.")
-                else: st.error("Không tìm thấy ô 'KHM' trong file!")
-            except Exception as e: st.error(f"Lỗi: {e}")
+                    else: st.warning("Không tìm thấy dữ liệu mẫu hợp lệ bên dưới ô KHM.")
+                else: st.error("Không tìm thấy ô 'KHM' trong file Excel!")
+            except Exception as e: st.error(f"Lỗi đọc file: {e}")
 
     with tab_thu_cong:
         with st.form("add_sample_form", clear_on_submit=True):
@@ -433,12 +447,16 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                     df_results = pd.DataFrame(calc_results)
                     df_results = df_results.sort_values(by=["Tên mẫu", "Tên chỉ tiêu"]).reset_index(drop=True)
                     
+                    # Lưu lại kết quả vào session_state để tái sử dụng ở tab Lập biên bản mà không cần upload CSV
+                    st.session_state.results = df_results
+                    st.session_state.results_stale = False
+                    
                     display_cols = ["Tên mẫu", "Tên chỉ tiêu", "C đo", "C thực", "Giới hạn", "R(%)"]
                     st.dataframe(df_results[display_cols], use_container_width=True, hide_index=True)
                     
                     csv_results = df_results.to_csv(index=False).encode('utf-8-sig')
                     st.download_button(
-                        label="📥 Tải Kết quả (CSV) để Lập Biên Bản",
+                        label="📥 Tải Kết quả (CSV) để lưu trữ",
                         data=csv_results,
                         file_name=f"Ket_Qua_GC_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                         mime="text/csv",
@@ -487,6 +505,9 @@ elif menu == "🚀 Tiện ích & Cấu hình":
     
     with tab_limit:
         st.subheader("1. Quản lý Thư viện Trực tiếp (Thêm/Sửa Cột & Hàng)")
+        if st.session_state.get('results_stale'):
+            st.warning("⚠️ Thư viện đã bị thay đổi! Vui lòng quay lại tab Vận hành GC-MS và bấm 'Tính lại' để có kết quả mới nhất.")
+            
         st.info("Chỉnh sửa số liệu, xóa hoặc thêm chất trực tiếp trên bảng này. Bạn có thể gõ vào cột LOQ hoặc MDL tùy ý. Sau khi chỉnh sửa, bấm **Lưu thay đổi**.")
         
         df_current_limit = st.session_state.df_limit.copy()
@@ -510,7 +531,10 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                 
                 conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=edited_limit)
                 st.session_state.df_limit = edited_limit
+                if 'results' in st.session_state:
+                    st.session_state.results_stale = True
                 st.success("🎉 Đã lưu thư viện lên Google Sheets thành công!")
+                st.rerun()
             except Exception as e:
                 st.error(f"⚠️ Lỗi kết nối Google Sheets: {e}")
 
@@ -575,7 +599,10 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                             
                             conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=combined_df)
                             st.session_state.df_limit = combined_df
+                            if 'results' in st.session_state:
+                                st.session_state.results_stale = True
                             st.success(f"🎉 Đã ghi thêm thành công! Tổng số chỉ tiêu hiện tại trong Thư viện: {len(combined_df)}")
+                            st.rerun()
                         except Exception as sheet_err:
                             st.error(f"⚠️ Lỗi kết nối Google Sheets: {sheet_err}")
                 else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên / Cột MDL / Cột LOQ).")
@@ -583,85 +610,91 @@ elif menu == "🚀 Tiện ích & Cấu hình":
 
     with tab_report: 
         st.subheader("📝 Lập Biên Bản Xử Lý Mẫu Tự Động")
-        st.info("Tải lên file Word Template (đã gắn thẻ `{{...}}`) hoặc File Excel Template và File CSV kết quả đã tính toán để hệ thống tự động điền số liệu.")
+        st.info("Tải lên file Word/Excel Template. Hệ thống sẽ tự động bốc kết quả từ bảng tính toán gần nhất của bạn để điền vào.")
         
         col_tpl, col_data = st.columns(2)
         with col_tpl:
-            template_file = st.file_uploader("1. Tải file Mẫu (.docx, .xlsx)", type=["docx", "xlsx"])
+            template_file = st.file_uploader("1. Tải file Mẫu Thiết Kế (.docx, .xlsx)", type=["docx", "xlsx"])
         with col_data:
-            data_file = st.file_uploader("2. Tải file Kết quả (.csv)", type=["xlsx", "csv"])
+            data_file = st.file_uploader("2. Tải file Kết quả (.csv) [Chỉ nạp nếu bạn tính lại file cũ. Mặc định máy tự lấy kết quả vừa chạy ở tab GC-MS]", type=["xlsx", "csv"])
 
-        # CẢNH BÁO NẾU NGƯỜI DÙNG CHƯA TẢI ĐỦ 2 FILE
-        if template_file is not None and data_file is None:
-            st.warning("👉 Bạn cần tải thêm **File Kết Quả (.csv)** vào ô số 2 thì nút Lập Biên Bản mới hiện ra nhé!")
-        elif data_file is not None and template_file is None:
-            st.warning("👉 Bạn cần tải thêm **File Mẫu (.docx hoặc .xlsx)** vào ô số 1 thì nút Lập Biên Bản mới hiện ra nhé!")
-
-        if template_file and data_file:
+        if template_file:
             try:
-                df_kq = pd.read_excel(data_file) if data_file.name.endswith('.xlsx') else pd.read_csv(data_file)
-                
-                if "Tên mẫu" not in df_kq.columns or "Tên chỉ tiêu" not in df_kq.columns:
-                    st.error("⚠️ File kết quả không đúng chuẩn. Vui lòng dùng đúng file tải về từ phần mềm này.")
+                # Ưu tiên lấy kết quả từ File tải lên, nếu không có thì lấy kết quả đang lưu trên web
+                if data_file is not None:
+                    df_kq = pd.read_excel(data_file) if data_file.name.endswith('.xlsx') else pd.read_csv(data_file)
                 else:
-                    # ----- TẠO DANH SÁCH CHO MẪU KHÍ THẢI -----
+                    df_kq = st.session_state.get('results', pd.DataFrame())
+                
+                if df_kq.empty or "Tên mẫu" not in df_kq.columns or "Tên chỉ tiêu" not in df_kq.columns:
+                    st.error("⚠️ Không tìm thấy Kết quả tính toán. Bạn hãy sang Tab Vận Hành GC-MS để tính dữ liệu trước, hoặc nạp file .csv kết quả vào ô số 2 nhé!")
+                elif st.session_state.get('results_stale') and data_file is None:
+                    st.warning("⚠️ Cảnh báo: Thư viện đã bị thay đổi nhưng bạn chưa tính lại kết quả. Vui lòng quay lại tab Vận hành GC-MS bấm 'Tính lại' để tránh sai sót!")
+                else:
+                    # ----- TẠO DANH SÁCH DỮ LIỆU ĐỂ BƠM VÀO TEMPLATE -----
                     ket_qua_list = []
-                    for _, row in df_kq.iterrows():
-                        ten_mau_str = str(row.get("Tên mẫu", ""))
-                        v_khi = "24,0" if "KT" in ten_mau_str.upper() else ("4,0" if any(k in ten_mau_str.upper() for k in ["KXQ", "KLV"]) else "")
-                        h_phantram = str(row.get("R(%)", "")).replace('%', '').strip()
+                    danh_sach_mau = []
+                    grouped = df_kq.groupby("Tên mẫu")
+                    
+                    for ten_mau, group in grouped:
+                        first_row = group.iloc[0]
+                        ten_mau_str = str(ten_mau)
                         
-                        c_surr_truoc = str(row.get("C_surr_truoc", "")).replace('.', ',')
-                        c_surr_sau = str(row.get("C_surr_sau", "")).replace('.', ',')
+                        v_khi = "24,0" if "KT" in ten_mau_str.upper() else ("4,0" if any(k in ten_mau_str.upper() for k in ["KXQ", "KLV"]) else "")
+                        h_phantram = str(first_row.get("R(%)", "")).replace('%', '').strip()
+                        c_surr_truoc = str(first_row.get("C_surr_truoc", "")).replace('.', ',')
+                        c_surr_sau = str(first_row.get("C_surr_sau", "")).replace('.', ',')
                         
                         if c_surr_sau == "" and h_phantram != "":
                             try: c_surr_sau = str(round((float(h_phantram) / 100) * 10.0, 2)).replace('.', ',')
                             except: pass
-                            
-                        ket_qua_list.append({
-                            "ngay": datetime.now().strftime("%d/%m/%Y"),
-                            "ten_mau": ten_mau_str,
-                            "chi_tieu": str(row.get("Tên chỉ tiêu", "")),
-                            "c_surr_truoc": c_surr_truoc,
-                            "c_surr_sau": c_surr_sau,
-                            "h_phantram": str(h_phantram).replace('.', ','),
-                            "v_khi": v_khi,
-                            "c_do": str(row.get("C đo", "")).replace('.', ','),
-                            "kq_thuc": str(row.get("C thực", "")).replace('.', ',')
-                        })
 
-                    # ----- TẠO DANH SÁCH CHO MẪU NƯỚC -----
-                    danh_sach_mau = []
-                    grouped = df_kq.groupby("Tên mẫu")
-                    for ten_mau, group in grouped:
-                        first_row = group.iloc[0]
+                        # Gom nhóm dữ liệu Mẫu Nước (Cột dọc)
                         mau_dict = {
                             "ngay": datetime.now().strftime("%d/%m/%Y"),
-                            "ky_hieu": ten_mau,
-                            "c_surr_truoc": str(first_row.get("C_surr_truoc", "")).replace('.', ','), 
-                            "c_surr_sau": str(first_row.get("C_surr_sau", "")).replace('.', ','), 
-                            "de": str(first_row.get("R(%)", "")).replace('.', ','),
+                            "ky_hieu": ten_mau_str,
+                            "c_surr_truoc": c_surr_truoc, 
+                            "c_surr_sau": c_surr_sau, 
+                            "de": h_phantram,
                             "ghi_chu": ""
                         }
                         
                         for _, row in group.iterrows():
-                            chi_tieu = str(row.get("Tên chỉ tiêu", "")).upper()
-                            slug = re.sub(r'\W+', '', chi_tieu.lower())
-                            mau_dict[f"cdo_{slug}"] = str(row.get("C đo", "")).replace('.', ',')
-                            mau_dict[f"kq_{slug}"] = str(row.get("C thực", "")).replace('.', ',')
+                            chi_tieu = str(row.get("Tên chỉ tiêu", ""))
+                            c_do = str(row.get("C đo", "")).replace('.', ',')
+                            kq_thuc = str(row.get("C thực", "")).replace('.', ',')
                             
-                            if "BENZENE" in chi_tieu or "BENZEN" in chi_tieu:
-                                mau_dict["cdo_benzen"] = mau_dict[f"cdo_{slug}"]
-                                mau_dict["kq_benzen"] = mau_dict[f"kq_{slug}"]
-                            elif "TOLUENE" in chi_tieu or "TOLUEN" in chi_tieu:
-                                mau_dict["cdo_toluen"] = mau_dict[f"cdo_{slug}"]
-                                mau_dict["kq_toluen"] = mau_dict[f"kq_{slug}"]
+                            # Đẩy dữ liệu Mẫu Khí (Từng dòng độc lập)
+                            ket_qua_list.append({
+                                "ngay": datetime.now().strftime("%d/%m/%Y"),
+                                "ten_mau": ten_mau_str,
+                                "chi_tieu": chi_tieu,
+                                "c_surr_truoc": c_surr_truoc,
+                                "c_surr_sau": c_surr_sau,
+                                "h_phantram": h_phantram,
+                                "v_khi": v_khi,
+                                "c_do": c_do,
+                                "kq_thuc": kq_thuc
+                            })
+                            
+                            # Cấu hình Mẫu Nước
+                            chi_tieu_upper = chi_tieu.upper()
+                            slug = re.sub(r'\W+', '', chi_tieu_upper.lower())
+                            mau_dict[f"cdo_{slug}"] = c_do
+                            mau_dict[f"kq_{slug}"] = kq_thuc
+                            
+                            if "BENZENE" in chi_tieu_upper or "BENZEN" in chi_tieu_upper:
+                                mau_dict["cdo_benzen"] = c_do
+                                mau_dict["kq_benzen"] = kq_thuc
+                            elif "TOLUENE" in chi_tieu_upper or "TOLUEN" in chi_tieu_upper:
+                                mau_dict["cdo_toluen"] = c_do
+                                mau_dict["kq_toluen"] = kq_thuc
                                 
                         danh_sach_mau.append(mau_dict)
 
                     # ----- XỬ LÝ TEMPLATE WORD -----
                     if template_file.name.endswith('.docx'):
-                        if st.button("🚀 Bắt đầu Lập Biên Bản Word", type="primary"):
+                        if st.button("🚀 Lập Biên Bản Word", type="primary"):
                             try:
                                 from docxtpl import DocxTemplate
                                 import io
@@ -678,10 +711,10 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                             except ImportError:
                                 st.error("⚠️ Hệ thống chưa cài thư viện 'docxtpl'. Hãy thêm 'docxtpl' vào requirements.txt!")
                                 
-                    # ----- XỬ LÝ TEMPLATE EXCEL -----
+                    # ----- XỬ LÝ TEMPLATE EXCEL BẬC CAO (Không ghi đè chữ ký) -----
                     elif template_file.name.endswith('.xlsx'):
-                        st.info("💡 Hướng dẫn: Gõ các thẻ như `{{ row.ten_mau }}`, `{{ row.kq_thuc }}` vào đúng một hàng mẫu. Hệ thống sẽ tự động nhân bản định dạng.")
-                        if st.button("🚀 Bắt đầu Lập Biên Bản Excel", type="primary"):
+                        st.info("💡 Hệ thống tự động bóc tách 1 dòng chứa thẻ `{{ }}` để chèn số liệu, tự động đẩy vùng biểu mẫu chữ ký bên dưới xuống thay vì ghi đè làm mất chữ ký.")
+                        if st.button("🚀 Lập Biên Bản Excel", type="primary"):
                             import openpyxl
                             from copy import copy
                             import io
@@ -689,7 +722,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                             wb = openpyxl.load_workbook(template_file)
                             ws = wb.active
                             
-                            # Tìm vị trí dòng chứa thẻ template
                             template_row_idx = None
                             template_cells = []
                             for r in range(1, ws.max_row + 1):
@@ -703,11 +735,9 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                                     break
                                     
                             if template_row_idx:
-                                # Nhận diện template Mẫu Nước hay Mẫu Khí
                                 is_nuoc = any(isinstance(v, str) and ("kq_benzen" in v or "kq_toluen" in v or "mau.ky_hieu" in v) for v in template_cells)
                                 data_loop = danh_sach_mau if is_nuoc else ket_qua_list
                                 
-                                # Lưu lại định dạng (Style) của dòng mẫu
                                 original_styles = []
                                 for col in range(1, ws.max_column + 1):
                                     cell_obj = ws.cell(row=template_row_idx, column=col)
@@ -719,22 +749,23 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                                         "alignment": copy(cell_obj.alignment)
                                     })
                                 
+                                # Tinh hoa: Dịch chuyển vùng dữ liệu bên dưới dòng mẫu xuống (tránh đè chữ ký)
+                                if len(data_loop) > 1 and ws.max_row > template_row_idx:
+                                    ws.move_range(f"A{template_row_idx+1}:{ws.cell(ws.max_row, ws.max_column).coordinate}", rows=len(data_loop)-1, translate=True)
+                                
                                 current_row = template_row_idx
                                 for item in data_loop:
                                     for col_idx, cell_val in enumerate(template_cells, start=1):
                                         new_val = cell_val
                                         if cell_val and isinstance(cell_val, str):
-                                            # Dọn dẹp thẻ Word lỡ copy nhầm
                                             new_val = re.sub(r'\{%p.*?%\}', '', new_val).strip()
                                             new_val = re.sub(r'\{%.*?%\}', '', new_val).strip()
                                             
-                                            # Thay thế số liệu
                                             matches = re.findall(r'\{\{\s*(?:row\.|mau\.)?(\w+)\s*\}\}', new_val)
                                             for m in matches:
                                                 replacement = str(item.get(m, ""))
                                                 new_val = re.sub(r'\{\{\s*(?:row\.|mau\.)?' + m + r'\s*\}\}', replacement, new_val)
                                                 
-                                            # Ép kiểu thành số cho Excel
                                             if isinstance(new_val, str) and re.match(r'^-?\d+(?:,\d+)?$', new_val.strip()):
                                                 try:
                                                     new_val = float(new_val.strip().replace(',', '.'))
@@ -742,12 +773,10 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                                             
                                             if new_val == "": new_val = None
                                                 
-                                        # Ghi giá trị
                                         new_cell = ws.cell(row=current_row, column=col_idx)
                                         new_cell.value = new_val
                                         
-                                        # Copy định dạng (Style)
-                                        if current_row > template_row_idx:
+                                        if current_row >= template_row_idx:
                                             style = original_styles[col_idx - 1]
                                             new_cell.font = copy(style["font"])
                                             new_cell.border = copy(style["border"])
@@ -756,13 +785,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                                             new_cell.alignment = copy(style["alignment"])
                                             
                                     current_row += 1
-                                    
-                                # Dọn dẹp các thẻ rác ở các dòng bên dưới
-                                for r in range(current_row, current_row + 5):
-                                    for c in range(1, ws.max_column + 1):
-                                        val = str(ws.cell(row=r, column=c).value or "")
-                                        if "{%" in val or "{{" in val:
-                                            ws.cell(row=r, column=c).value = None
                                             
                                 bio = io.BytesIO()
                                 wb.save(bio)
