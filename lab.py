@@ -126,6 +126,28 @@ def evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recover
     return f"{round(c_thuc_val, 4)}"
 
 # ==========================================
+# CẤU HÌNH BOT TRỢ LÝ LAB
+# ==========================================
+def bot_answer(question, df):
+    q = str(question).lower()
+    if any(x in q for x in ['tổng', 'bao nhiêu', 'có bao nhiêu mẫu']):
+        tong = len(df)
+        cho_chay = len(df[df['Trạng Thái'] == '🟡 3. Chờ chạy máy'])
+        return f"Hiện tại hệ thống đang lưu trữ tổng cộng {tong} mẫu. Trong đó có {cho_chay} mẫu đang ở trạng thái chờ chạy máy."
+    elif any(x in q for x in ['r%', 'thu hồi', 'chuẩn']):
+        return "Độ thu hồi R(%) được tính bằng cách: (Nồng độ C đo được trên máy) / (Nồng độ C thêm chuẩn ban đầu) × 100. Hệ thống sẽ tự động nội suy C ban đầu sao cho H% rơi vào khoảng 70-130%."
+    elif any(x in q for x in ['mdl', 'loq', 'giới hạn', 'kph']):
+        return "Hệ thống áp dụng giới hạn MDL cho mẫu Khí (KT, KXQ, KLV) và LOQ cho mẫu Nước (NS, NM, NT). Nếu C thực tính ra nhỏ hơn mức này, kết quả sẽ tự động hiển thị KPH hoặc < LOQ."
+    elif any(x in q for x in ['cách tính', 'công thức', 'tính kết quả']):
+        return "Mẫu Khí: C_thực = (C_đo / V_khí) × (100 / R%). \nMẫu Nước: C_thực = C_đo × (100 / R%). V_khí mặc định là 24L (KT) hoặc 4L (KXQ/KLV)."
+    elif any(x in q for x in ['biên bản', 'word', 'excel', 'xuất báo cáo']):
+        return "Để xuất biên bản, bạn hãy sang tab 'Vận hành GC-MS' tải file kết quả (CSV) về trước. Sau đó qua mục 'Tiện ích & Cấu hình' > 'Lập Biên Bản', nạp file Word/Excel thiết kế và file CSV vào là xong!"
+    elif any(x in q for x in ['lỗi', 'không chạy', 'help', 'không ra kết quả']):
+        return "Nếu hệ thống bị kẹt, bạn thử bấm nút 'Cập nhật dữ liệu tức thì' trên thanh bên trái. Đảm bảo file cấu hình thư viện của bạn có đủ cột Tên Chất, MDL, LOQ."
+    else:
+        return "Xin lỗi, mình là Trợ lý LIMS nội bộ. Bạn có thể hỏi mình về: Số lượng mẫu chờ chạy, cách tính R%, cách tra MDL/LOQ, công thức tính toán hoặc hướng dẫn lập biên bản nhé!"
+
+# ==========================================
 # 4. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
 st.sidebar.title("🔬 LIMS HATICO")
@@ -142,14 +164,44 @@ menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
 ])
 
 st.sidebar.divider()
-st.sidebar.markdown("**Hỗ trợ nhanh:**")
-if st.sidebar.button("🔄 Cập nhật dữ liệu tức thì"):
+
+# Nút chức năng
+if st.sidebar.button("🔄 Cập nhật dữ liệu tức thì", use_container_width=True):
     st.cache_data.clear()
     if 'results' in st.session_state:
         st.session_state.results_stale = True
     st.session_state.df = load_data()
     st.session_state.df_limit = load_limit_config() 
     st.rerun()
+
+st.sidebar.divider()
+
+# KHU VỰC TRỢ LÝ ẢO (CHATBOT)
+with st.sidebar.popover("💬 Chat với Trợ lý Lab", use_container_width=True):
+    st.markdown("👋 **Xin chào! Mình là Trợ lý Lab GC.**")
+    st.caption("Hỏi mình về tiến độ mẫu, cách tính toán, hoặc cách dùng web.")
+    
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+        
+    # Vùng hiển thị lịch sử chat
+    chat_container = st.container(height=250)
+    with chat_container:
+        for msg in st.session_state.chat_history:
+            if msg["role"] == "user":
+                st.markdown(f"👤 **Bạn:** {msg['content']}")
+            else:
+                st.markdown(f"🤖 **Bot:** {msg['content']}")
+                
+    # Vùng nhập liệu
+    with st.form("chat_form", clear_on_submit=True):
+        user_input = st.text_input("Hỏi gì đó...", placeholder="VD: Có bao nhiêu mẫu đang chờ chạy?")
+        submit_btn = st.form_submit_button("Gửi")
+        if submit_btn and user_input.strip():
+            st.session_state.chat_history.append({"role": "user", "content": user_input})
+            ans = bot_answer(user_input, st.session_state.df)
+            st.session_state.chat_history.append({"role": "bot", "content": ans})
+            st.rerun()
 
 df_current = st.session_state.df.copy()
 df_current["Ngày Nhận"] = df_current["Giờ Nhận"].dt.date
@@ -263,7 +315,6 @@ elif menu == "📥 Quản lý Tiếp nhận":
                         header_val = clean_str(ws.cell(header_row, col).value)
                         if header_val.casefold() == 'ghi chú' or not header_val: break
                         
-                        # Làm sạch tên chỉ tiêu
                         header_val = re.sub(r'^\d+\.\s*', '', header_val)
                         header_val = re.sub(r'\s*\(chọn cái này\)', '', header_val, flags=re.I).strip()
                         params_info.append((col, header_val))
@@ -280,7 +331,6 @@ elif menu == "📥 Quản lý Tiếp nhận":
                             fill = ws.cell(r, col_idx).fill
                             color = fill.fgColor
                             
-                            # Kiểm tra xem ô có bị bôi xám hay không (Mã Hex màu xám: 808080)
                             is_gray = fill.patternType == 'solid' and color.type == 'rgb' and str(color.rgb)[-6:].upper() == '808080'
                             
                             if not is_gray:
@@ -344,7 +394,7 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
             
     with col_import:
         st.subheader("2. Xử lý dữ liệu GC-MS theo SOP")
-        st.info("💡 Hệ thống AI tự quét thư viện LOQ/MDL để nhận diện danh sách các chất cần bóc tách từ file báo cáo.")
+        st.info("💡 Tự động tính C_surr_truoc và C_surr_sau để xuất vào Biên Bản.")
         
         gc_file = st.file_uploader("Kéo thả báo cáo GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
 
@@ -447,7 +497,6 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                     df_results = pd.DataFrame(calc_results)
                     df_results = df_results.sort_values(by=["Tên mẫu", "Tên chỉ tiêu"]).reset_index(drop=True)
                     
-                    # Lưu lại kết quả vào session_state để tái sử dụng ở tab Lập biên bản mà không cần upload CSV
                     st.session_state.results = df_results
                     st.session_state.results_stale = False
                     
@@ -456,7 +505,7 @@ elif menu == "⚙️ Vận hành GC-MS (Agilent - VOCs)":
                     
                     csv_results = df_results.to_csv(index=False).encode('utf-8-sig')
                     st.download_button(
-                        label="📥 Tải Kết quả (CSV) để lưu trữ",
+                        label="📥 Tải Kết quả (CSV) để Lưu trữ",
                         data=csv_results,
                         file_name=f"Ket_Qua_GC_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                         mime="text/csv",
@@ -620,7 +669,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
 
         if template_file:
             try:
-                # Ưu tiên lấy kết quả từ File tải lên, nếu không có thì lấy kết quả đang lưu trên web
                 if data_file is not None:
                     df_kq = pd.read_excel(data_file) if data_file.name.endswith('.xlsx') else pd.read_csv(data_file)
                 else:
@@ -631,7 +679,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                 elif st.session_state.get('results_stale') and data_file is None:
                     st.warning("⚠️ Cảnh báo: Thư viện đã bị thay đổi nhưng bạn chưa tính lại kết quả. Vui lòng quay lại tab Vận hành GC-MS bấm 'Tính lại' để tránh sai sót!")
                 else:
-                    # ----- TẠO DANH SÁCH DỮ LIỆU ĐỂ BƠM VÀO TEMPLATE -----
                     ket_qua_list = []
                     danh_sach_mau = []
                     grouped = df_kq.groupby("Tên mẫu")
@@ -649,7 +696,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                             try: c_surr_sau = str(round((float(h_phantram) / 100) * 10.0, 2)).replace('.', ',')
                             except: pass
 
-                        # Gom nhóm dữ liệu Mẫu Nước (Cột dọc)
                         mau_dict = {
                             "ngay": datetime.now().strftime("%d/%m/%Y"),
                             "ky_hieu": ten_mau_str,
@@ -664,7 +710,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                             c_do = str(row.get("C đo", "")).replace('.', ',')
                             kq_thuc = str(row.get("C thực", "")).replace('.', ',')
                             
-                            # Đẩy dữ liệu Mẫu Khí (Từng dòng độc lập)
                             ket_qua_list.append({
                                 "ngay": datetime.now().strftime("%d/%m/%Y"),
                                 "ten_mau": ten_mau_str,
@@ -677,7 +722,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                                 "kq_thuc": kq_thuc
                             })
                             
-                            # Cấu hình Mẫu Nước
                             chi_tieu_upper = chi_tieu.upper()
                             slug = re.sub(r'\W+', '', chi_tieu_upper.lower())
                             mau_dict[f"cdo_{slug}"] = c_do
@@ -692,7 +736,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                                 
                         danh_sach_mau.append(mau_dict)
 
-                    # ----- XỬ LÝ TEMPLATE WORD -----
                     if template_file.name.endswith('.docx'):
                         if st.button("🚀 Lập Biên Bản Word", type="primary"):
                             try:
@@ -711,7 +754,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                             except ImportError:
                                 st.error("⚠️ Hệ thống chưa cài thư viện 'docxtpl'. Hãy thêm 'docxtpl' vào requirements.txt!")
                                 
-                    # ----- XỬ LÝ TEMPLATE EXCEL BẬC CAO (Không ghi đè chữ ký) -----
                     elif template_file.name.endswith('.xlsx'):
                         st.info("💡 Hệ thống tự động bóc tách 1 dòng chứa thẻ `{{ }}` để chèn số liệu, tự động đẩy vùng biểu mẫu chữ ký bên dưới xuống thay vì ghi đè làm mất chữ ký.")
                         if st.button("🚀 Lập Biên Bản Excel", type="primary"):
@@ -749,7 +791,6 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                                         "alignment": copy(cell_obj.alignment)
                                     })
                                 
-                                # Tinh hoa: Dịch chuyển vùng dữ liệu bên dưới dòng mẫu xuống (tránh đè chữ ký)
                                 if len(data_loop) > 1 and ws.max_row > template_row_idx:
                                     ws.move_range(f"A{template_row_idx+1}:{ws.cell(ws.max_row, ws.max_column).coordinate}", rows=len(data_loop)-1, translate=True)
                                 
