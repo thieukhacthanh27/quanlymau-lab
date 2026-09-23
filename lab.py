@@ -1382,3 +1382,38 @@ elif menu == "⚙️ Cấu hình Hệ thống":
                             st.error(f"⚠️ Lỗi kết nối: {sheet_err}")
                 else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên / Cột MDL / Cột LOQ).")
             except Exception as e: st.error(f"Lỗi đọc file: {e}")
+
+def convert_unit_value(value, from_unit, to_unit):
+    """Hàm tự động quy đổi đơn vị đo lường"""
+    if pd.isna(value) or to_unit == "Mặc định" or not from_unit:
+        return value
+        
+    try:
+        val = float(value)
+    except:
+        return value # Trả về nguyên bản nếu là chuỗi (VD: KPH, < LOQ)
+
+    f_u = str(from_unit).strip().lower()
+    t_u = str(to_unit).strip().lower()
+
+    if f_u == t_u:
+        return val
+
+    # Tỷ lệ quy đổi thông dụng (Nước & Khí)
+    conversion_factors = {
+        ('mg/l', 'µg/l'): 1000.0,
+        ('mg/l', 'ppb'): 1000.0,
+        ('µg/l', 'mg/l'): 0.001,
+        ('ppb', 'mg/l'): 0.001,
+        ('ppm', 'ppb'): 1000.0,
+        ('ppb', 'ppm'): 0.001,
+        ('mg/m3', 'µg/m3'): 1000.0,
+        ('µg/m3', 'mg/m3'): 0.001,
+        ('mg/nm3', 'µg/nm3'): 1000.0,
+        ('µg/nm3', 'mg/nm3'): 0.001,
+    }
+
+    factor = conversion_factors.get((f_u, t_u))
+    if factor:
+        return val * factor
+    return val
