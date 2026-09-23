@@ -983,38 +983,63 @@ elif menu == "🧮 Tiện ích Phân tích":
     with tab_calib:
         with st.container(border=True):
             st.markdown("<div class='sub-title'>🧪 Lập Công Thức Pha Chuẩn Tối Ưu (Smart Mix)</div>", unsafe_allow_html=True)
-            st.info("💡 Hệ thống hỗ trợ tối ưu hóa quy trình pha chuẩn: Gộp các Nội chuẩn/Surrogate thành 1 Master Mix để hút 1 lần; Gộp các Mix chuẩn gốc thành Mix làm việc (Working Standard) để tránh sai số pipet nhỏ.")
+            st.info("💡 Bổ sung tính năng tự quy đổi đơn vị: Chọn đơn vị cho Mix gốc và dãy chuẩn đích, hệ thống sẽ tự toán toán lượng thể tích cần hút mà không cần nhập thủ công.")
             
-            col_v1, col_v2 = st.columns(2)
+            col_v1, col_v2, col_v3 = st.columns([1, 2, 1])
             with col_v1:
-                v_final = st.number_input("Thể tích định mức mỗi điểm chuẩn (mL)", value=1.0, step=0.1, min_value=0.1)
+                v_final = st.number_input("Thể tích định mức mỗi điểm (mL)", value=1.0, step=0.1, min_value=0.1)
             with col_v2:
-                levels_input = st.text_input("🎯 Nhập dãy nồng độ chuẩn cần pha (ppm):", "0.5, 1, 2, 5, 10, 20")
+                levels_input = st.text_input("🎯 Nhập dãy nồng độ chuẩn cần pha:", "0.5, 1, 2, 5, 10, 20")
+            with col_v3:
+                unit_levels = st.selectbox("Đơn vị dãy đích:", ["ppm", "ppb", "mg/L", "µg/L"])
             
             st.markdown("### ⚙️ Tùy chọn Tối ưu hóa (Optimization)")
             col_opt1, col_opt2 = st.columns(2)
             with col_opt1:
                 opt_mix_is_surr = st.toggle("🧪 Gộp IS & Surrogate thành Master Mix", value=True)
                 if opt_mix_is_surr:
-                    v_spike_is = st.number_input("Thể tích hút Master Mix cho mỗi vial (µL)", value=50.0, step=10.0)
+                    v_spike_is = st.number_input("Thể tích hút Master Mix/vial (µL)", value=50.0, step=10.0)
             with col_opt2:
-                opt_mix_std = st.toggle("🧪 Gộp các Chuẩn gốc thành Mix Trung gian", value=True)
+                opt_mix_std = st.toggle("🧪 Gộp Mix chuẩn gốc thành Mix trung gian", value=True)
                 if opt_mix_std:
-                    c_ws_std = st.number_input("Nồng độ Mix Trung gian cần pha (ppm)", value=100.0, step=10.0)
-                    v_ws_total = st.number_input("Thể tích cần pha Mix Trung gian (µL)", value=1000.0, step=100.0)
+                    col_ws1, col_ws2, col_ws3 = st.columns(3)
+                    with col_ws1:
+                        c_ws_std = st.number_input("Nồng độ Mix TG", value=100.0, step=10.0)
+                    with col_ws2:
+                        unit_ws_std = st.selectbox("Đơn vị Mix TG", ["ppm", "ppb", "mg/L", "µg/L"])
+                    with col_ws3:
+                        v_ws_total = st.number_input("Thể tích pha (µL)", value=1000.0, step=100.0)
 
             st.markdown("**1. Các dung dịch Chuẩn (Mix) thay đổi theo dãy nồng độ:**")
-            if "df_mix_default" not in st.session_state:
-                st.session_state.df_mix_default = pd.DataFrame([{"Tên Mix Chuẩn": "Mix VOCs", "C_gốc (ppm)": 1000.0}])
-            df_mix = st.data_editor(st.session_state.df_mix_default, num_rows="dynamic", use_container_width=True, key="mix_editor")
+            if "df_mix_default" not in st.session_state or "Đơn vị gốc" not in st.session_state.df_mix_default.columns:
+                st.session_state.df_mix_default = pd.DataFrame([{"Tên Mix Chuẩn": "Mix VOCs", "C_gốc": 1000.0, "Đơn vị gốc": "ppm"}])
+            df_mix = st.data_editor(
+                st.session_state.df_mix_default, 
+                num_rows="dynamic", 
+                use_container_width=True, 
+                key="mix_editor",
+                column_config={
+                    "Đơn vị gốc": st.column_config.SelectboxColumn("Đơn vị", options=["ppm", "ppb", "mg/L", "µg/L"])
+                }
+            )
             
             st.markdown("**2. Các dung dịch Nội chuẩn (IS) & Đồng hành (Surrogate) cố định:**")
-            if "df_is_default" not in st.session_state:
+            if "df_is_default" not in st.session_state or "Đơn vị gốc" not in st.session_state.df_is_default.columns:
                 st.session_state.df_is_default = pd.DataFrame([
-                    {"Phân Loại": "Nội chuẩn (IS)", "Tên Hợp Chất": "Fluorobenzene", "C_gốc (ppm)": 1000.0, "C_đích mỗi vial (ppm)": 10.0},
-                    {"Phân Loại": "Surrogate", "Tên Hợp Chất": "Toluene-D8", "C_gốc (ppm)": 1000.0, "C_đích mỗi vial (ppm)": 10.0}
+                    {"Phân Loại": "Nội chuẩn (IS)", "Tên Hợp Chất": "Fluorobenzene", "C_gốc": 1000.0, "Đơn vị gốc": "ppm", "C_đích mỗi vial": 10.0, "Đơn vị đích": "ppm"},
+                    {"Phân Loại": "Surrogate", "Tên Hợp Chất": "Toluene-D8", "C_gốc": 1000.0, "Đơn vị gốc": "ppm", "C_đích mỗi vial": 10.0, "Đơn vị đích": "ppm"}
                 ])
-            df_is_surr = st.data_editor(st.session_state.df_is_default, num_rows="dynamic", use_container_width=True, key="is_surr_editor", column_config={"Phân Loại": st.column_config.SelectboxColumn(options=["Nội chuẩn (IS)", "Surrogate", "Khác"])})
+            df_is_surr = st.data_editor(
+                st.session_state.df_is_default, 
+                num_rows="dynamic", 
+                use_container_width=True, 
+                key="is_surr_editor", 
+                column_config={
+                    "Phân Loại": st.column_config.SelectboxColumn(options=["Nội chuẩn (IS)", "Surrogate", "Khác"]),
+                    "Đơn vị gốc": st.column_config.SelectboxColumn("Đơn vị gốc", options=["ppm", "ppb", "mg/L", "µg/L"]),
+                    "Đơn vị đích": st.column_config.SelectboxColumn("Đơn vị đích", options=["ppm", "ppb", "mg/L", "µg/L"])
+                }
+            )
             
             if st.button("🚀 Tính Toán Bảng Pha Chuẩn & Tối Ưu", type="primary"):
                 try:
@@ -1033,10 +1058,15 @@ elif menu == "🧮 Tiện ích Phân tích":
                         for _, row in df_is_surr.iterrows():
                             name = str(row.get("Tên Hợp Chất", "")).strip()
                             if not name or name == "nan": continue
-                            c_s = float(row.get("C_gốc (ppm)", 0))
-                            c_t = float(row.get("C_đích mỗi vial (ppm)", 0))
-                            v_stock = (c_t * v_final * 1000 * v_master_total) / (c_s * v_spike_is) if c_s > 0 else 0
-                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} gốc ({c_s} ppm)")
+                            c_s_raw = float(row.get("C_gốc", 0))
+                            unit_s = str(row.get("Đơn vị gốc", "ppm")).strip()
+                            c_t_raw = float(row.get("C_đích mỗi vial", 0))
+                            unit_t = str(row.get("Đơn vị đích", "ppm")).strip()
+                            
+                            c_s_converted = convert_unit_value(c_s_raw, unit_s, unit_t)
+                            
+                            v_stock = (c_t_raw * v_final * 1000 * v_master_total) / (c_s_converted * v_spike_is) if c_s_converted > 0 else 0
+                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} gốc ({c_s_raw} {unit_s})")
                             sum_v += v_stock
                         v_solv = v_master_total - sum_v
                         instructions.append(f"- Thêm **{v_solv:.2f} µL** dung môi. Lắc đều.")
@@ -1049,23 +1079,30 @@ elif menu == "🧮 Tiện ích Phân tích":
                         for _, row in df_is_surr.iterrows():
                             name = str(row.get("Tên Hợp Chất", "")).strip()
                             if not name or name == "nan": continue
-                            c_s = float(row.get("C_gốc (ppm)", 0))
-                            c_t = float(row.get("C_đích mỗi vial (ppm)", 0))
-                            v_ul = (c_t * v_final * 1000) / c_s if c_s > 0 else 0
+                            c_s_raw = float(row.get("C_gốc", 0))
+                            unit_s = str(row.get("Đơn vị gốc", "ppm")).strip()
+                            c_t_raw = float(row.get("C_đích mỗi vial", 0))
+                            unit_t = str(row.get("Đơn vị đích", "ppm")).strip()
+                            
+                            c_s_converted = convert_unit_value(c_s_raw, unit_s, unit_t)
+                            v_ul = (c_t_raw * v_final * 1000) / c_s_converted if c_s_converted > 0 else 0
                             prefix = "IS" if "IS" in str(row.get("Phân Loại", "")) else "Surr"
                             is_surr_columns[f"Hút {prefix}: {name} (µL)"] = v_ul
                             total_is_v_per_vial += v_ul
 
                     if opt_mix_std:
                         instructions.append("### 🧪 BƯỚC 2: PHA MIX CHUẨN LÀM VIỆC (WORKING STANDARD)")
-                        instructions.append(f"*(Gộp các Mix chuẩn gốc thành Mix trung gian duy nhất có nồng độ {c_ws_std} ppm. Thể tích pha: {v_ws_total} µL)*")
+                        instructions.append(f"*(Gộp các Mix chuẩn gốc thành Mix trung gian duy nhất có nồng độ {c_ws_std} {unit_ws_std}. Thể tích pha: {v_ws_total} µL)*")
                         sum_v = 0.0
                         for _, r in df_mix.iterrows():
                             name = str(r.get("Tên Mix Chuẩn", "")).strip()
                             if not name or name == "nan": continue
-                            c_s = float(r.get("C_gốc (ppm)", 0))
-                            v_stock = (c_ws_std * v_ws_total) / c_s if c_s > 0 else 0
-                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} ({c_s} ppm)")
+                            c_s_raw = float(r.get("C_gốc", 0))
+                            unit_s = str(r.get("Đơn vị gốc", "ppm")).strip()
+                            
+                            c_s_converted = convert_unit_value(c_s_raw, unit_s, unit_ws_std)
+                            v_stock = (c_ws_std * v_ws_total) / c_s_converted if c_s_converted > 0 else 0
+                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} ({c_s_raw} {unit_s})")
                             sum_v += v_stock
                         v_solv = v_ws_total - sum_v
                         instructions.append(f"- Thêm **{v_solv:.2f} µL** dung môi. Lắc đều.")
@@ -1074,19 +1111,23 @@ elif menu == "🧮 Tiện ích Phân tích":
 
                     instructions.append("### 🧪 BƯỚC 3: PHA DÃY CHUẨN VÀO VIAL CUỐI CÙNG")
                     for lvl in levels:
-                        row_data = {"Điểm chuẩn": f"Level {lvl} ppm"}
+                        row_data = {"Điểm chuẩn": f"Level {lvl} {unit_levels}"}
                         total_std_v = 0.0
                         
                         if opt_mix_std:
-                            v_ws = (lvl * v_final * 1000) / c_ws_std if c_ws_std > 0 else 0
-                            row_data[f"Hút Mix Làm Việc {c_ws_std}ppm (µL)"] = round(v_ws, 2)
+                            c_ws_converted = convert_unit_value(c_ws_std, unit_ws_std, unit_levels)
+                            v_ws = (lvl * v_final * 1000) / c_ws_converted if c_ws_converted > 0 else 0
+                            row_data[f"Hút Mix Làm Việc {c_ws_std}{unit_ws_std} (µL)"] = round(v_ws, 2)
                             total_std_v += v_ws
                         else:
                             for _, r in df_mix.iterrows():
                                 name = str(r.get("Tên Mix Chuẩn", "")).strip()
                                 if not name or name == "nan": continue
-                                c_s = float(r.get("C_gốc (ppm)", 0))
-                                v_ul = (lvl * v_final * 1000) / c_s if c_s > 0 else 0
+                                c_s_raw = float(r.get("C_gốc", 0))
+                                unit_s = str(r.get("Đơn vị gốc", "ppm")).strip()
+                                
+                                c_s_converted = convert_unit_value(c_s_raw, unit_s, unit_levels)
+                                v_ul = (lvl * v_final * 1000) / c_s_converted if c_s_converted > 0 else 0
                                 row_data[f"Hút Mix {name} (µL)"] = round(v_ul, 2)
                                 total_std_v += v_ul
                         
