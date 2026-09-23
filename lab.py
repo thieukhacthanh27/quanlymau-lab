@@ -78,7 +78,7 @@ CHEM_STATUS = ["🟢 Còn nhiều", "🟡 Sắp hết", "🔴 Đã hết"]
 
 # KHAI BÁO BIẾN CHO KHO HÓA CHẤT
 U_GROUPS = {
-    'Nồng độ dung dịch': {'g/L': 1000., 'mg/L': 1., 'µg/L': .001, 'ng/L': .000001, 'mg/mL': 1000., 'µg/mL': 1., 'ng/mL': .001},
+    'Nồng độ dung dịch': {'g/L': 1000., 'mg/L': 1., 'µg/L': .001, 'ng/L': .000001, 'mg/mL': 1000., 'µg/mL': 1., 'ng/mL': .001, 'ppm': 1., 'ppb': .001},
     'Thể tích': {'L': 1., 'mL': .001, 'µL': .000001, 'm³': 1000.},
     'Khối lượng': {'g': 1., 'mg': .001, 'µg': .000001, 'ng': .000000001, 'kg': 1000.},
     'Nồng độ khí thực': {'g/m³': 1000., 'mg/m³': 1., 'µg/m³': .001, 'ng/m³': .000001},
@@ -96,6 +96,8 @@ def u_text(v):
 
 def u_canonical(unit):
     text = u_text(unit).replace('μ', 'µ').replace('ug', 'µg').replace('ul', 'µL').replace('m3', 'm³').replace('ml', 'mL').replace(' / ', '/')
+    if text.lower() == 'ppm': return 'ppm'
+    if text.lower() == 'ppb': return 'ppb'
     return {'ng/ml': 'ng/mL', 'ug/L': 'µg/L', 'ug/ml': 'µg/mL'}.get(text, text)
 
 def u_convert(value, source, target):
@@ -341,8 +343,8 @@ def convert_unit_value(value, from_unit, to_unit):
     if f_u == t_u: return val
 
     conversion_factors = {
-        ('mg/l', 'µg/l'): 1000.0, ('mg/l', 'ppb'): 1000.0,
-        ('µg/l', 'mg/l'): 0.001, ('ppb', 'mg/l'): 0.001,
+        ('mg/l', 'µg/l'): 1000.0, ('mg/l', 'ppb'): 1000.0, ('mg/l', 'ppm'): 1.0,
+        ('µg/l', 'mg/l'): 0.001, ('ppb', 'mg/l'): 0.001, ('ppm', 'mg/l'): 1.0,
         ('ppm', 'ppb'): 1000.0, ('ppb', 'ppm'): 0.001,
         ('mg/m3', 'µg/m3'): 1000.0, ('µg/m3', 'mg/m3'): 0.001,
         ('mg/nm3', 'µg/nm3'): 1000.0, ('µg/nm3', 'mg/nm3'): 0.001,
@@ -761,7 +763,12 @@ elif menu == "⚙️ Vận hành GC-MS":
         unit_cfg=u_controls("auto_")
         with st.container(border=True):
             st.markdown("<div class='sub-title'>Xử lý Kết quả Hàng loạt (SOP)</div>", unsafe_allow_html=True)
-            st.info("💡 Tự động bóc tách số liệu, nội suy nồng độ $C_{surr}$ chuẩn và so khớp Giới hạn MDL/LOQ theo đúng chuẩn phòng Lab.")
+            st.info("💡 Tự động bóc tách số liệu, nội suy nồng độ $C_{surr}$ chuẩn, so khớp Giới hạn MDL/LOQ và hỗ trợ quy đổi đơn vị.")
+            
+            target_unit_auto = st.selectbox(
+                "🔄 Tùy chọn quy đổi đơn vị đầu ra:", 
+                ["Mặc định", "mg/L", "µg/L", "mg/m3", "µg/m3", "ppm", "ppb"]
+            )
             
             gc_file = st.file_uploader("Kéo thả báo cáo GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
 
@@ -851,10 +858,27 @@ elif menu == "⚙️ Vận hành GC-MS":
                             mdl_val, loq_val, unit = get_limit_info(comp_name, nen_mau)
                             
                             c_thuc_str = evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recovery=sample_recovery)
+                            final_unit = unit if target_unit_auto == "Mặc định" else target_unit_auto
+                            
+                            if target_unit_auto != "Mặc định":
+                                if c_thuc_str.startswith("KPH") and mdl_val is not None:
+                                    conv_mdl = convert_unit_value(mdl_val, unit, target_unit_auto)
+                                    c_thuc_str = f"KPH (< MDL: {conv_mdl} {final_unit})"
+                                elif c_thuc_str.startswith("<") and loq_val is not None:
+                                    conv_loq = convert_unit_value(loq_val, unit, target_unit_auto)
+                                    c_thuc_str = f"< LOQ ({conv_loq} {final_unit})"
+                                else:
+                                    try:
+                                        c_thuc_numeric = float(c_thuc_str.replace(',', '.'))
+                                        converted_val = convert_unit_value(c_thuc_numeric, unit, target_unit_auto)
+                                        c_thuc_str = str(round(converted_val, 4)).replace('.', ',')
+                                    except: pass
                             
                             limit_display = ""
-                            if loai_mau == 'Khí' and mdl_val is not None: limit_display = f"MDL: {mdl_val} {unit}"
-                            elif loai_mau == 'Nước' and loq_val is not None: limit_display = f"LOQ: {loq_val} {unit}"
+                            if loai_mau == 'Khí' and mdl_val is not None: 
+                                limit_display = f"MDL: {convert_unit_value(mdl_val, unit, target_unit_auto) if target_unit_auto != 'Mặc định' else mdl_val} {final_unit}"
+                            elif loai_mau == 'Nước' and loq_val is not None: 
+                                limit_display = f"LOQ: {convert_unit_value(loq_val, unit, target_unit_auto) if target_unit_auto != 'Mặc định' else loq_val} {final_unit}"
                             
                             calc_results.append({
                                 "Tên mẫu": sample_name, "Tên chỉ tiêu": comp_name, "C đo": round(raw_conc, 4), 
@@ -956,12 +980,27 @@ elif menu == "🧮 Tiện ích Phân tích":
                 
                 st.write(f"**Phân loại:** {loai_mau_def} ({nen_mau_code}) | **Chỉ tiêu theo Database:** {len(chi_tieu_list)}")
                 
+                st.markdown("### 🔄 Tùy chọn Quy đổi Đơn vị")
+                col_u1, col_u2 = st.columns(2)
+                with col_u1:
+                    target_unit = st.selectbox(
+                        f"Đơn vị đầu ra mong muốn cho mẫu {loai_mau_def}:", 
+                        ["Mặc định", "mg/L", "µg/L", "mg/m3", "µg/m3", "ppm", "ppb"],
+                        key=f"unit_manual_{selected_sample_manual}"
+                    )
+
                 manual_data = []
                 for ct in chi_tieu_list:
                     mdl_val, loq_val, unit = get_limit_info(ct, nen_mau_code)
                     limit_str = ""
-                    if loai_mau_def == 'Khí' and mdl_val is not None: limit_str = f"MDL: {mdl_val} {unit}"
-                    elif loai_mau_def == 'Nước' and loq_val is not None: limit_str = f"LOQ: {loq_val} {unit}"
+                    final_unit = unit if target_unit == "Mặc định" else target_unit
+                    
+                    if loai_mau_def == 'Khí' and mdl_val is not None: 
+                        conv_mdl = convert_unit_value(mdl_val, unit, target_unit) if target_unit != "Mặc định" else mdl_val
+                        limit_str = f"MDL: {conv_mdl} {final_unit}"
+                    elif loai_mau_def == 'Nước' and loq_val is not None: 
+                        conv_loq = convert_unit_value(loq_val, unit, target_unit) if target_unit != "Mặc định" else loq_val
+                        limit_str = f"LOQ: {conv_loq} {final_unit}"
 
                     manual_data.append({
                         "Cộng Tổng": False,
@@ -1146,7 +1185,7 @@ elif menu == "🧮 Tiện ích Phân tích":
                     
                     if opt_mix_is_surr:
                         v_master_total = (len(levels) + 3) * v_spike_is
-                        instructions.append("### 🧪 BƯỚC 1: PHA MASTER MIX NỘI chuẩn (IS) & SURROGATE")
+                        instructions.append("### 🧪 BƯỚC 1: PHA MASTER MIX NỘI CHUẨN (IS) & SURROGATE")
                         instructions.append(f"*(Pha tổng cộng {v_master_total} µL Master Mix dùng chung cho toàn bộ các điểm chuẩn. Mỗi điểm chuẩn sẽ hút {v_spike_is} µL)*")
                         sum_v = 0.0
                         for _, row in df_is_surr.iterrows():
@@ -1492,7 +1531,7 @@ elif menu == "🧪 Kiểm soát Hóa chất":
                 file_name_display = upload_csv.name
             except Exception as exc: st.error(f"Lỗi đọc CSV: {exc}")
 
-        # TIẾP NHẬN DỮ LIỆU TỪ FILE VÀ HIỂN THỊ TRƯỚC
+        # TIẾP NHẬN DỮ LIỆU TỪ FILE VÀ HIỂN TRƯỚC
         if parsed is not None and not parsed.empty:
             st.success(f'✔️ Đã đọc được {len(parsed)} dòng từ file {file_name_display}.')
             st.caption('Chọn dòng cần nhập vào kho chung. Chú ý các dòng có ghi chú trong cột Cần Kiểm Tra.')
