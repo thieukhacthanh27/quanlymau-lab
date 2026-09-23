@@ -76,7 +76,7 @@ CHEM_SYSTEMS = ["GC-MS", "GC-FID", "Thermo", "Dùng chung"]
 CHEM_TYPES = ["Chất chuẩn (IS/Surrogate)", "Dung môi", "Vật tư tiêu hao", "Khí chuẩn", "Khác"]
 CHEM_STATUS = ["🟢 Còn nhiều", "🟡 Sắp hết", "🔴 Đã hết"]
 
-# KHAI BÁO BIẾN CHO KHO HÓA CHẤT
+# KHAI BÁO BIẾN CHO KHO HÓA CHẤT & QUY ĐỔI
 U_GROUPS = {
     'Nồng độ dung dịch': {'g/L': 1000., 'mg/L': 1., 'µg/L': .001, 'ng/L': .000001, 'mg/mL': 1000., 'µg/mL': 1., 'ng/mL': .001, 'ppm': 1., 'ppb': .001},
     'Thể tích': {'L': 1., 'mL': .001, 'µL': .000001, 'm³': 1000.},
@@ -399,7 +399,6 @@ def u_result(raw,volume,mdl,loq,limit_unit,kind,recovery,cfg):
 def evaluate_result(raw_conc,v_param,mdl_val,loq_val,unit,loai_mau,recovery=100.0):
     cfg=st.session_state.get('unit_cfg')
     if not cfg or not cfg.get('confirmed'):
-        # Fallback to old behavior if unit config is not active/confirmed
         if pd.isna(raw_conc) or raw_conc <= 0: return "KPH"
         if loai_mau == 'Khí':
             c_thuc_val = (raw_conc * 1.0) / v_param * (100.0 / recovery)
@@ -420,7 +419,7 @@ def unit_utility():
         a=st.selectbox('Từ đơn vị',units);b=st.selectbox('Sang đơn vị',units,index=min(1,len(units)-1))
         v=st.number_input('Giá trị',value=1.0)
         st.metric('Giá trị sau đổi',f'{u_convert(v,a,b):.10g} {b}')
-        st.caption('1 µg/mL = 1 mg/L = 1000 µg/L. Độ tinh khiết (%) không phải nồng độ dung dịch. Khối lượng và thể tích cần khối lượng riêng để đổi.')
+        st.caption('1 µg/mL = 1 mg/L = 1000 µg/L = 1 ppm. Khối lượng và thể tích cần khối lượng riêng để đổi.')
 
 def lab_norm(value):
     if value is None or pd.isna(value): return ''
@@ -763,12 +762,7 @@ elif menu == "⚙️ Vận hành GC-MS":
         unit_cfg=u_controls("auto_")
         with st.container(border=True):
             st.markdown("<div class='sub-title'>Xử lý Kết quả Hàng loạt (SOP)</div>", unsafe_allow_html=True)
-            st.info("💡 Tự động bóc tách số liệu, nội suy nồng độ $C_{surr}$ chuẩn, so khớp Giới hạn MDL/LOQ và hỗ trợ quy đổi đơn vị.")
-            
-            target_unit_auto = st.selectbox(
-                "🔄 Tùy chọn quy đổi đơn vị đầu ra:", 
-                ["Mặc định", "mg/L", "µg/L", "mg/m3", "µg/m3", "ppm", "ppb"]
-            )
+            st.info("💡 Tự động bóc tách số liệu, nội suy nồng độ $C_{surr}$ chuẩn và so khớp Giới hạn MDL/LOQ theo đúng chuẩn phòng Lab.")
             
             gc_file = st.file_uploader("Kéo thả báo cáo GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
 
@@ -858,27 +852,10 @@ elif menu == "⚙️ Vận hành GC-MS":
                             mdl_val, loq_val, unit = get_limit_info(comp_name, nen_mau)
                             
                             c_thuc_str = evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recovery=sample_recovery)
-                            final_unit = unit if target_unit_auto == "Mặc định" else target_unit_auto
-                            
-                            if target_unit_auto != "Mặc định":
-                                if c_thuc_str.startswith("KPH") and mdl_val is not None:
-                                    conv_mdl = convert_unit_value(mdl_val, unit, target_unit_auto)
-                                    c_thuc_str = f"KPH (< MDL: {conv_mdl} {final_unit})"
-                                elif c_thuc_str.startswith("<") and loq_val is not None:
-                                    conv_loq = convert_unit_value(loq_val, unit, target_unit_auto)
-                                    c_thuc_str = f"< LOQ ({conv_loq} {final_unit})"
-                                else:
-                                    try:
-                                        c_thuc_numeric = float(c_thuc_str.replace(',', '.'))
-                                        converted_val = convert_unit_value(c_thuc_numeric, unit, target_unit_auto)
-                                        c_thuc_str = str(round(converted_val, 4)).replace('.', ',')
-                                    except: pass
                             
                             limit_display = ""
-                            if loai_mau == 'Khí' and mdl_val is not None: 
-                                limit_display = f"MDL: {convert_unit_value(mdl_val, unit, target_unit_auto) if target_unit_auto != 'Mặc định' else mdl_val} {final_unit}"
-                            elif loai_mau == 'Nước' and loq_val is not None: 
-                                limit_display = f"LOQ: {convert_unit_value(loq_val, unit, target_unit_auto) if target_unit_auto != 'Mặc định' else loq_val} {final_unit}"
+                            if loai_mau == 'Khí' and mdl_val is not None: limit_display = f"MDL: {mdl_val} {unit}"
+                            elif loai_mau == 'Nước' and loq_val is not None: limit_display = f"LOQ: {loq_val} {unit}"
                             
                             calc_results.append({
                                 "Tên mẫu": sample_name, "Tên chỉ tiêu": comp_name, "C đo": round(raw_conc, 4), 
@@ -980,27 +957,12 @@ elif menu == "🧮 Tiện ích Phân tích":
                 
                 st.write(f"**Phân loại:** {loai_mau_def} ({nen_mau_code}) | **Chỉ tiêu theo Database:** {len(chi_tieu_list)}")
                 
-                st.markdown("### 🔄 Tùy chọn Quy đổi Đơn vị")
-                col_u1, col_u2 = st.columns(2)
-                with col_u1:
-                    target_unit = st.selectbox(
-                        f"Đơn vị đầu ra mong muốn cho mẫu {loai_mau_def}:", 
-                        ["Mặc định", "mg/L", "µg/L", "mg/m3", "µg/m3", "ppm", "ppb"],
-                        key=f"unit_manual_{selected_sample_manual}"
-                    )
-
                 manual_data = []
                 for ct in chi_tieu_list:
                     mdl_val, loq_val, unit = get_limit_info(ct, nen_mau_code)
                     limit_str = ""
-                    final_unit = unit if target_unit == "Mặc định" else target_unit
-                    
-                    if loai_mau_def == 'Khí' and mdl_val is not None: 
-                        conv_mdl = convert_unit_value(mdl_val, unit, target_unit) if target_unit != "Mặc định" else mdl_val
-                        limit_str = f"MDL: {conv_mdl} {final_unit}"
-                    elif loai_mau_def == 'Nước' and loq_val is not None: 
-                        conv_loq = convert_unit_value(loq_val, unit, target_unit) if target_unit != "Mặc định" else loq_val
-                        limit_str = f"LOQ: {conv_loq} {final_unit}"
+                    if loai_mau_def == 'Khí' and mdl_val is not None: limit_str = f"MDL: {mdl_val} {unit}"
+                    elif loai_mau_def == 'Nước' and loq_val is not None: limit_str = f"LOQ: {loq_val} {unit}"
 
                     manual_data.append({
                         "Cộng Tổng": False,
@@ -1128,144 +1090,204 @@ elif menu == "🧮 Tiện ích Phân tích":
                         st.error(str(exc))
 
     with tab_calib:
-        calib_v_unit=st.selectbox("Đơn vị thể tích định mức",["mL","µL","L"],key="calib_v_unit")
-        calib_unit=st.selectbox("Đơn vị nhập dãy chuẩn và nồng độ đích",list(U_GROUPS["Nồng độ dung dịch"]),index=5,key="calib_unit")
-        st.caption("Chọn Đơn vị gốc cho từng dòng; kết quả công thức tự quy về µg/mL. Các thể tích hút xuất bằng µL.")
-        with st.container(border=True):
-            st.markdown("<div class='sub-title'>🧪 Lập Công Thức Pha Chuẩn Tối Ưu (Smart Mix)</div>", unsafe_allow_html=True)
-            st.info("💡 Hệ thống hỗ trợ tối ưu hóa quy trình pha chuẩn: Gộp các Nội chuẩn/Surrogate thành 1 Master Mix để hút 1 lần; Gộp các Mix chuẩn gốc thành Mix làm việc (Working Standard) để tránh sai số pipet nhỏ.")
+        st.markdown("<div class='sub-title'>🧪 Lập Công Thức Pha Chuẩn Tối Ưu (Smart Mix)</div>", unsafe_allow_html=True)
+        st.info("💡 Tự động quy đổi nồng độ chéo (VD: Gốc 10 ppm ➔ Mix trung gian 1 ppm ➔ Đích 100 ppb). Thể tích hút xuất mặc định bằng µL để dễ dùng pipet.")
+        
+        common_units = ["ppm", "ppb", "mg/L", "µg/L", "µg/mL", "ng/mL"]
+        
+        col_v1, col_v2, col_v3 = st.columns([1, 2, 1])
+        with col_v1:
+            v_final = st.number_input("Thể tích định mức mỗi điểm (mL)", value=1.0, step=0.1, min_value=0.01)
+        with col_v2:
+            levels_input = st.text_input("🎯 Dãy nồng độ đích (cách nhau bởi dấu phẩy):", "10, 50, 100, 200, 500, 1000")
+        with col_v3:
+            unit_levels = st.selectbox("Đơn vị dãy đích:", common_units, index=0) # Mặc định ppm
             
-            col_v1, col_v2 = st.columns(2)
-            with col_v1:
-                v_final = st.number_input(f"Thể tích định mức mỗi điểm chuẩn ({calib_v_unit})", value=1.0, step=0.1, min_value=0.1)
-            with col_v2:
-                levels_input = st.text_input(f"🎯 Dãy chuẩn ({calib_unit}), phân cách bằng dấu phẩy; thập phân dùng dấu chấm:", "0.5, 1, 2, 5, 10, 20")
-            
-            st.markdown("### ⚙️ Tùy chọn Tối ưu hóa (Optimization)")
-            col_opt1, col_opt2 = st.columns(2)
-            with col_opt1:
+        st.markdown("### ⚙️ Tùy chọn Tối ưu hóa (Optimization)")
+        col_opt1, col_opt2 = st.columns(2)
+        with col_opt1:
+            with st.container(border=True):
                 opt_mix_is_surr = st.toggle("🧪 Gộp IS & Surrogate thành Master Mix", value=True)
                 if opt_mix_is_surr:
-                    v_spike_is = st.number_input("Thể tích hút Master Mix cho mỗi vial (µL)", value=50.0, step=10.0)
-            with col_opt2:
-                opt_mix_std = st.toggle("🧪 Gộp các Chuẩn gốc thành Mix Trung gian", value=True)
+                    v_spike_is = st.number_input("Thể tích hút Master Mix / vial (µL)", value=50.0, step=10.0)
+                else:
+                    st.caption("Sẽ tính thể tích hút trực tiếp từng chất IS/Surrogate vào mỗi vial.")
+                    v_spike_is = 0
+        with col_opt2:
+            with st.container(border=True):
+                opt_mix_std = st.toggle("🧪 Gộp Mix chuẩn gốc thành Mix Trung gian", value=True)
                 if opt_mix_std:
-                    c_ws_std = st.number_input(f"Nồng độ Mix Trung gian ({calib_unit})", value=100.0, step=10.0)
-                    v_ws_total = st.number_input("Thể tích cần pha Mix Trung gian (µL)", value=1000.0, step=100.0)
+                    col_ws1, col_ws2, col_ws3 = st.columns([1.5, 1, 1.5])
+                    with col_ws1:
+                        c_ws_std = st.number_input("Nồng độ Mix TG", value=1.0, step=0.5)
+                    with col_ws2:
+                        unit_ws_std = st.selectbox("Đơn vị Mix TG", common_units, index=0) # Mặc định ppm
+                    with col_ws3:
+                        v_ws_total = st.number_input("Thể tích pha Mix TG (µL)", value=1000.0, step=100.0)
+                else:
+                    st.caption("Sẽ tính thể tích hút trực tiếp từ các Mix gốc vào dãy chuẩn.")
 
-            st.markdown("**1. Các dung dịch Chuẩn (Mix) thay đổi theo dãy nồng độ:**")
-            if "df_mix_default" not in st.session_state:
-                st.session_state.df_mix_default = pd.DataFrame([{"Tên Mix Chuẩn": "Mix VOCs", "C gốc (giá trị nhập)": 1000.0, "Đơn vị gốc":"µg/mL"}])
-            df_mix = st.data_editor(st.session_state.df_mix_default, num_rows="dynamic", use_container_width=True, key="mix_editor")
-            
-            st.markdown("**2. Các dung dịch Nội chuẩn (IS) & Đồng hành (Surrogate) cố định:**")
-            if "df_is_default" not in st.session_state:
-                st.session_state.df_is_default = pd.DataFrame([
-                    {"Phân Loại": "Nội chuẩn (IS)", "Tên Hợp Chất": "Fluorobenzene", "C gốc (giá trị nhập)": 1000.0, "Đơn vị gốc":"µg/mL", "C đích (đơn vị đang chọn)": 10.0},
-                    {"Phân Loại": "Surrogate", "Tên Hợp Chất": "Toluene-D8", "C gốc (giá trị nhập)": 1000.0, "Đơn vị gốc":"µg/mL", "C đích (đơn vị đang chọn)": 10.0}
-                ])
-            df_is_surr = st.data_editor(st.session_state.df_is_default, num_rows="dynamic", use_container_width=True, key="is_surr_editor", column_config={"Phân Loại": st.column_config.SelectboxColumn(options=["Nội chuẩn (IS)", "Surrogate", "Khác"])})
-            
-            if st.button("🚀 Tính Toán Bảng Pha Chuẩn & Tối Ưu", type="primary"):
-                try:
-                    v_final=u_convert(v_final,calib_v_unit,"mL")
-                    levels = sorted([u_convert(float(x.strip()),calib_unit,"µg/mL") for x in levels_input.split(",") if x.strip()])
-                    if not levels or any(x<0 for x in levels):raise ValueError("Dãy chuẩn không hợp lệ")
-                    if opt_mix_std:c_ws_std=u_convert(c_ws_std,calib_unit,"µg/mL")
-                    if opt_mix_is_surr and v_spike_is<=0:raise ValueError("Thể tích hút phải >0")
-                    for frame in [df_mix,df_is_surr]:
-                        for _,r in frame.iterrows():
-                            if float(r.get("C gốc (giá trị nhập)",0))<=0:raise ValueError("Nồng độ gốc phải >0")
-                    if opt_mix_std and (c_ws_std<=0 or v_ws_total<=0):raise ValueError("Thông số mix trung gian phải >0")
-                    calib_data = []
-                    instructions = []
-
-                    is_surr_columns = {} 
-                    total_is_v_per_vial = 0.0
-                    
-                    if opt_mix_is_surr:
-                        v_master_total = (len(levels) + 3) * v_spike_is
-                        instructions.append("### 🧪 BƯỚC 1: PHA MASTER MIX NỘI CHUẨN (IS) & SURROGATE")
-                        instructions.append(f"*(Pha tổng cộng {v_master_total} µL Master Mix dùng chung cho toàn bộ các điểm chuẩn. Mỗi điểm chuẩn sẽ hút {v_spike_is} µL)*")
-                        sum_v = 0.0
-                        for _, row in df_is_surr.iterrows():
-                            name = str(row.get("Tên Hợp Chất", "")).strip()
-                            if not name or name == "nan": continue
-                            c_s = u_convert(float(row.get("C gốc (giá trị nhập)", 0)),row.get("Đơn vị gốc","µg/mL"),"µg/mL")
-                            if c_s<=0:raise ValueError("Nồng độ chuẩn gốc phải >0")
-                            c_t = u_convert(float(row.get("C đích (đơn vị đang chọn)", 0)),calib_unit,"µg/mL")
-                            v_stock = (c_t * v_final * 1000 * v_master_total) / (c_s * v_spike_is) if c_s > 0 else 0
-                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} gốc ({c_s} µg/mL)")
-                            sum_v += v_stock
-                        v_solv = v_master_total - sum_v
-                        instructions.append(f"- Thêm **{v_solv:.2f} µL** dung môi. Lắc đều.")
-                        if sum_v > v_master_total:raise ValueError("Master Mix vượt thể tích. Giảm nồng độ đích hoặc tăng thể tích hút.")
+        st.markdown("**1. Các dung dịch Chuẩn Gốc (Thay đổi theo dãy nồng độ):**")
+        if "df_mix_default_v2" not in st.session_state:
+            st.session_state.df_mix_default_v2 = pd.DataFrame([{"Tên Mix Chuẩn": "Mix VOCs", "Nồng độ Gốc": 1000.0, "Đơn vị gốc": "ppm"}])
+        df_mix = st.data_editor(
+            st.session_state.df_mix_default_v2, 
+            num_rows="dynamic", 
+            use_container_width=True, 
+            key="mix_editor_v2",
+            column_config={
+                "Nồng độ Gốc": st.column_config.NumberColumn("Nồng độ Gốc", required=True),
+                "Đơn vị gốc": st.column_config.SelectboxColumn("Đơn vị Gốc", options=common_units, default="ppm")
+            }
+        )
+        
+        st.markdown("**2. Các dung dịch Nội chuẩn (IS) & Đồng hành (Surrogate) cố định:**")
+        if "df_is_default_v2" not in st.session_state:
+            st.session_state.df_is_default_v2 = pd.DataFrame([
+                {"Phân Loại": "Nội chuẩn (IS)", "Tên Hợp Chất": "Fluorobenzene", "Nồng độ Gốc": 1000.0, "Đơn vị gốc": "ppm", "Nồng độ Đích/vial": 10.0, "Đơn vị đích": "ppm"},
+                {"Phân Loại": "Surrogate", "Tên Hợp Chất": "Toluene-D8", "Nồng độ Gốc": 1000.0, "Đơn vị gốc": "ppm", "Nồng độ Đích/vial": 10.0, "Đơn vị đích": "ppm"}
+            ])
+        df_is_surr = st.data_editor(
+            st.session_state.df_is_default_v2, 
+            num_rows="dynamic", 
+            use_container_width=True, 
+            key="is_surr_editor_v2", 
+            column_config={
+                "Phân Loại": st.column_config.SelectboxColumn(options=["Nội chuẩn (IS)", "Surrogate", "Khác"]),
+                "Nồng độ Gốc": st.column_config.NumberColumn("Nồng độ Gốc", required=True),
+                "Đơn vị gốc": st.column_config.SelectboxColumn("Đơn vị Gốc", options=common_units, default="ppm"),
+                "Nồng độ Đích/vial": st.column_config.NumberColumn("Nồng độ Đích/vial", required=True),
+                "Đơn vị đích": st.column_config.SelectboxColumn("Đơn vị Đích", options=common_units, default="ppm")
+            }
+        )
+        
+        if st.button("🚀 Tính Toán Bảng Pha Chuẩn & Tối Ưu", type="primary"):
+            try:
+                levels = sorted([float(x.strip()) for x in levels_input.split(",") if x.strip()])
+                if not levels or any(x <= 0 for x in levels): raise ValueError("Dãy chuẩn không hợp lệ (phải > 0)")
+                if opt_mix_std and c_ws_std <= 0: raise ValueError("Nồng độ Mix trung gian phải > 0")
+                if opt_mix_is_surr and v_spike_is <= 0: raise ValueError("Thể tích hút Master Mix phải > 0")
+                
+                calib_data = []
+                instructions = []
+                is_surr_columns = {} 
+                total_is_v_per_vial = 0.0
+                
+                # BƯỚC 1: IS & Surrogate Master Mix
+                if opt_mix_is_surr:
+                    num_vials = len(levels) + 3 # +3 cho mẫu Blank/QC
+                    v_master_total = num_vials * v_spike_is
+                    instructions.append("### 🧪 BƯỚC 1: PHA MASTER MIX NỘI CHUẨN (IS) & SURROGATE")
+                    instructions.append(f"*(Pha tổng cộng {v_master_total} µL Master Mix dùng chung cho {num_vials} vial (bao gồm dãy chuẩn và QC/Blank). Mỗi vial sẽ hút {v_spike_is} µL)*")
+                    sum_v = 0.0
+                    for _, row in df_is_surr.iterrows():
+                        name = str(row.get("Tên Hợp Chất", "")).strip()
+                        if not name or name == "nan": continue
+                        c_s_raw = float(row.get("Nồng độ Gốc", 0))
+                        unit_s = str(row.get("Đơn vị gốc", "ppm")).strip()
+                        c_t_raw = float(row.get("Nồng độ Đích/vial", 0))
+                        unit_t = str(row.get("Đơn vị đích", "ppm")).strip()
                         
-                        is_surr_columns["Hút IS/Surr Master Mix (µL)"] = v_spike_is
-                        total_is_v_per_vial = v_spike_is
-                    else:
-                        for _, row in df_is_surr.iterrows():
-                            name = str(row.get("Tên Hợp Chất", "")).strip()
-                            if not name or name == "nan": continue
-                            c_s = u_convert(float(row.get("C gốc (giá trị nhập)", 0)),row.get("Đơn vị gốc","µg/mL"),"µg/mL")
-                            if c_s<=0:raise ValueError("Nồng độ chuẩn gốc phải >0")
-                            c_t = u_convert(float(row.get("C đích (đơn vị đang chọn)", 0)),calib_unit,"µg/mL")
-                            v_ul = (c_t * v_final * 1000) / c_s if c_s > 0 else 0
-                            prefix = "IS" if "IS" in str(row.get("Phân Loại", "")) else "Surr"
-                            is_surr_columns[f"Hút {prefix}: {name} (µL)"] = v_ul
-                            total_is_v_per_vial += v_ul
+                        if c_s_raw <= 0: raise ValueError(f"Nồng độ gốc của {name} phải > 0")
+                        
+                        c_t_conv = u_convert(c_t_raw, unit_t, unit_s)
+                        v_stock_per_vial = (c_t_conv * (v_final * 1000)) / c_s_raw
+                        v_stock_total = v_stock_per_vial * num_vials
+                        
+                        instructions.append(f"- Hút **{v_stock_total:.2f} µL** {name} gốc ({c_s_raw} {unit_s})")
+                        sum_v += v_stock_total
+                        
+                    v_solv = v_master_total - sum_v
+                    if sum_v > v_master_total:
+                        raise ValueError("Master Mix vượt thể tích. Vui lòng giảm nồng độ đích hoặc tăng thể tích hút Master Mix/vial lên.")
+                    instructions.append(f"- Thêm **{v_solv:.2f} µL** dung môi. Lắc đều.")
+                    
+                    is_surr_columns["Hút IS/Surr Master Mix (µL)"] = v_spike_is
+                    total_is_v_per_vial = v_spike_is
+                else:
+                    # Rút lẻ IS Surrogate trực tiếp
+                    for _, row in df_is_surr.iterrows():
+                        name = str(row.get("Tên Hợp Chất", "")).strip()
+                        if not name or name == "nan": continue
+                        c_s_raw = float(row.get("Nồng độ Gốc", 0))
+                        unit_s = str(row.get("Đơn vị gốc", "ppm")).strip()
+                        c_t_raw = float(row.get("Nồng độ Đích/vial", 0))
+                        unit_t = str(row.get("Đơn vị đích", "ppm")).strip()
+                        
+                        if c_s_raw <= 0: raise ValueError(f"Nồng độ gốc của {name} phải > 0")
+                        c_t_conv = u_convert(c_t_raw, unit_t, unit_s)
+                        v_ul = (c_t_conv * (v_final * 1000)) / c_s_raw
+                        
+                        prefix = "IS" if "IS" in str(row.get("Phân Loại", "")) else "Surr"
+                        is_surr_columns[f"Hút {prefix}: {name} (µL)"] = v_ul
+                        total_is_v_per_vial += v_ul
 
+                # BƯỚC 2: Pha Working Standard (Nếu dùng Mix TG)
+                if opt_mix_std:
+                    instructions.append("### 🧪 BƯỚC 2: PHA MIX CHUẨN LÀM VIỆC (WORKING STANDARD)")
+                    instructions.append(f"*(Gộp các Mix chuẩn gốc thành Mix trung gian duy nhất có nồng độ {c_ws_std} {unit_ws_std}. Thể tích pha: {v_ws_total} µL)*")
+                    sum_v = 0.0
+                    for _, r in df_mix.iterrows():
+                        name = str(r.get("Tên Mix Chuẩn", "")).strip()
+                        if not name or name == "nan": continue
+                        c_s_raw = float(r.get("Nồng độ Gốc", 0))
+                        unit_s = str(r.get("Đơn vị gốc", "ppm")).strip()
+                        
+                        if c_s_raw <= 0: raise ValueError(f"Nồng độ gốc của {name} phải > 0")
+                        
+                        c_ws_conv = u_convert(c_ws_std, unit_ws_std, unit_s)
+                        v_stock = (c_ws_conv * v_ws_total) / c_s_raw
+                        
+                        instructions.append(f"- Hút **{v_stock:.2f} µL** {name} ({c_s_raw} {unit_s})")
+                        sum_v += v_stock
+                        
+                    v_solv = v_ws_total - sum_v
+                    if sum_v > v_ws_total:
+                        raise ValueError("Mix trung gian vượt quá tổng thể tích pha. Vui lòng tăng thể tích pha hoặc giảm nồng độ Mix TG xuống.")
+                    instructions.append(f"- Thêm **{v_solv:.2f} µL** dung môi. Lắc đều.")
+
+                # BƯỚC 3: Dãy chuẩn vào Vial
+                instructions.append("### 🧪 BƯỚC 3: PHA DÃY CHUẨN VÀO VIAL CUỐI CÙNG")
+                instructions.append(f"*(Định mức {v_final} mL = {v_final * 1000} µL cho mỗi điểm chuẩn)*")
+                for lvl in levels:
+                    row_data = {"Điểm chuẩn": f"Level {lvl} {unit_levels}"}
+                    total_std_v = 0.0
+                    
                     if opt_mix_std:
-                        instructions.append("### 🧪 BƯỚC 2: PHA MIX CHUẨN LÀM VIỆC (WORKING STANDARD)")
-                        instructions.append(f"*(Gộp các Mix chuẩn gốc thành Mix trung gian duy nhất có nồng độ {c_ws_std} µg/mL. Thể tích pha: {v_ws_total} µL)*")
-                        sum_v = 0.0
+                        lvl_conv = u_convert(lvl, unit_levels, unit_ws_std)
+                        v_ws = (lvl_conv * (v_final * 1000)) / c_ws_std
+                        row_data[f"Hút Mix TG {c_ws_std} {unit_ws_std} (µL)"] = round(v_ws, 2)
+                        total_std_v += v_ws
+                    else:
                         for _, r in df_mix.iterrows():
                             name = str(r.get("Tên Mix Chuẩn", "")).strip()
                             if not name or name == "nan": continue
-                            c_s = u_convert(float(r.get("C gốc (giá trị nhập)", 0)),r.get("Đơn vị gốc","µg/mL"),"µg/mL")
-                            v_stock = (c_ws_std * v_ws_total) / c_s if c_s > 0 else 0
-                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} ({c_s} µg/mL)")
-                            sum_v += v_stock
-                        v_solv = v_ws_total - sum_v
-                        instructions.append(f"- Thêm **{v_solv:.2f} µL** dung môi. Lắc đều.")
-                        if sum_v > v_ws_total:raise ValueError("Mix trung gian vượt thể tích.")
-
-                    instructions.append("### 🧪 BƯỚC 3: PHA DÃY CHUẨN VÀO VIAL CUỐI CÙNG")
-                    for lvl in levels:
-                        row_data = {"Điểm chuẩn": f"Level {lvl} µg/mL"}
-                        total_std_v = 0.0
-                        
-                        if opt_mix_std:
-                            v_ws = (lvl * v_final * 1000) / c_ws_std if c_ws_std > 0 else 0
-                            row_data[f"Hút Mix Làm Việc {c_ws_std}µg/mL (µL)"] = round(v_ws, 2)
-                            total_std_v += v_ws
-                        else:
-                            for _, r in df_mix.iterrows():
-                                name = str(r.get("Tên Mix Chuẩn", "")).strip()
-                                if not name or name == "nan": continue
-                                c_s = u_convert(float(r.get("C gốc (giá trị nhập)", 0)),r.get("Đơn vị gốc","µg/mL"),"µg/mL")
-                                v_ul = (lvl * v_final * 1000) / c_s if c_s > 0 else 0
-                                row_data[f"Hút Mix {name} (µL)"] = round(v_ul, 2)
-                                total_std_v += v_ul
-                        
-                        for k, v in is_surr_columns.items():
-                            row_data[k] = round(v, 2)
+                            c_s_raw = float(r.get("Nồng độ Gốc", 0))
+                            unit_s = str(r.get("Đơn vị gốc", "ppm")).strip()
                             
-                        v_dungmoi = (v_final * 1000) - total_std_v - total_is_v_per_vial
-                        if v_dungmoi<0:raise ValueError("Điểm chuẩn vượt thể tích vial; chưa xuất bảng pha.")
-                        row_data["Dung môi bù (µL)"] = round(v_dungmoi, 2) if v_dungmoi >= 0 else "Quá thể tích!"
-                        row_data["V tổng đích (mL)"] = v_final
-                        calib_data.append(row_data)
+                            lvl_conv = u_convert(lvl, unit_levels, unit_s)
+                            v_ul = (lvl_conv * (v_final * 1000)) / c_s_raw
+                            row_data[f"Hút Mix {name} (µL)"] = round(v_ul, 2)
+                            total_std_v += v_ul
+                    
+                    for k, v in is_surr_columns.items():
+                        row_data[k] = round(v, 2)
+                        
+                    v_dungmoi = (v_final * 1000) - total_std_v - total_is_v_per_vial
+                    if v_dungmoi < 0: raise ValueError(f"Điểm chuẩn {lvl} {unit_levels} vượt quá thể tích vial ({v_final} mL). Hãy tăng thể tích vial lên hoặc tăng nồng độ chuẩn lên.")
+                    row_data["Dung môi bù (µL)"] = round(v_dungmoi, 2)
+                    row_data["V tổng (mL)"] = v_final
+                    calib_data.append(row_data)
 
-                    for ins in instructions:
-                        st.markdown(ins)
-                    
-                    df_calib = pd.DataFrame(calib_data)
-                    st.dataframe(df_calib, use_container_width=True, hide_index=True)
-                    
-                    st.download_button("📥 Tải Bảng Pha Chuẩn (CSV)", data=df_calib.to_csv(index=False).encode('utf-8-sig'), file_name=f"Quy_trinh_Pha_chuan_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv")
-                except Exception as e:
-                    st.error(f"Lỗi tính toán: {e}. Vui lòng kiểm tra lại dữ liệu.")
+                for ins in instructions:
+                    st.markdown(ins)
+                
+                df_calib = pd.DataFrame(calib_data)
+                st.dataframe(df_calib, use_container_width=True, hide_index=True)
+                
+                st.download_button("📥 Tải Bảng Pha Chuẩn (CSV)", data=df_calib.to_csv(index=False).encode('utf-8-sig'), file_name=f"Quy_trinh_Pha_chuan_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv")
+            except Exception as e:
+                st.error(f"Lỗi tính toán: {e}. Vui lòng kiểm tra lại thông số nồng độ, đơn vị và thể tích.")
 
 elif menu == "📝 Báo cáo & Lập Biên bản":
     st.markdown("<h1 class='main-title'>📝 Báo cáo & Lập Biên Bản</h1>", unsafe_allow_html=True)
@@ -1466,7 +1488,6 @@ elif menu == "🧪 Kiểm soát Hóa chất":
     if st.session_state.get('chem_error'): st.error(st.session_state.chem_error)
     base = st.session_state.df_chem.copy()
     
-    # DASHBOARD THỐNG KÊ (MỚI)
     if not base.empty:
         col1, col2, col3, col4 = st.columns(4)
         col1.markdown(f'<div class="kpi" style="--accent:#239f8d; min-height:110px; padding:15px"><div class="kpi-label">Tổng số hóa chất</div><div class="kpi-number">{len(base)}</div></div>', unsafe_allow_html=True)
@@ -1475,7 +1496,6 @@ elif menu == "🧪 Kiểm soát Hóa chất":
         col4.markdown(f'<div class="kpi" style="--accent:#dbab5b; min-height:110px; padding:15px"><div class="kpi-label">Cần rà soát</div><div class="kpi-number">{len(base[base["Cần Kiểm Tra"].astype(str).str.strip() != ""]) if "Cần Kiểm Tra" in base.columns else 0}</div></div>', unsafe_allow_html=True)
         st.write("")
 
-    # NÂNG CẤP FORM THÊM THỦ CÔNG
     with st.expander('➕ Thêm hóa chất thủ công'):
         with st.form('stock_add_form'):
             col_add1, col_add2 = st.columns(2)
@@ -1531,7 +1551,6 @@ elif menu == "🧪 Kiểm soát Hóa chất":
                 file_name_display = upload_csv.name
             except Exception as exc: st.error(f"Lỗi đọc CSV: {exc}")
 
-        # TIẾP NHẬN DỮ LIỆU TỪ FILE VÀ HIỂN TRƯỚC
         if parsed is not None and not parsed.empty:
             st.success(f'✔️ Đã đọc được {len(parsed)} dòng từ file {file_name_display}.')
             st.caption('Chọn dòng cần nhập vào kho chung. Chú ý các dòng có ghi chú trong cột Cần Kiểm Tra.')
@@ -1562,7 +1581,6 @@ elif menu == "🧪 Kiểm soát Hóa chất":
                     st.rerun()
                 except Exception as exc: st.error(str(exc))
     
-    # QUẢN LÝ KHO CHUNG & CẢNH BÁO
     if base.empty:
         st.info('Kho chưa có dữ liệu. Hãy thêm thủ công hoặc tải lên file PDF/CSV.')
     else:
