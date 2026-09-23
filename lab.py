@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import difflib
 import io
@@ -13,29 +13,21 @@ from streamlit_gsheets import GSheetsConnection
 # ==========================================
 st.set_page_config(page_title="GC HATICO - Lab GC", page_icon="🔬", layout="wide")
 
-# CSS TUỲ CHỈNH CẤP ĐỘ CAO (TAILWIND INSPIRATION)
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-    /* Áp dụng font Inter cho toàn bộ App */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif !important;
     }
-    
-    /* Màu nền tổng thể App (Slate sáng) */
     .stApp {
         background-color: #F8FAFC;
     }
-    
-    /* Tùy chỉnh thanh Sidebar */
     [data-testid="stSidebar"] {
         background-color: #FFFFFF;
         border-right: 1px solid #E2E8F0;
         box-shadow: 2px 0 10px rgba(0,0,0,0.02);
     }
-    
-    /* Hiệu ứng Tiêu đề Gradient */
     .main-title {
         background: linear-gradient(135deg, #0F172A 0%, #3B82F6 100%);
         -webkit-background-clip: text;
@@ -51,8 +43,6 @@ st.markdown("""
         margin-top: 1rem;
         margin-bottom: 1rem;
     }
-
-    /* Thẻ Thống kê (Metric Cards) */
     div[data-testid="stMetric"] {
         background-color: #FFFFFF;
         border: 1px solid #E2E8F0;
@@ -72,8 +62,6 @@ st.markdown("""
         font-weight: 700 !important;
         color: #0F172A;
     }
-    
-    /* Thiết kế Nút Bấm (Buttons) */
     .stButton > button {
         border-radius: 8px;
         font-weight: 600;
@@ -92,8 +80,6 @@ st.markdown("""
         box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4);
         transform: translateY(-2px);
     }
-
-    /* Thiết kế Thẻ (Tabs) */
     .stTabs [data-baseweb="tab-list"] {
         background-color: #FFFFFF;
         border-radius: 10px;
@@ -118,19 +104,22 @@ st.markdown("""
         color: #2563EB !important;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    
-    /* Chỉnh sửa Bảng dữ liệu */
     [data-testid="stDataFrame"] {
         border-radius: 10px;
         border: 1px solid #E2E8F0;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
-    
-    /* Chỉnh sửa Expanders & Containers */
     [data-testid="stExpander"] {
         background: #FFFFFF;
         border-radius: 10px;
         border: 1px solid #E2E8F0;
+    }
+    .warning-box {
+        background-color: #FEF2F2;
+        border-left: 4px solid #EF4444;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -142,8 +131,12 @@ STATUSES = [
     "🔵 4. Đang chạy máy", "🟣 5. Đang tính số liệu", "🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"
 ]
 
+CHEM_SYSTEMS = ["GC-MS", "GC-FID", "Thermo", "Dùng chung"]
+CHEM_TYPES = ["Chất chuẩn (IS/Surrogate)", "Dung môi", "Vật tư tiêu hao", "Khí chuẩn", "Khác"]
+CHEM_STATUS = ["🟢 Còn nhiều", "🟡 Sắp hết", "🔴 Đã hết"]
+
 # ==========================================
-# 2. KẾT NỐI DATABASE & THƯ VIỆN KÉP
+# 2. KẾT NỐI DATABASE
 # ==========================================
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -168,10 +161,34 @@ def load_limit_config():
     except:
         return pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
 
+def load_chemical_data():
+    try:
+        df_chem = conn.read(spreadsheet=SHEET_URL, worksheet="QuanLyHoaChat", ttl=0) 
+        if df_chem.empty or len(df_chem.columns) == 0 or "Tên Hóa Chất" not in df_chem.columns:
+            raise Exception("Chưa có cấu trúc")
+        df_chem['Hạn Sử Dụng'] = pd.to_datetime(df_chem['Hạn Sử Dụng'], errors='coerce').dt.date
+        df_chem['Ngày Mở Nắp'] = pd.to_datetime(df_chem['Ngày Mở Nắp'], errors='coerce').dt.date
+        return df_chem
+    except:
+        df_chem = pd.DataFrame(columns=["Hệ Máy", "Phân Loại", "Tên Hóa Chất", "Số Lô (Lot)", "Ngày Mở Nắp", "Hạn Sử Dụng", "Tình Trạng Kho", "Ghi Chú"])
+        return df_chem
+
+def save_chemical_data(df_chem):
+    df_save = df_chem.copy()
+    df_save['Hạn Sử Dụng'] = pd.to_datetime(df_save['Hạn Sử Dụng'], errors='coerce').dt.strftime('%Y-%m-%d')
+    df_save['Ngày Mở Nắp'] = pd.to_datetime(df_save['Ngày Mở Nắp'], errors='coerce').dt.strftime('%Y-%m-%d')
+    try:
+        conn.update(spreadsheet=SHEET_URL, worksheet="QuanLyHoaChat", data=df_save)
+    except:
+        pass
+    st.cache_data.clear()
+
 if "df" not in st.session_state:
     st.session_state.df = load_data()
 if "df_limit" not in st.session_state:
     st.session_state.df_limit = load_limit_config()
+if "df_chem" not in st.session_state:
+    st.session_state.df_chem = load_chemical_data()
 
 # ==========================================
 # 3. CÁC HÀM BỔ SUNG & XỬ LÝ SỐ LIỆU
@@ -249,9 +266,6 @@ def evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recover
 
     return f"{round(c_thuc_val, 4)}"
 
-# ==========================================
-# TRỢ LÝ LAB ĐỘNG (DYNAMIC QUERY ENGINE)
-# ==========================================
 def lab_norm(value):
     if value is None or pd.isna(value): return ''
     return ''.join(c for c in unicodedata.normalize('NFD',str(value).lower().replace('đ','d')) if unicodedata.category(c)!='Mn').strip()
@@ -264,7 +278,7 @@ def lab_local_answer(question, df):
     if any(x in q for x in ['cong thuc', 'cach tinh']):
         return "💡 **Công thức SOP:**\n- Mẫu Nước: C = C đo × 100/R.\n- Mẫu Khí: C = C đo ÷ V × 100/R.\nHệ thống tự động gợi ý V=24L cho mẫu Khí (KT) và V=4L cho mẫu Xung quanh (KXQ/KLV)."
     if any(x in q for x in ['bien ban', 'huong dan', 'cach nhap', 'loi', 'mdl', 'loq']):
-        return "💡 **Hướng dẫn:**\n- Tiếp nhận mẫu ở Tab 2.\n- Tính kết quả ở Tab 3 (GC-MS).\n- Thư viện ở Tab cuối (CauHinh_MDL_LOQ).\n- Tính xong sang Tab Cuối ném file Word/Excel vào để Lập Biên Bản tự động."
+        return "💡 **Hướng dẫn:**\n- Tiếp nhận mẫu ở Tab 2.\n- Tính kết quả ở Tab 3 (GC-MS).\n- Quản lý Hóa chất ở Tab Kiểm soát Hóa chất.\n- Thư viện ở Tab cuối (CauHinh_MDL_LOQ).\n- Tính xong sang Tab Cuối ném file Word/Excel vào để Lập Biên Bản tự động."
 
     filters = []
     code = re.search(r'\b(?:ns|nt|nm|nn|kt|kxq|kkxq|klv)[.\-]?\d[\w.\-]*', q)
@@ -322,6 +336,7 @@ menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
     "⚙️ Vận hành GC-MS (VOCs)",
     "🔥 Vận hành GC-FID",
     "🧬 Vận hành Thermo",
+    "🧪 Kiểm soát Hóa chất",
     "🚀 Tiện ích & Cấu hình"
 ])
 
@@ -333,11 +348,11 @@ if st.sidebar.button("🔄 Cập nhật hệ thống", use_container_width=True)
         st.session_state.results_stale = True
     st.session_state.df = load_data()
     st.session_state.df_limit = load_limit_config() 
+    st.session_state.df_chem = load_chemical_data()
     st.rerun()
 
 st.sidebar.divider()
 
-# KHU VỰC TRỢ LÝ ẢO (CHATBOT)
 with st.sidebar.popover("💬 Chat với Trợ lý AI", use_container_width=True):
     st.markdown("👋 **Xin chào! Mình là Trợ lý LIMS.**")
     st.caption("Tra cứu tiến độ mẫu, mẻ, phân công hoặc hỏi về SOP.")
@@ -376,19 +391,18 @@ today_date = datetime.today().date()
 # ==========================================
 
 if menu == "🏠 Trang chủ (Tổng quan)":
-    st.markdown("<div class='main-title'>Bảng Điều Khiển Trung Tâm</div>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>📊 Bảng Điều Khiển Trung Tâm</h1>", unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     tong_hom_nay = len(df_current[df_current["Ngày Nhận"] == today_date])
     cho_chay_may = len(df_current[df_current["Trạng Thái"] == "🟡 3. Chờ chạy máy"])
     ton_dong = len(df_current[(df_current["Ngày Nhận"] < today_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))])
-    
     da_luu = len(df_current[df_current["Trạng Thái"] == "🟢 6. Lưu kho"])
     da_huy = len(df_current[df_current["Trạng Thái"] == "⚫ 7. Đã tiêu hủy"])
     tong_hoan_thanh = da_luu + da_huy
     
     col1.metric("📥 Tổng nhận hôm nay", tong_hom_nay)
-    col2.metric("⏳ Đang chờ chạy", cho_chay_may)
+    col2.metric("⏳ Đang chờ chạy GC", cho_chay_may)
     col3.metric("⚠️ Tồn đọng chưa xử lý", ton_dong, delta="-Cần xử lý", delta_color="inverse")
     col4.metric("✅ Đã hoàn thành", tong_hoan_thanh, f"Lưu/Hủy", delta_color="off")
     
@@ -428,7 +442,7 @@ if menu == "🏠 Trang chủ (Tổng quan)":
             "Ngày Nhận": None 
         },
         disabled=["Mã Mẫu", "Tên Mẻ", "Chỉ Tiêu", "Phân Loại", "Giờ Nhận"], 
-        use_container_width=True, num_rows="dynamic", key="data_editor", height=400
+        use_container_width=True, num_rows="dynamic", key="data_editor", height=450
     )
 
     if st.button("💾 Lưu các thay đổi vào Hệ thống", type="primary"):
@@ -450,7 +464,7 @@ if menu == "🏠 Trang chủ (Tổng quan)":
         st.rerun()
 
 elif menu == "📥 Quản lý Tiếp nhận":
-    st.markdown("<div class='main-title'>📥 Khu vực Tiếp nhận mẫu mới</div>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>📥 Khu vực Tiếp nhận mẫu mới</h1>", unsafe_allow_html=True)
     
     tab_excel, tab_thu_cong = st.tabs(["📁 Nạp qua Excel tự động", "✍️ Nhập Mẫu Lẻ"])
     
@@ -531,7 +545,7 @@ elif menu == "📥 Quản lý Tiếp nhận":
     with tab_thu_cong:
         with st.container(border=True):
             with st.form("add_sample_form", clear_on_submit=True):
-                st.markdown("<div class='sub-title'>Bổ sung Mẫu Thủ Công</div>", unsafe_allow_html=True)
+                st.markdown("<div class='sub-title'>Bổ sung Mẫu Lẻ</div>", unsafe_allow_html=True)
                 new_id = st.text_input("Mã Mẫu (VD: NS-1509-01)*")
                 new_name = st.text_input("Tên Mẻ (VD: 2026.07.017)")
                 col_t1, col_t2 = st.columns(2)
@@ -545,12 +559,13 @@ elif menu == "📥 Quản lý Tiếp nhận":
                     st.success(f"✅ Đã thêm mẫu {new_id} thành công!")
 
 elif menu == "⚙️ Vận hành GC-MS (VOCs)":
-    st.markdown("<div class='main-title'>⚙️ Phân tích & Vận hành Máy đo GC-MS</div>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>⚙️ Phân tích & Vận hành Máy đo GC-MS</h1>", unsafe_allow_html=True)
     
-    col_seq, col_import = st.columns(2)
-    with col_seq:
+    tab_seq, tab_auto, tab_manual = st.tabs(["1. Xuất Sequence", "2. Xử lý Tự động (File PDF/Excel)", "3. Tính toán & Nhập liệu Thủ công"])
+    
+    with tab_seq:
         with st.container(border=True):
-            st.markdown("<div class='sub-title'>1. Xuất Sequence Chạy Máy</div>", unsafe_allow_html=True)
+            st.markdown("<div class='sub-title'>Xuất Sequence Chạy Máy</div>", unsafe_allow_html=True)
             df_ready = st.session_state.df[st.session_state.df["Trạng Thái"] == "🟡 3. Chờ chạy máy"]
             st.write(f"Đang có **{len(df_ready)}** mẫu trong hàng chờ.")
             
@@ -560,10 +575,10 @@ elif menu == "⚙️ Vận hành GC-MS (VOCs)":
                 seq_df['Data File'] = datetime.now().strftime("%Y%m%d") + "_" + df_ready['Mã Mẫu']
                 st.download_button("📥 Tải File Sequence.csv", data=seq_df.to_csv(index=False).encode('utf-8'), file_name=f"MassHunter_Seq_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary")
             
-    with col_import:
+    with tab_auto:
         with st.container(border=True):
-            st.markdown("<div class='sub-title'>2. Xử lý Kết quả (SOP)</div>", unsafe_allow_html=True)
-            st.info("💡 Tự động nội suy nồng độ $C_{surr}$ chuẩn và so khớp Giới hạn MDL/LOQ theo đúng chuẩn phòng Lab.")
+            st.markdown("<div class='sub-title'>Xử lý Kết quả Hàng loạt (Từ File máy)</div>", unsafe_allow_html=True)
+            st.info("💡 Tự động bóc tách số liệu, nội suy nồng độ $C_{surr}$ chuẩn và so khớp Giới hạn MDL/LOQ theo đúng chuẩn phòng Lab.")
             
             gc_file = st.file_uploader("Kéo thả báo cáo GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
 
@@ -679,48 +694,219 @@ elif menu == "⚙️ Vận hành GC-MS (VOCs)":
                             mime="text/csv",
                             type="primary"
                         )
+                        
+                        # Tự động cập nhật trạng thái các mẫu đã tính
+                        processed_samples = df_results["Tên mẫu"].unique().tolist()
+                        for smp in processed_samples:
+                            mask = st.session_state.df["Mã Mẫu"] == smp
+                            if mask.any():
+                                st.session_state.df.loc[mask, "Trạng Thái"] = "🟣 5. Đang tính số liệu"
+                        save_data(st.session_state.df)
+                        
                     else: 
                         st.warning("⚠️ Báo cáo không chứa mẫu hợp lệ (KT, KXQ, NS, NT...) hoặc thiếu dữ liệu phân tích.")
                 except Exception as e: st.error(f"❌ Lỗi xử lý: {e}")
 
+    with tab_manual:
+        with st.container(border=True):
+            st.markdown("<div class='sub-title'>Tính toán & Nhập liệu Thủ công (Ghi đè SOP)</div>", unsafe_allow_html=True)
+            st.info("💡 Chức năng điền tay số liệu cho từng mẫu lẻ. Kết quả sẽ được gộp chung vào bảng kết quả tổng bên trên để xuất Biên bản.")
+            
+            valid_samples = df_current[df_current['Chỉ Tiêu'].str.strip() != ""]['Mã Mẫu'].tolist()
+            selected_sample_manual = st.selectbox("🔍 Chọn Mã Mẫu để nhập liệu:", ["-- Chọn mẫu --"] + valid_samples)
+            
+            if selected_sample_manual != "-- Chọn mẫu --":
+                sample_info = df_current[df_current['Mã Mẫu'] == selected_sample_manual].iloc[0]
+                chi_tieu_raw = str(sample_info['Chỉ Tiêu'])
+                chi_tieu_list = [ct.strip() for ct in re.split(r'[;,]', chi_tieu_raw) if ct.strip()]
+                
+                if chi_tieu_list:
+                    v_param_def, nen_mau_code, loai_mau_def = parse_sample_matrix(selected_sample_manual)
+                    if v_param_def is None:
+                        v_param_def, nen_mau_code, loai_mau_def = 24.0, 'KT', 'Khí'
+                    
+                    st.write(f"**Phân loại:** {loai_mau_def} ({nen_mau_code}) | **Chỉ tiêu cần phân tích:** {len(chi_tieu_list)}")
+                    
+                    manual_data = []
+                    for ct in chi_tieu_list:
+                        manual_data.append({
+                            "Chỉ Tiêu": ct,
+                            "Độ làm giàu (V)": v_param_def,
+                            "C_surr thực": 10.0,
+                            "C_surr đo": 10.0,
+                            "C_đo chỉ tiêu": 0.0
+                        })
+                    
+                    df_manual = pd.DataFrame(manual_data)
+                    edited_manual = st.data_editor(
+                        df_manual,
+                        column_config={
+                            "Chỉ Tiêu": st.column_config.TextColumn(disabled=True),
+                            "Độ làm giàu (V)": st.column_config.NumberColumn(format="%.2f"),
+                            "C_surr thực": st.column_config.NumberColumn(format="%.3f"),
+                            "C_surr đo": st.column_config.NumberColumn(format="%.3f"),
+                            "C_đo chỉ tiêu": st.column_config.NumberColumn(format="%.4f")
+                        },
+                        use_container_width=True,
+                        hide_index=True,
+                        key=f"manual_editor_{selected_sample_manual}"
+                    )
+                    
+                    if st.button("💾 Tính Toán & Lưu Mẫu Này", type="primary"):
+                        new_results = []
+                        for _, row in edited_manual.iterrows():
+                            ct = str(row["Chỉ Tiêu"])
+                            v = float(row["Độ làm giàu (V)"])
+                            c_truoc = float(row["C_surr thực"])
+                            c_sau = float(row["C_surr đo"])
+                            c_do = float(row["C_đo chỉ tiêu"])
+                            
+                            recovery = (c_sau / c_truoc) * 100.0 if c_truoc > 0 else 100.0
+                            mdl_val, loq_val, unit = get_limit_info(ct, nen_mau_code)
+                            c_thuc_str = evaluate_result(c_do, v, mdl_val, loq_val, unit, loai_mau_def, recovery)
+                            
+                            limit_display = ""
+                            if loai_mau_def == 'Khí' and mdl_val is not None: limit_display = f"MDL: {mdl_val} {unit}"
+                            elif loai_mau_def == 'Nước' and loq_val is not None: limit_display = f"LOQ: {loq_val} {unit}"
+                            
+                            new_results.append({
+                                "Tên mẫu": selected_sample_manual,
+                                "Tên chỉ tiêu": ct,
+                                "C đo": round(c_do, 4),
+                                "C thực": c_thuc_str,
+                                "Giới hạn": limit_display,
+                                "R(%)": f"{round(recovery, 1)}%",
+                                "C_surr_truoc": c_truoc,
+                                "C_surr_sau": c_sau
+                            })
+                        
+                        new_df = pd.DataFrame(new_results)
+                        if 'results' not in st.session_state or st.session_state.results.empty:
+                            st.session_state.results = new_df
+                        else:
+                            existing = st.session_state.results
+                            existing = existing[existing["Tên mẫu"] != selected_sample_manual]
+                            st.session_state.results = pd.concat([existing, new_df], ignore_index=True)
+                        
+                        st.session_state.results_stale = False
+                        
+                        # Cập nhật trạng thái mẫu sang Đang tính số liệu
+                        mask = st.session_state.df["Mã Mẫu"] == selected_sample_manual
+                        if mask.any():
+                            st.session_state.df.loc[mask, "Trạng Thái"] = "🟣 5. Đang tính số liệu"
+                            save_data(st.session_state.df)
+                            
+                        st.success(f"✅ Đã lưu kết quả cho mẫu {selected_sample_manual}! Bạn có thể chuyển sang mẫu khác hoặc qua tab Tiện ích xuất biên bản.")
+                        st.rerun()
+                else:
+                    st.warning("Mẫu này chưa được chỉ định Chỉ Tiêu phân tích. Hãy vào 'Quản lý Tiếp nhận' cập nhật lại.")
+
 elif menu == "🔥 Vận hành GC-FID":
-    st.markdown("<div class='main-title'>🔥 Hệ thống GC-FID (Agilent)</div>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>🔥 Hệ thống GC-FID (Agilent)</h1>", unsafe_allow_html=True)
     st.caption("Module chuyên biệt xử lý dữ liệu từ đầu dò FID")
     
     col_seq, col_import = st.columns(2)
     with col_seq:
         with st.container(border=True):
-            st.subheader("1. Xuất Sequence GC-FID")
+            st.markdown("<div class='sub-title'>1. Xuất Sequence GC-FID</div>", unsafe_allow_html=True)
             st.info("Sẽ tích hợp thuật toán xuất file Sequence định dạng cho máy GC-FID Agilent.")
         
     with col_import:
         with st.container(border=True):
-            st.subheader("2. Xử lý kết quả GC-FID")
+            st.markdown("<div class='sub-title'>2. Xử lý kết quả GC-FID</div>", unsafe_allow_html=True)
             st.info("Khu vực chờ tích hợp thuật toán đọc file báo cáo từ máy GC-FID.")
             fid_file = st.file_uploader("Kéo thả báo cáo GC-FID (PDF/Excel/CSV/TXT)", type=["pdf", "xlsx", "xls", "csv", "txt"])
             if fid_file:
                 st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report FID.")
 
 elif menu == "🧬 Vận hành Thermo":
-    st.markdown("<div class='main-title'>🧬 Hệ thống Thermo GC-MS</div>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>🧬 Hệ thống Thermo GC-MS</h1>", unsafe_allow_html=True)
     st.caption("Module chuyên biệt xử lý dữ liệu OCP, OPP, PCB và Phenol")
     
     col_seq, col_import = st.columns(2)
     with col_seq:
         with st.container(border=True):
-            st.subheader("1. Xuất Sequence Thermo")
+            st.markdown("<div class='sub-title'>1. Xuất Sequence Thermo</div>", unsafe_allow_html=True)
             st.info("Sẽ tích hợp thuật toán xuất file Sequence định dạng tương thích phần mềm Thermo.")
         
     with col_import:
         with st.container(border=True):
-            st.subheader("2. Xử lý kết quả Thermo")
+            st.markdown("<div class='sub-title'>2. Xử lý kết quả Thermo</div>", unsafe_allow_html=True)
             st.info("Khu vực chờ tích hợp thuật toán đọc file xuất từ máy Thermo.")
             thermo_file = st.file_uploader("Kéo thả báo cáo Thermo (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
             if thermo_file:
                 st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report Thermo.")
 
+elif menu == "🧪 Kiểm soát Hóa chất":
+    st.markdown("<h1 class='main-title'>🧪 Quản lý Hóa chất & Vật tư tiêu hao</h1>", unsafe_allow_html=True)
+    st.caption("Module kiểm soát chất chuẩn, dung môi và vật tư riêng biệt cho 3 hệ máy.")
+    
+    df_chem = st.session_state.df_chem.copy()
+    
+    today = datetime.now().date()
+    df_chem['Hạn Sử Dụng'] = pd.to_datetime(df_chem['Hạn Sử Dụng'], errors='coerce').dt.date
+    
+    warnings = []
+    for idx, row in df_chem.iterrows():
+        exp_date = row['Hạn Sử Dụng']
+        if pd.notna(exp_date):
+            days_left = (exp_date - today).days
+            if days_left < 0:
+                warnings.append(f"❌ **ĐÃ HẾT HẠN:** {row['Tên Hóa Chất']} (Hệ: {row['Hệ Máy']}, Lô: {row['Số Lô (Lot)']}) - Hết hạn từ {exp_date.strftime('%d/%m/%Y')}.")
+            elif days_left <= 30:
+                warnings.append(f"⚠️ **SẮP HẾT HẠN:** {row['Tên Hóa Chất']} (Hệ: {row['Hệ Máy']}) - Còn lại {days_left} ngày (EXP: {exp_date.strftime('%d/%m/%Y')}).")
+        
+        if str(row['Tình Trạng Kho']) == "🔴 Đã hết":
+            warnings.append(f"🛒 **HẾT HÀNG TRONG KHO:** {row['Tên Hóa Chất']} ({row['Hệ Máy']}). Cần lên kế hoạch mua sắm (PO) ngay!")
+
+    if warnings:
+        st.markdown("<div class='warning-box'><strong>🚨 DANH SÁCH CẢNH BÁO CẦN LƯU Ý:</strong><br>", unsafe_allow_html=True)
+        for w in warnings:
+            st.markdown(w)
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    with st.container(border=True):
+        tab_all, tab_gcms, tab_gcfid, tab_thermo = st.tabs(["Tất cả Hóa chất", "🔬 GC-MS", "🔥 GC-FID", "🧬 Thermo"])
+        
+        def render_chem_editor(filter_system=None):
+            if filter_system:
+                mask = df_chem["Hệ Máy"] == filter_system
+                df_view = df_chem[mask].copy()
+            else:
+                df_view = df_chem.copy()
+                
+            edited_chem = st.data_editor(
+                df_view,
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "Hệ Máy": st.column_config.SelectboxColumn("Hệ Máy", options=CHEM_SYSTEMS, required=True),
+                    "Phân Loại": st.column_config.SelectboxColumn("Phân Loại", options=CHEM_TYPES, required=True),
+                    "Tên Hóa Chất": st.column_config.TextColumn("Tên Hóa Chất / Vật Tư", required=True),
+                    "Ngày Mở Nắp": st.column_config.DateColumn("Ngày Mở Nắp", format="YYYY-MM-DD"),
+                    "Hạn Sử Dụng": st.column_config.DateColumn("Hạn Sử Dụng (EXP)", format="YYYY-MM-DD"),
+                    "Tình Trạng Kho": st.column_config.SelectboxColumn("Tình Trạng Kho", options=CHEM_STATUS)
+                },
+                key=f"chem_editor_{filter_system if filter_system else 'all'}",
+                height=400
+            )
+            return edited_chem
+
+        with tab_all: edited_all = render_chem_editor()
+        with tab_gcms: edited_gcms = render_chem_editor("GC-MS")
+        with tab_gcfid: edited_gcfid = render_chem_editor("GC-FID")
+        with tab_thermo: edited_thermo = render_chem_editor("Thermo")
+            
+        st.caption("✨ **Mẹo:** Thêm, sửa, xóa các hóa chất trực tiếp trên bảng. Hệ thống sẽ tự động cập nhật cảnh báo khi bạn lưu lại.")
+
+        if st.button("💾 Lưu Cập nhật Kho Hóa chất", type="primary"):
+            st.session_state.df_chem = edited_all
+            save_chemical_data(st.session_state.df_chem)
+            st.success("🎉 Đã lưu danh mục Hóa chất & Vật tư thành công!")
+            st.rerun()
+
 elif menu == "🚀 Tiện ích & Cấu hình":
-    st.markdown("<div class='main-title'>🛠️ Tiện ích & Quản trị Hệ thống</div>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>🛠️ Tiện ích & Quản trị Hệ thống</h1>", unsafe_allow_html=True)
     
     tab_limit, tab_report, tab_qr = st.tabs(["📚 Quản lý Thư viện MDL & LOQ", "📝 Lập Biên Bản", "🏷️ Sinh Mã QR"])
     
@@ -731,34 +917,34 @@ elif menu == "🚀 Tiện ích & Cấu hình":
             
         st.info("💡 Bạn có thể chỉnh sửa, thêm, xóa các mức giới hạn trực tiếp trên bảng. Nhớ ấn **Lưu thay đổi**.")
         
-        df_current_limit = st.session_state.df_limit.copy()
-        if df_current_limit.empty:
-            df_current_limit = pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
-            df_current_limit.loc[0] = ["", "", "", "", ""]
-            
-        edited_limit = st.data_editor(
-            df_current_limit, 
-            num_rows="dynamic", 
-            use_container_width=True,
-            key="limit_editor",
-            height=350
-        )
-        
-        if st.button("💾 Lưu thay đổi Thư viện", type="primary"):
-            try:
-                st.cache_data.clear() 
-                edited_limit = edited_limit[edited_limit["Tên Chất"].str.strip() != ""] 
+        with st.container(border=True):
+            df_current_limit = st.session_state.df_limit.copy()
+            if df_current_limit.empty:
+                df_current_limit = pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
+                df_current_limit.loc[0] = ["", "", "", "", ""]
                 
-                conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=edited_limit)
-                st.session_state.df_limit = edited_limit
-                if 'results' in st.session_state:
-                    st.session_state.results_stale = True
-                st.success("🎉 Đã lưu thư viện lên Google Sheets thành công!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"⚠️ Lỗi kết nối Google Sheets: {e}")
+            edited_limit = st.data_editor(
+                df_current_limit, 
+                num_rows="dynamic", 
+                use_container_width=True,
+                key="limit_editor",
+                height=350
+            )
+            
+            if st.button("💾 Lưu thay đổi Thư viện", type="primary"):
+                try:
+                    st.cache_data.clear() 
+                    edited_limit = edited_limit[edited_limit["Tên Chất"].str.strip() != ""] 
+                    
+                    conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=edited_limit)
+                    st.session_state.df_limit = edited_limit
+                    if 'results' in st.session_state:
+                        st.session_state.results_stale = True
+                    st.success("🎉 Đã lưu thư viện lên Google Sheets thành công!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"⚠️ Lỗi kết nối Google Sheets: {e}")
 
-        st.divider()
         with st.container(border=True):
             st.markdown("<div class='sub-title'>2. Cập nhật Hàng loạt (Import Excel)</div>", unsafe_allow_html=True)
             limit_file = st.file_uploader("Kéo thả file Bảng giới hạn (.xlsx)", type=["xlsx"])
