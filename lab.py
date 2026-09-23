@@ -1,11 +1,13 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import re
 import difflib
 import io
 import json
 import unicodedata
+import math
+import hashlib
 from streamlit_gsheets import GSheetsConnection
 
 # ==========================================
@@ -135,8 +137,123 @@ CHEM_SYSTEMS = ["GC-MS", "GC-FID", "Thermo", "Dùng chung"]
 CHEM_TYPES = ["Chất chuẩn (IS/Surrogate)", "Dung môi", "Vật tư tiêu hao", "Khí chuẩn", "Khác"]
 CHEM_STATUS = ["🟢 Còn nhiều", "🟡 Sắp hết", "🔴 Đã hết"]
 
+# KHAI BÁO BIẾN CHO KHO HÓA CHẤT
+U_GROUPS = {
+    'Nồng độ dung dịch': {'g/L': 1000., 'mg/L': 1., 'µg/L': .001, 'ng/L': .000001, 'mg/mL': 1000., 'µg/mL': 1., 'ng/mL': .001},
+    'Thể tích': {'L': 1., 'mL': .001, 'µL': .000001, 'm³': 1000.},
+    'Khối lượng': {'g': 1., 'mg': .001, 'µg': .000001, 'ng': .000000001, 'kg': 1000.},
+    'Nồng độ khí thực': {'g/m³': 1000., 'mg/m³': 1., 'µg/m³': .001, 'ng/m³': .000001},
+    'Nồng độ khí chuẩn': {'mg/Nm³': 1., 'µg/Nm³': .001, 'ng/Nm³': .000001},
+    'Hàm lượng khối lượng': {'mg/kg': 1., 'µg/kg': .001, 'ng/kg': .000001, 'ppm (m/m)': 1., 'ppb (m/m)': .001, '% (m/m)': 10000.}
+}
+CHEM_BASE = ['Hệ Máy', 'Phân Loại', 'Tên Hóa Chất', 'Số Lô (Lot)', 'Ngày Mở Nắp', 'Hạn Sử Dụng', 'Tình Trạng Kho', 'Ghi Chú']
+CHEM_EXTRA = ['ID Nguồn', 'STT Nguồn', 'CAS', 'Nhà Sản Xuất', 'Nồng Độ', 'Đơn Vị Nồng Độ', 'Độ Tinh Khiết (%)', 'Quy Cách Gốc', 'Lượng Quy Cách', 'Đơn Vị Quy Cách', 'Tình Trạng Gốc', 'HSD Gốc', 'Bảo Quản', 'Nguồn PDF', 'Trang PDF', 'Dòng PDF', 'Cần Kiểm Tra']
+
 # ==========================================
-# 2. KẾT NỐI DATABASE
+# 2. HÀM TIỆN ÍCH KHO HÓA CHẤT NÂNG CAO
+# ==========================================
+def u_text(v):
+    return '' if v is None or pd.isna(v) else str(v).strip()
+
+def u_canonical(unit):
+    text = u_text(unit).replace('μ', 'µ').replace('ug', 'µg').replace('ul', 'µL').replace('m3', 'm³').replace('ml', 'mL').replace(' / ', '/')
+    return {'ng/ml': 'ng/mL', 'ug/L': 'µg/L', 'ug/ml': 'µg/mL'}.get(text, text)
+
+def u_convert(value, source, target):
+    value = float(value)
+    if not math.isfinite(value): raise ValueError('Giá trị phải hữu hạn.')
+    source, target = u_canonical(source), u_canonical(target)
+    for group in U_GROUPS.values():
+        if source in group and target in group: return value * group[source] / group[target]
+    raise ValueError(f'Không tự quy đổi {source} → {target}: khác đại lượng hoặc chưa xác định cơ sở đơn vị.')
+
+def u_expiry(text):
+    text = u_text(text)
+    m = re.fullmatch(r'(\d{1,2})/(\d{1,2})/(\d{4})', text)
+    if not m: return None, ('Thiếu/ngày không đầy đủ' if text else 'Chưa có HSD')
+    a, b, y = map(int, m.groups())
+    if a <= 12 and b <= 12 and a != b: return None, 'Ngày mơ hồ D/M hay M/D: cần xác nhận'
+    try: return date(y, b, a) if a > 12 or a == b else date(y, a, b), ''
+    except ValueError: return None, 'Ngày không hợp lệ'
+
+def u_cas_valid(cas):
+    digits = cas.replace('-', '')
+    return bool(re.fullmatch(r'\d{2,7}-\d{2}-\d', cas)) and sum(int(v) * (i + 1) for i, v in enumerate(reversed(digits[:-1]))) % 10 == int(digits[-1])
+
+def read_stock_pdf(data, filename):
+    import pdfplumber
+    digest = hashlib.sha256(data).hexdigest()
+    records = []; system = ''; kind = 'Chất chuẩn phân tích'
+    with pdfplumber.open(io.BytesIO(data)) as pdf:
+        for page_no, page in enumerate(pdf.pages, 1):
+            for table in page.extract_tables():
+                for row_no, cells in enumerate(table, 1):
+                    cells = [u_text(x).replace('\n', ' ') for x in cells]
+                    if len(cells) != 9: continue
+                    stt, name, formula, maker, pack, state, expiry, storage, unlabelled = cells
+                    joined = ' '.join(cells).upper()
+                    if 'CHO MÁY GCMS THERMO' in joined: system = 'Thermo'; kind = 'Chất chuẩn phân tích'; continue
+                    if 'GCMS AGILENT' in joined: system = 'Dùng chung'; kind = 'Chất chuẩn phân tích'; continue
+                    if 'ĐỒNG HÀNH VÀ NỘI CHUẨN' in joined: kind = 'Chất chuẩn (IS/Surrogate)'; continue
+                    if name.strip().upper() in ['OPPS', 'OCPS', 'PCBS', 'PHENOL']: kind = 'Chất chuẩn phân tích'; continue
+                    if not name or name in ['Tên hóa chất', 'Tên Hóa Chất'] or not (maker or pack or state): continue
+                    text = name + ' ' + formula
+                    warnings = []
+                    cas_values = re.findall(r'\b\d{2,7}\s*-\s*\d{2}\s*-\s*\d\b', text)
+                    cas_values = list(dict.fromkeys(re.sub(r'\s', '', v) for v in cas_values))
+                    if any(not u_cas_valid(c) for c in cas_values): warnings.append('CAS không khớp số kiểm tra; đối chiếu COA')
+                    values = re.findall(r'(\d+(?:[.,]\d+)?)\s*(mg|ug|µg|μg|ng)\s*/\s*(ml|mL|L|l)\b', text)
+                    concentrations = {(float(n.replace(',', '.')), u_canonical(a + '/' + ('mL' if b.lower() == 'ml' else 'L'))) for n, a, b in values}
+                    conc, unit = next(iter(concentrations)) if len(concentrations) == 1 else (None, '')
+                    if len(concentrations) > 1: warnings.append('Nhiều nồng độ trong một dòng; không tự gộp')
+                    purity = re.search(r'(\d+(?:[.,]\d+)?)\s*%', text)
+                    pure = float(purity.group(1).replace(',', '.')) if purity else None
+                    pm = re.search(r'(\d+(?:[.,]\d+)?)\s*(mg|ug|µg|g|ml|mL|L)\b', pack)
+                    amount = float(pm.group(1).replace(',', '.')) if pm else None
+                    pack_unit = u_canonical(pm.group(2)) if pm else ''
+                    exp, date_note = u_expiry(expiry)
+                    if date_note: warnings.append(date_note)
+                    if len(name) < 3: warnings.append('Tên hóa chất chưa đầy đủ')
+                    if re.search(r'components|each', text, re.I): warnings.append('Hỗn hợp: giữ nguyên thành phần; nồng độ có thể là mỗi chất')
+                    status = '🔴 Đã hết' if 'hết' in state.lower() else 'Chưa xác nhận lượng tồn'
+                    notes = ('Công thức/thành phần: ' + formula if formula else '')
+                    notes += '; Cột cuối không có tiêu đề: ' + unlabelled if unlabelled else ''
+                    records.append(dict(zip(CHEM_BASE, [system or 'Dùng chung', kind, name, '', None, exp, status, notes])) | {
+                        'ID Nguồn': digest + f':{page_no}:{row_no}', 'STT Nguồn': stt, 'CAS': '; '.join(cas_values), 'Nhà Sản Xuất': maker,
+                        'Nồng Độ': conc, 'Đơn Vị Nồng Độ': unit, 'Độ Tinh Khiết (%)': pure, 'Quy Cách Gốc': pack,
+                        'Lượng Quy Cách': amount, 'Đơn Vị Quy Cách': pack_unit, 'Tình Trạng Gốc': state, 'HSD Gốc': expiry,
+                        'Bảo Quản': storage, 'Nguồn PDF': filename, 'Trang PDF': page_no, 'Dòng PDF': row_no, 'Cần Kiểm Tra': '; '.join(warnings)})
+    if not records: raise ValueError('Không tìm thấy bảng 9 cột theo PDF kho GC đã cung cấp. Không hỗ trợ PDF scan/cấu trúc khác.')
+    df = pd.DataFrame(records)
+    duplicate = df.duplicated(['Tên Hóa Chất', 'Nhà Sản Xuất', 'Quy Cách Gốc', 'HSD Gốc'], keep=False)
+    df.loc[duplicate, 'Cần Kiểm Tra'] = df.loc[duplicate, 'Cần Kiểm Tra'].map(lambda x: x + '; Có dòng có thể trùng trong PDF: đối chiếu từng lọ, không tự cộng kho')
+    return df
+
+def stock_frame(df):
+    if not df.empty and 'Tên Hóa Chất' not in df: raise ValueError('QuanLyHoaChat thiếu cột Tên Hóa Chất. Không ghi đè cấu trúc.')
+    df = df.copy()
+    for c in CHEM_BASE + CHEM_EXTRA:
+        if c not in df: df[c] = None if c in ['Ngày Mở Nắp', 'Hạn Sử Dụng', 'Nồng Độ', 'Độ Tinh Khiết (%)', 'Lượng Quy Cách'] else ''
+    for c in ['Ngày Mở Nắp', 'Hạn Sử Dụng']: df[c] = pd.to_datetime(df[c], errors='coerce').dt.date
+    for c in ['Nồng Độ', 'Độ Tinh Khiết (%)', 'Lượng Quy Cách']: df[c] = pd.to_numeric(df[c], errors='coerce')
+    return df
+
+def stock_serial(df):
+    df = stock_frame(df)
+    for c in ['Ngày Mở Nắp', 'Hạn Sử Dụng']: df[c] = pd.to_datetime(df[c], errors='coerce').dt.strftime('%Y-%m-%d')
+    return df.fillna('')
+
+def stock_fingerprint(df):
+    return hashlib.sha256(stock_serial(df).astype(str).to_json(orient='split', force_ascii=False).encode()).hexdigest()
+
+def stock_merge(base, incoming):
+    existing = set(base.get('ID Nguồn', pd.Series(dtype=str)).dropna().astype(str)) - {''}
+    ids = incoming['ID Nguồn'].astype(str)
+    if ids.duplicated().any() or any(x in existing for x in ids if x): raise ValueError('Đã nhập dòng nguồn PDF/CSV này. Chưa lưu thêm dòng nào.')
+    return pd.concat([base, incoming], ignore_index=True)
+
+# ==========================================
+# 3. KẾT NỐI DATABASE CHÍNH
 # ==========================================
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -163,24 +280,27 @@ def load_limit_config():
 
 def load_chemical_data():
     try:
-        df_chem = conn.read(spreadsheet=SHEET_URL, worksheet="QuanLyHoaChat", ttl=0) 
-        if df_chem.empty or len(df_chem.columns) == 0 or "Tên Hóa Chất" not in df_chem.columns:
-            raise Exception("Chưa có cấu trúc")
-        df_chem['Hạn Sử Dụng'] = pd.to_datetime(df_chem['Hạn Sử Dụng'], errors='coerce').dt.date
-        df_chem['Ngày Mở Nắp'] = pd.to_datetime(df_chem['Ngày Mở Nắp'], errors='coerce').dt.date
-        return df_chem
-    except:
-        df_chem = pd.DataFrame(columns=["Hệ Máy", "Phân Loại", "Tên Hóa Chất", "Số Lô (Lot)", "Ngày Mở Nắp", "Hạn Sử Dụng", "Tình Trạng Kho", "Ghi Chú"])
-        return df_chem
+        df = stock_frame(conn.read(spreadsheet=SHEET_URL, worksheet='QuanLyHoaChat', ttl=0))
+        st.session_state.chem_base = stock_fingerprint(df)
+        st.session_state.pop('chem_error', None)
+        return df
+    except Exception as exc:
+        st.session_state.chem_error = f'Không đọc được kho: {exc}. Kiểm tra worksheet QuanLyHoaChat rồi tải lại.'
+        return stock_frame(pd.DataFrame())
 
 def save_chemical_data(df_chem):
-    df_save = df_chem.copy()
-    df_save['Hạn Sử Dụng'] = pd.to_datetime(df_save['Hạn Sử Dụng'], errors='coerce').dt.strftime('%Y-%m-%d')
-    df_save['Ngày Mở Nắp'] = pd.to_datetime(df_save['Ngày Mở Nắp'], errors='coerce').dt.strftime('%Y-%m-%d')
-    try:
-        conn.update(spreadsheet=SHEET_URL, worksheet="QuanLyHoaChat", data=df_save)
-    except:
-        pass
+    if st.session_state.get('chem_error'): raise ValueError(st.session_state.chem_error)
+    current = stock_frame(conn.read(spreadsheet=SHEET_URL, worksheet='QuanLyHoaChat', ttl=0))
+    if stock_fingerprint(current) != st.session_state.get('chem_base'): raise ValueError('Kho đã thay đổi trên Sheets; tải lại trước khi lưu để tránh ghi đè.')
+    
+    for column in ['Nồng Độ', 'Độ Tinh Khiết (%)', 'Lượng Quy Cách']:
+        values = pd.to_numeric(df_chem[column], errors='coerce')
+        if (values.dropna() < 0).any(): raise ValueError(f'{column} không được âm.')
+    if df_chem['Tên Hóa Chất'].fillna('').str.strip().eq('').any(): raise ValueError('Tên hóa chất không được trống.')
+    
+    saved = stock_serial(df_chem)
+    conn.update(spreadsheet=SHEET_URL, worksheet='QuanLyHoaChat', data=saved)
+    st.session_state.chem_base = stock_fingerprint(saved)
     st.cache_data.clear()
 
 if "df" not in st.session_state:
@@ -191,7 +311,7 @@ if "df_chem" not in st.session_state:
     st.session_state.df_chem = load_chemical_data()
 
 # ==========================================
-# 3. CÁC HÀM BỔ SUNG & XỬ LÝ SỐ LIỆU
+# 4. CÁC HÀM BỔ SUNG & XỬ LÝ SỐ LIỆU
 # ==========================================
 def clean_str(value):
     return "" if pd.isna(value) else str(value).strip()
@@ -248,37 +368,26 @@ def get_limit_info(compound_name, nen_mau):
     return None, None, ""
 
 def convert_unit_value(value, from_unit, to_unit):
-    """Hàm tự động quy đổi đơn vị đo lường"""
-    if pd.isna(value) or to_unit == "Mặc định" or not from_unit:
-        return value
-        
-    try:
-        val = float(value)
-    except:
-        return value
+    """Hàm tự động quy đổi đơn vị đo lường cơ bản (Giữ lại cho tương thích module cũ)"""
+    if pd.isna(value) or to_unit == "Mặc định" or not from_unit: return value
+    try: val = float(value)
+    except: return value
 
     f_u = str(from_unit).strip().lower()
     t_u = str(to_unit).strip().lower()
 
-    if f_u == t_u:
-        return val
+    if f_u == t_u: return val
 
     conversion_factors = {
-        ('mg/l', 'µg/l'): 1000.0,
-        ('mg/l', 'ppb'): 1000.0,
-        ('µg/l', 'mg/l'): 0.001,
-        ('ppb', 'mg/l'): 0.001,
-        ('ppm', 'ppb'): 1000.0,
-        ('ppb', 'ppm'): 0.001,
-        ('mg/m3', 'µg/m3'): 1000.0,
-        ('µg/m3', 'mg/m3'): 0.001,
-        ('mg/nm3', 'µg/nm3'): 1000.0,
-        ('µg/nm3', 'mg/nm3'): 0.001,
+        ('mg/l', 'µg/l'): 1000.0, ('mg/l', 'ppb'): 1000.0,
+        ('µg/l', 'mg/l'): 0.001, ('ppb', 'mg/l'): 0.001,
+        ('ppm', 'ppb'): 1000.0, ('ppb', 'ppm'): 0.001,
+        ('mg/m3', 'µg/m3'): 1000.0, ('µg/m3', 'mg/m3'): 0.001,
+        ('mg/nm3', 'µg/nm3'): 1000.0, ('µg/nm3', 'mg/nm3'): 0.001,
     }
 
     factor = conversion_factors.get((f_u, t_u))
-    if factor:
-        return val * factor
+    if factor: return val * factor
     return val
 
 def evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recovery=100.0):
@@ -359,7 +468,7 @@ def lab_local_answer(question, df):
         return ans
 
 # ==========================================
-# 4. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
+# 5. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
 st.sidebar.markdown("<h2 style='text-align: center; color: #1E293B;'>🔬 LIMS HATICO</h2>", unsafe_allow_html=True)
 st.sidebar.caption("<div style='text-align: center; margin-bottom: 20px;'>Phần mềm Quản lý Phòng Lab Tự động</div>", unsafe_allow_html=True)
@@ -423,7 +532,7 @@ df_current["Ngày Nhận"] = df_current["Giờ Nhận"].dt.date
 today_date = datetime.today().date()
 
 # ==========================================
-# 5. GIAO DIỆN CÁC TRANG
+# 6. GIAO DIỆN CÁC TRANG
 # ==========================================
 
 if menu == "🏠 Trang chủ (Tổng quan)":
@@ -1339,72 +1448,162 @@ elif menu == "📝 Báo cáo & Lập Biên bản":
         st.write("Mô đun in tem dán mã vạch (Barcode/QR code) hàng loạt đang chờ tích hợp.")
 
 elif menu == "🧪 Kiểm soát Hóa chất":
-    st.markdown("<h1 class='main-title'>🧪 Quản lý Hóa chất & Vật tư tiêu hao</h1>", unsafe_allow_html=True)
-    st.caption("Module kiểm soát chất chuẩn, dung môi và vật tư riêng biệt cho 3 hệ máy.")
+    st.title('🧪 Kho hóa chất và Quản lý nhập liệu')
+    if st.session_state.get('chem_error'): st.error(st.session_state.chem_error)
+    base = st.session_state.df_chem.copy()
     
-    df_chem = st.session_state.df_chem.copy()
-    
-    today = datetime.now().date()
-    df_chem['Hạn Sử Dụng'] = pd.to_datetime(df_chem['Hạn Sử Dụng'], errors='coerce').dt.date
-    
-    warnings = []
-    for idx, row in df_chem.iterrows():
-        exp_date = row['Hạn Sử Dụng']
-        if pd.notna(exp_date):
-            days_left = (exp_date - today).days
-            if days_left < 0:
-                warnings.append(f"❌ **ĐÃ HẾT HẠN:** {row['Tên Hóa Chất']} (Hệ: {row['Hệ Máy']}, Lô: {row['Số Lô (Lot)']}) - Hết hạn từ {exp_date.strftime('%d/%m/%Y')}.")
-            elif days_left <= 30:
-                warnings.append(f"⚠️ **SẮP HẾT HẠN:** {row['Tên Hóa Chất']} (Hệ: {row['Hệ Máy']}) - Còn lại {days_left} ngày (EXP: {exp_date.strftime('%d/%m/%Y')}).")
-        
-        if str(row['Tình Trạng Kho']) == "🔴 Đã hết":
-            warnings.append(f"🛒 **HẾT HÀNG TRONG KHO:** {row['Tên Hóa Chất']} ({row['Hệ Máy']}). Cần lên kế hoạch mua sắm (PO) ngay!")
+    # DASHBOARD THỐNG KÊ (MỚI)
+    if not base.empty:
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Tổng số hóa chất", len(base))
+        col2.metric("Chuẩn phân tích", len(base[base['Phân Loại'] == 'Chất chuẩn phân tích']))
+        col3.metric("Nội chuẩn/Surrogate", len(base[base['Phân Loại'] == 'Chất chuẩn (IS/Surrogate)']))
+        col4.metric("⚠️ Cần rà soát", len(base[base['Cần Kiểm Tra'].astype(str).str.strip() != '']) if 'Cần Kiểm Tra' in base.columns else 0)
 
-    if warnings:
-        st.markdown("<div class='warning-box'><strong>🚨 DANH SÁCH CẢNH BÁO CẦN LƯU Ý:</strong><br>", unsafe_allow_html=True)
-        for w in warnings:
-            st.markdown(w)
-        st.markdown("</div>", unsafe_allow_html=True)
-    
-    with st.container(border=True):
-        tab_all, tab_gcms, tab_gcfid, tab_thermo = st.tabs(["Tất cả Hóa chất", "🔬 GC-MS", "🔥 GC-FID", "🧬 Thermo"])
-        
-        def render_chem_editor(filter_system=None):
-            if filter_system:
-                mask = df_chem["Hệ Máy"] == filter_system
-                df_view = df_chem[mask].copy()
-            else:
-                df_view = df_chem.copy()
+    # NÂNG CẤP FORM THÊM THỦ CÔNG
+    with st.expander('➕ Thêm hóa chất thủ công'):
+        with st.form('stock_add_form'):
+            col_add1, col_add2 = st.columns(2)
+            with col_add1:
+                name = st.text_input('Tên hóa chất *')
+                lot = st.text_input('Số lô (Lot)')
+                system = st.selectbox('Hệ máy', CHEM_SYSTEMS)
+                kind = st.selectbox('Phân loại', ['Chất chuẩn phân tích'] + CHEM_TYPES)
+            with col_add2:
+                cas = st.text_input('CAS (Ví dụ: 59-50-7)')
+                maker = st.text_input('Nhà sản xuất')
+                conc = st.number_input('Nồng độ', min_value=0.0, value=0.0, format="%.2f")
+                unit = st.selectbox('Đơn vị nồng độ', list(U_GROUPS['Nồng độ dung dịch']))
                 
-            edited_chem = st.data_editor(
-                df_view,
-                num_rows="dynamic",
-                use_container_width=True,
-                column_config={
-                    "Hệ Máy": st.column_config.SelectboxColumn("Hệ Máy", options=CHEM_SYSTEMS, required=True),
-                    "Phân Loại": st.column_config.SelectboxColumn("Phân Loại", options=CHEM_TYPES, required=True),
-                    "Tên Hóa Chất": st.column_config.TextColumn("Tên Hóa Chất / Vật Tư", required=True),
-                    "Ngày Mở Nắp": st.column_config.DateColumn("Ngày Mở Nắp", format="YYYY-MM-DD"),
-                    "Hạn Sử Dụng": st.column_config.DateColumn("Hạn Sử Dụng (EXP)", format="YYYY-MM-DD"),
-                    "Tình Trạng Kho": st.column_config.SelectboxColumn("Tình Trạng Kho", options=CHEM_STATUS)
-                },
-                key=f"chem_editor_{filter_system if filter_system else 'all'}",
-                height=400
-            )
-            return edited_chem
+            if st.form_submit_button('Thêm vào kho', disabled=bool(st.session_state.get('chem_error'))):
+                try:
+                    if not name.strip(): raise ValueError('Cần nhập tên hóa chất.')
+                    new_record = {
+                        'Tên Hóa Chất': name.strip(), 'Số Lô (Lot)': lot, 'Hệ Máy': system, 
+                        'Phân Loại': kind, 'Tình Trạng Kho': 'Chưa xác nhận lượng tồn',
+                        'CAS': cas.strip(), 'Nhà Sản Xuất': maker.strip(), 
+                        'Nồng Độ': conc if conc > 0 else None,
+                        'Đơn Vị Nồng Độ': unit if conc > 0 else ''
+                    }
+                    row = stock_frame(pd.DataFrame([new_record]))
+                    updated = pd.concat([base, row], ignore_index=True)
+                    save_chemical_data(updated); st.session_state.df_chem = stock_frame(updated); st.rerun()
+                except Exception as exc: st.error(str(exc))
+                
+    st.markdown("### 📥 Nạp dữ liệu tự động (PDF / CSV)")
+    col_up1, col_up2 = st.columns(2)
+    with col_up1:
+        upload_pdf = st.file_uploader('Tải lên PDF (Hóa chất chuẩn GC)', type=['pdf'], key='stock_pdf')
+    with col_up2:
+        upload_csv = st.file_uploader('Hoặc tải lên CSV (File bóc tách)', type=['csv'], key='stock_csv')
 
-        with tab_all: edited_all = render_chem_editor()
-        with tab_gcms: edited_gcms = render_chem_editor("GC-MS")
-        with tab_gcfid: edited_gcfid = render_chem_editor("GC-FID")
-        with tab_thermo: edited_thermo = render_chem_editor("Thermo")
+    parsed = None
+    file_name_display = ""
+    
+    if upload_pdf:
+        try:
+            @st.cache_data(show_spinner=False, max_entries=3)
+            def cached_stock(data, name): return read_stock_pdf(data, name)
+            parsed = cached_stock(upload_pdf.getvalue(), upload_pdf.name)
+            file_name_display = upload_pdf.name
+        except Exception as exc: st.error(f"Lỗi đọc PDF: {exc}")
+        
+    elif upload_csv:
+        try:
+            parsed = pd.read_csv(upload_csv)
+            parsed = stock_frame(parsed)
+            file_name_display = upload_csv.name
+        except Exception as exc: st.error(f"Lỗi đọc CSV: {exc}")
+
+    # TIẾP NHẬN DỮ LIỆU TỪ FILE VÀ HIỂN THỊ TRƯỚC
+    if parsed is not None and not parsed.empty:
+        st.success(f'✔️ Đã đọc được {len(parsed)} dòng từ file {file_name_display}.')
+        st.caption('Chọn dòng cần nhập vào kho chung. Chú ý các dòng có ghi chú trong cột Cần Kiểm Tra.')
+        preview = parsed.copy(); preview.insert(0, 'Nhập', False)
+        
+        col_config = {
+            'Hạn Sử Dụng': st.column_config.DateColumn(),
+            'Nồng Độ': st.column_config.NumberColumn(),
+            'Đơn Vị Nồng Độ': st.column_config.SelectboxColumn(options=list(U_GROUPS['Nồng độ dung dịch']))
+        }
+        disabled_cols = ['ID Nguồn', 'Nguồn PDF', 'Trang PDF', 'Dòng PDF', 'HSD Gốc', 'Tình Trạng Gốc', 'Quy Cách Gốc']
+        
+        edited_preview = st.data_editor(preview, num_rows='fixed', hide_index=True, use_container_width=True, 
+                                key='stock_preview_' + hashlib.sha256(str(file_name_display).encode()).hexdigest(),
+                                column_config=col_config, disabled=disabled_cols)
+                                
+        if upload_pdf:
+            st.download_button('📥 Tải kết quả bóc tách PDF (CSV)', parsed.to_csv(index=False).encode('utf-8-sig'), 'Kho_hoa_chat_tu_PDF.csv', 'text/csv')
             
-        st.caption("✨ **Mẹo:** Thêm, sửa, xóa các hóa chất trực tiếp trên bảng. Hệ thống sẽ tự động cập nhật cảnh báo khi bạn lưu lại.")
+        if st.button('🚀 Ghi các dòng đã chọn vào Kho chung', disabled=bool(st.session_state.get('chem_error'))):
+            try:
+                incoming = edited_preview[edited_preview['Nhập']].drop(columns='Nhập')
+                if incoming.empty: raise ValueError('Bạn chưa tick chọn dòng nào để nhập.')
+                updated = stock_merge(base, incoming)
+                save_chemical_data(updated)
+                st.session_state.df_chem = stock_frame(updated)
+                st.success("Nhập kho thành công!")
+                st.rerun()
+            except Exception as exc: st.error(str(exc))
 
-        if st.button("💾 Lưu Cập nhật Kho Hóa chất", type="primary"):
-            st.session_state.df_chem = edited_all
-            save_chemical_data(st.session_state.df_chem)
-            st.success("🎉 Đã lưu danh mục Hóa chất & Vật tư thành công!")
-            st.rerun()
+    st.divider()
+    
+    # QUẢN LÝ KHO CHUNG & CẢNH BÁO
+    if base.empty:
+        st.info('Kho chưa có dữ liệu. Hãy thêm thủ công hoặc tải lên file PDF/CSV.')
+    else:
+        st.markdown("### 📋 Danh sách Hóa chất & Vật tư")
+        expires = pd.to_datetime(base['Hạn Sử Dụng'], errors='coerce')
+        today = pd.Timestamp.now().normalize()
+        
+        expired = base[expires < today]
+        soon = base[(expires >= today) & (expires <= today + pd.Timedelta(days=30))]
+        needs_check = base[base['Cần Kiểm Tra'].astype(str).str.strip() != ''] if 'Cần Kiểm Tra' in base.columns else pd.DataFrame()
+        
+        with st.expander('⚠️ Bảng Cảnh báo (Hạn sử dụng & Cần đối chiếu thông tin)'):
+            if not expired.empty or not soon.empty:
+                st.markdown("🔴 **Hóa chất Đã hết hạn / Sắp hết hạn:**")
+                st.dataframe(pd.concat([expired, soon]), use_container_width=True)
+            if not needs_check.empty:
+                st.markdown("🔍 **Hóa chất cần kiểm tra lại thông tin (Sai CAS, lỗi ngày tháng...):**")
+                st.dataframe(needs_check[['Tên Hóa Chất', 'Nhà Sản Xuất', 'CAS', 'Cần Kiểm Tra']], use_container_width=True)
+
+        col_f1, col_f2 = st.columns([2, 1])
+        with col_f1: search = st.text_input('🔍 Lọc theo Tên / CAS / Nhà sản xuất')
+        with col_f2: systems = st.multiselect('Lọc Hệ máy', sorted(set(base['Hệ Máy'].dropna().astype(str))))
+        
+        mask = pd.Series(True, index=base.index)
+        if search: mask &= base[['Tên Hóa Chất', 'CAS', 'Nhà Sản Xuất']].fillna('').astype(str).apply(lambda c: c.str.contains(search, case=False, regex=False)).any(axis=1)
+        if systems: mask &= base['Hệ Máy'].isin(systems)
+        selected = base[mask].copy()
+        
+        st.caption('Sửa cột Đơn Vị Nồng Độ là sửa khai báo dữ liệu gốc. Muốn đổi đơn vị và giữ nguyên nồng độ thực, hãy dùng bảng Quy đổi bên dưới.')
+        
+        edited_inventory = st.data_editor(selected, num_rows='fixed', hide_index=True, use_container_width=True, key='stock_edit',
+            column_config={
+                'Hạn Sử Dụng': st.column_config.DateColumn(),
+                'Ngày Mở Nắp': st.column_config.DateColumn(),
+                'Hệ Máy': st.column_config.SelectboxColumn(options=CHEM_SYSTEMS),
+                'Tình Trạng Kho': st.column_config.SelectboxColumn(options=CHEM_STATUS + ['Chưa xác nhận lượng tồn']),
+                'Đơn Vị Nồng Độ': st.column_config.SelectboxColumn(options=list(U_GROUPS['Nồng độ dung dịch']))
+            }, disabled=['ID Nguồn', 'Nguồn PDF', 'Trang PDF', 'Dòng PDF'])
+            
+        if st.button('💾 Lưu các chỉnh sửa vào Kho', disabled=bool(st.session_state.get('chem_error'))):
+            try:
+                updated = base.copy(); updated.loc[selected.index, edited_inventory.columns] = edited_inventory.values
+                save_chemical_data(updated); st.session_state.df_chem = stock_frame(updated); st.rerun()
+            except Exception as exc: st.error(str(exc))
+            
+        with st.expander('🔄 Công cụ Quy đổi nồng độ (Không ghi đè giá trị gốc)'):
+            target = st.selectbox('Đơn vị xem nồng độ mong muốn', list(U_GROUPS['Nồng độ dung dịch']), index=1)
+            view = selected[['Tên Hóa Chất', 'Nồng Độ', 'Đơn Vị Nồng Độ']].copy()
+            def cv(row):
+                try: return u_convert(row['Nồng Độ'], row['Đơn Vị Nồng Độ'], target)
+                except (ValueError, TypeError): return None
+            view['Nồng độ quy đổi'] = view.apply(cv, axis=1); view['Đơn vị đích'] = target
+            st.dataframe(view, use_container_width=True)
+            
+        st.download_button('📥 Xuất toàn bộ Kho ra CSV', stock_serial(base).to_csv(index=False).encode('utf-8-sig'), 'Kho_hoa_chat_Hien_Tai.csv', 'text/csv')
 
 elif menu == "⚙️ Cấu hình Hệ thống":
     st.markdown("<h1 class='main-title'>⚙️ Cấu hình & Quản trị Hệ thống</h1>", unsafe_allow_html=True)
