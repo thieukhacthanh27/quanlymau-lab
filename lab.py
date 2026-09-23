@@ -6,8 +6,11 @@ import difflib
 import io
 import json
 import unicodedata
+import os
+import html
 import math
 import hashlib
+from pathlib import Path
 from streamlit_gsheets import GSheetsConnection
 
 # ==========================================
@@ -17,112 +20,48 @@ st.set_page_config(page_title="GC HATICO - Lab GC", page_icon="🔬", layout="wi
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif !important;
-    }
-    .stApp {
-        background-color: #F8FAFC;
-    }
-    [data-testid="stSidebar"] {
-        background-color: #FFFFFF;
-        border-right: 1px solid #E2E8F0;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.02);
-    }
-    .main-title {
-        background: linear-gradient(135deg, #0F172A 0%, #3B82F6 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 800;
-        font-size: 2.2rem;
-        padding-bottom: 0.5rem;
-    }
-    .sub-title {
-        color: #1E293B;
-        font-weight: 700;
-        font-size: 1.4rem;
-        margin-top: 1rem;
-        margin-bottom: 1rem;
-    }
-    div[data-testid="stMetric"] {
-        background-color: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 20px 24px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        border-left: 5px solid #3B82F6;
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
-    div[data-testid="stMetric"]:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.15);
-        border-left: 5px solid #2563EB;
-    }
-    div[data-testid="stMetricValue"] {
-        font-size: 2.2rem !important;
-        font-weight: 700 !important;
-        color: #0F172A;
-    }
-    .stButton > button {
-        border-radius: 8px;
-        font-weight: 600;
-        padding: 0.5rem 1rem;
-        border: 1px solid #CBD5E1;
-        transition: all 0.2s ease;
-    }
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
-        border: none !important;
-        color: white !important;
-        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.25);
-    }
-    .stButton > button[kind="primary"]:hover {
-        background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%) !important;
-        box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4);
-        transform: translateY(-2px);
-    }
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: #FFFFFF;
-        border-radius: 10px;
-        padding: 5px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        gap: 8px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 6px;
-        padding: 10px 20px;
-        color: #64748B;
-        font-weight: 600;
-        border: none;
-        transition: all 0.2s;
-    }
-    .stTabs [data-baseweb="tab"]:hover {
-        background-color: #F1F5F9;
-        color: #0F172A;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #EFF6FF !important;
-        color: #2563EB !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-    [data-testid="stDataFrame"] {
-        border-radius: 10px;
-        border: 1px solid #E2E8F0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-    [data-testid="stExpander"] {
-        background: #FFFFFF;
-        border-radius: 10px;
-        border: 1px solid #E2E8F0;
-    }
-    .warning-box {
-        background-color: #FEF2F2;
-        border-left: 4px solid #EF4444;
-        padding: 15px;
-        border-radius: 6px;
-        margin-bottom: 20px;
-    }
+.stApp {background:#f3f6f8;color:#142c3b}
+.stMainBlockContainer {padding-top:2rem;max-width:1500px;padding-bottom:4rem}
+[data-testid="stSidebar"] {background:#102d38;border-right:0}
+[data-testid="stSidebar"] h2,[data-testid="stSidebar"] p,[data-testid="stSidebar"] label {color:#d9e8e9!important}
+[data-testid="stSidebar"] [data-testid="stRadio"] label {padding:8px 10px;border-radius:8px;margin-bottom:3px}
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {background:#21515d}
+[data-testid="stSidebar"] .stButton button,[data-testid="stSidebar"] [data-testid="stPopover"] button {background:#1c424f;color:#e4f2f1;border-color:#355865}
+[data-testid="stSidebar"] .stButton button p {color:#e4f2f1!important}
+[data-testid="stSidebar"] hr {border-color:#34515c}
+.main-title {font-size:2rem!important;font-weight:750;color:#142c3b;margin-bottom:.3rem}
+.sub-title {font-size:1.15rem;font-weight:700;margin:1rem 0}
+.eyebrow {font-size:11px;letter-spacing:2px;font-weight:750;color:#63848b;text-transform:uppercase}
+.hero {display:flex;align-items:center;justify-content:space-between;gap:24px;margin:8px 0 25px}
+.hero h1 {font-size:34px;font-weight:750;margin:5px 0 8px;padding:0;letter-spacing:-1px}
+.hero p {color:#6a7e89;margin:0;font-size:14px}
+.date-pill {background:white;border:1px solid #dce6e9;border-radius:25px;padding:10px 17px;font-size:12px;white-space:nowrap;color:#537079}
+.brand {font-size:24px;letter-spacing:1px;font-weight:800;color:white;margin-top:4px}
+.brand em {color:#5bd2ba;font-style:normal}
+.brand-sub {font-size:11px;letter-spacing:2px;color:#8aaab5;margin:4px 0 28px}
+.kpi {background:white;border:1px solid #e0e8ec;border-radius:13px;padding:20px 23px;min-height:150px;border-top:3px solid var(--accent)}
+.kpi-label {color:#607986;font-size:13px;font-weight:600}
+.kpi-number {font-size:36px;font-weight:750;line-height:1.5;color:#173847}
+.kpi-foot {font-size:11px;color:#82959d}
+.section-title {font-size:17px;font-weight:700;color:#173847;margin:0 0 4px}
+.section-note {font-size:12px;color:#7b9199;margin-bottom:17px}
+.flow-row {display:flex;align-items:center;gap:14px;margin:12px 0;font-size:12px}
+.flow-label {width:125px;color:#5e7783;flex-shrink:0}
+.flow-track {height:7px;flex:1;background:#edf2f4;border-radius:8px;overflow:hidden}
+.flow-fill {height:100%;background:#23a68f;border-radius:8px}
+.flow-count {width:24px;font-weight:700;text-align:right;color:#173847}
+.notice {padding:12px 14px;background:#fff8eb;border:1px solid #f4e6c9;border-radius:9px;color:#89662e;font-size:12px;margin:10px 0}
+.stButton button,.stDownloadButton button {border-radius:8px;font-weight:600;border:1px solid #d7e4e8;min-height:41px}
+.stButton button[kind="primary"],.stDownloadButton button[kind="primary"] {background:#168d7d;border-color:#168d7d;color:white}
+[data-testid="stVerticalBlockBorderWrapper"]>div {border-radius:13px!important}
+[data-testid="stDataFrame"],[data-testid="stDataEditor"] {border:1px solid #e1e9ed;border-radius:9px;overflow:hidden}
+[data-testid="stExpander"] {background:white;border-radius:10px}
+[data-testid="stMetric"] {background:white;border:1px solid #e1e9ed;padding:16px;border-radius:12px}
+.stTabs [data-baseweb="tab-list"] {gap:24px;background:transparent}
+.stTabs [aria-selected="true"] {color:#168d7d!important}
+.stTabs [data-baseweb="tab-highlight"] {background:#168d7d}
+.warning-box {background:#fff4e9;border-left:4px solid #d99944;padding:15px;border-radius:7px}
+@media(max-width:760px){.hero{display:block}.date-pill{display:inline-block;margin-top:15px}.hero h1{font-size:27px}.kpi{min-height:120px;padding:15px}.stMainBlockContainer{padding:1rem}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -255,7 +194,30 @@ def stock_merge(base, incoming):
 # ==========================================
 # 3. KẾT NỐI DATABASE CHÍNH
 # ==========================================
-conn = st.connection("gsheets", type=GSheetsConnection)
+DEMO_MODE = os.environ.get("LAB_DEMO", "0") == "1"
+class DemoConnection:
+    def read(self, spreadsheet=None, worksheet=None, **kwargs):
+        key = "demo_store_" + (worksheet or "samples")
+        if key not in st.session_state:
+            if worksheet == "QuanLyHoaChat":
+                rows = []
+                for name, offset, system in [("VOCs mix • DEMO", 18, "GC-MS"), ("Toluene-d8 • DEMO", 160, "GC-MS"), ("PCB mix • DEMO", -8, "Thermo"), ("Methanol • DEMO", 300, "Dùng chung")]:
+                    rows.append({"Tên Hóa Chất":name,"Hệ Máy":system,"Phân Loại":"Chất chuẩn (IS/Surrogate)","Số Lô (Lot)":"DEMO-2026","Ngày Mở Nắp":"","Hạn Sử Dụng":(datetime.now()+timedelta(days=offset)).strftime("%Y-%m-%d"),"Tình Trạng Kho":"🟢 Còn nhiều","Ghi Chú":"Dữ liệu minh họa","Nồng Độ":100.0,"Đơn Vị Nồng Độ":"µg/mL"})
+                data = pd.DataFrame(rows)
+            elif worksheet:
+                data = pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
+            else:
+                rows = []
+                for i in range(36):
+                    rows.append({"Mã Mẫu":f"{'NS' if i%3 else 'KT'}-DEMO-{i+1:03}","Tên Mẻ":f"DEMO.2026.{i//12+1:03}","Nền Mẫu":"Nước" if i%3 else "Khí","Chỉ Tiêu":"VOCs; Benzen; Toluen" if i%2 else "OCP; PCB","Trạng Thái":STATUSES[i%7],"Người Giữ":["Thành","KTV 02","KTV 03"][i%3],"Ghi Chú":"Mẫu minh họa","Giờ Nhận":datetime.now()-timedelta(days=i%4,hours=i%5)})
+                data = pd.DataFrame(rows)
+            st.session_state[key] = data
+        return st.session_state[key].copy(deep=True)
+    def update(self, spreadsheet=None, worksheet=None, data=None, **kwargs):
+        st.session_state["demo_store_"+(worksheet or "samples")] = data.copy(deep=True)
+        return data
+
+conn = DemoConnection() if DEMO_MODE else st.connection("gsheets", type=GSheetsConnection)
 
 def load_data():
     df = conn.read(spreadsheet=SHEET_URL, ttl=0)
@@ -368,7 +330,7 @@ def get_limit_info(compound_name, nen_mau):
     return None, None, ""
 
 def convert_unit_value(value, from_unit, to_unit):
-    """Hàm tự động quy đổi đơn vị đo lường cơ bản (Giữ lại cho tương thích module cũ)"""
+    """Hàm tự động quy đổi đơn vị đo lường cơ bản (Giữ lại cho module cũ)"""
     if pd.isna(value) or to_unit == "Mặc định" or not from_unit: return value
     try: val = float(value)
     except: return value
@@ -390,24 +352,73 @@ def convert_unit_value(value, from_unit, to_unit):
     if factor: return val * factor
     return val
 
-def evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recovery=100.0):
-    if pd.isna(raw_conc) or raw_conc <= 0:
-        return "KPH"
-        
-    if loai_mau == 'Khí':
-        c_thuc_val = (raw_conc * 1.0) / v_param * (100.0 / recovery)
-        if mdl_val is not None and c_thuc_val < mdl_val:
-            return f"KPH (< MDL: {mdl_val} {unit})"
-            
-    elif loai_mau == 'Nước':
-        c_thuc_val = raw_conc * (100.0 / recovery)
-        if loq_val is not None and c_thuc_val < loq_val:
-            return f"< LOQ ({loq_val} {unit})"
-            
-    else:
-        c_thuc_val = raw_conc
+def u_controls(key):
+    with st.expander('Đơn vị đầu vào và đầu ra',expanded=True):
+        liquid=list(U_GROUPS['Nồng độ dung dịch'])
+        src=st.selectbox('Đơn vị C đo và Csurr đo',liquid,index=liquid.index('µg/mL'),key=key+'src')
+        ref=st.selectbox('Đơn vị Csurr trước / các mức C tự gợi ý',liquid,index=liquid.index('µg/mL'),key=key+'ref')
+        water=st.selectbox('Đơn vị kết quả nước',liquid,index=liquid.index('µg/L'),key=key+'water')
+        gas_mode=st.selectbox('Cách tính mẫu khí',['Công thức gốc: đơn vị kết quả do SOP xác định','Từ nồng độ dịch chiết và thể tích'],key=key+'mode')
+        basis=st.selectbox('Cơ sở thể tích khí',['Thể tích thực','Thể tích đã quy về điều kiện chuẩn theo SOP'],key=key+'basis')
+        gas_units=list(U_GROUPS['Nồng độ khí chuẩn' if basis.startswith('Thể tích đã') else 'Nồng độ khí thực'])
+        gas_base=st.selectbox('Đơn vị kết quả khí trước đổi (theo SOP)',gas_units,index=gas_units.index('mg/Nm³' if basis.startswith('Thể tích đã') else 'mg/m³'),key=key+'base'+basis)
+        gas_out=st.selectbox('Đơn vị xuất kết quả khí',gas_units,index=gas_units.index('µg/Nm³' if basis.startswith('Thể tích đã') else 'µg/m³'),key=key+'out'+basis)
+        extraction=st.number_input('Thể tích dịch chiết/giải hấp (mL)',min_value=.000001,value=1.,key=key+'extract')
+        st.caption('Nếu chọn khí chuẩn, V khí phải là thể tích đã được quy chuẩn từ trước theo SOP; app không tự giả định nhiệt độ/áp suất.')
+    confirmed=st.checkbox('Đã xác nhận đơn vị nguồn, đơn vị kết quả và thông số theo SOP',key=key+'confirmed')
+    cfg=dict(basis=basis,confirmed=confirmed,src=src,ref=ref,water=water,gas_mode=gas_mode,gas_base=gas_base,gas_out=gas_out,extraction=extraction)
+    previous=st.session_state.get('unit_cfg')
+    if previous is not None and previous!=cfg:st.session_state.results_stale=True
+    st.session_state.unit_cfg=cfg
+    return cfg
 
-    return f"{round(c_thuc_val, 4)}"
+def u_result(raw,volume,mdl,loq,limit_unit,kind,recovery,cfg):
+    if not math.isfinite(float(raw)) or raw<0:raise ValueError('C đo phải là số không âm hợp lệ.')
+    if not math.isfinite(float(recovery)) or recovery<=0:raise ValueError('Recovery phải lớn hơn 0.')
+    if kind=='Nước':
+        out=cfg['water'];value=u_convert(raw,cfg['src'],out)*100/recovery
+    else:
+        if volume<=0:raise ValueError('Thể tích khí phải >0 L.')
+        out=cfg['gas_out']
+        if cfg['gas_mode'].startswith('Từ'):
+            mass_mg=u_convert(raw,cfg['src'],'mg/L')*cfg['extraction']/1000
+            value=u_convert(mass_mg/(volume/1000)*100/recovery,'mg/Nm³' if cfg.get('basis','').startswith('Thể tích đã') else 'mg/m³',out)
+        else:
+            value=u_convert(u_convert(raw,cfg['src'],cfg['ref'])/volume*100/recovery,cfg['gas_base'],out)
+    threshold=mdl if kind=='Khí' else loq
+    tag='MDL' if kind=='Khí' else 'LOQ'
+    if threshold is not None and pd.notna(threshold):
+        threshold=u_convert(float(threshold),limit_unit,out)
+    report=f'{value:.8g}'
+    if raw==0:report='KPH (quy ước bản gốc)'
+    elif threshold is not None and pd.notna(threshold) and value<threshold:report=f'KPH (< MDL {threshold:g} {out})' if kind=='Khí' else f'< LOQ ({threshold:g} {out})'
+    return report,value,out
+
+def evaluate_result(raw_conc,v_param,mdl_val,loq_val,unit,loai_mau,recovery=100.0):
+    cfg=st.session_state.get('unit_cfg')
+    if not cfg or not cfg.get('confirmed'):
+        # Fallback to old behavior if unit config is not active/confirmed
+        if pd.isna(raw_conc) or raw_conc <= 0: return "KPH"
+        if loai_mau == 'Khí':
+            c_thuc_val = (raw_conc * 1.0) / v_param * (100.0 / recovery)
+            if mdl_val is not None and c_thuc_val < mdl_val: return f"KPH (< MDL: {mdl_val} {unit})"
+        elif loai_mau == 'Nước':
+            c_thuc_val = raw_conc * (100.0 / recovery)
+            if loq_val is not None and c_thuc_val < loq_val: return f"< LOQ ({loq_val} {unit})"
+        else:
+            c_thuc_val = raw_conc
+        return f"{round(c_thuc_val, 4)}"
+    return u_result(raw_conc,v_param,mdl_val,loq_val,unit,loai_mau,recovery,cfg)[0]
+
+def unit_utility():
+    st.markdown("<h1 class='main-title'>🔄 Quy đổi đơn vị</h1>", unsafe_allow_html=True)
+    with st.container(border=True):
+        group=st.selectbox('Đại lượng',list(U_GROUPS))
+        units=list(U_GROUPS[group])
+        a=st.selectbox('Từ đơn vị',units);b=st.selectbox('Sang đơn vị',units,index=min(1,len(units)-1))
+        v=st.number_input('Giá trị',value=1.0)
+        st.metric('Giá trị sau đổi',f'{u_convert(v,a,b):.10g} {b}')
+        st.caption('1 µg/mL = 1 mg/L = 1000 µg/L. Độ tinh khiết (%) không phải nồng độ dung dịch. Khối lượng và thể tích cần khối lượng riêng để đổi.')
 
 def lab_norm(value):
     if value is None or pd.isna(value): return ''
@@ -470,8 +481,14 @@ def lab_local_answer(question, df):
 # ==========================================
 # 5. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
-st.sidebar.markdown("<h2 style='text-align: center; color: #1E293B;'>🔬 LIMS HATICO</h2>", unsafe_allow_html=True)
-st.sidebar.caption("<div style='text-align: center; margin-bottom: 20px;'>Phần mềm Quản lý Phòng Lab Tự động</div>", unsafe_allow_html=True)
+st.sidebar.markdown("<div class='brand'>HATICO<em> / LAB</em></div><div class='brand-sub'>GC · LABORATORY WORKSPACE</div>",unsafe_allow_html=True)
+if DEMO_MODE:
+    st.sidebar.caption("🧪 BẢN THỬ · Dữ liệu minh họa")
+else:
+    st.sidebar.caption("Nguồn dữ liệu: Google Sheets")
+
+def go_page(page):
+    st.session_state["nav_page"] = page
 
 menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
     "🏠 Trang chủ (Tổng quan)", 
@@ -482,8 +499,9 @@ menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
     "🧮 Tiện ích Phân tích",
     "📝 Báo cáo & Lập Biên bản",
     "🧪 Kiểm soát Hóa chất",
+    "🔄 Quy đổi đơn vị",
     "⚙️ Cấu hình Hệ thống"
-])
+], key="nav_page", label_visibility="collapsed")
 
 st.sidebar.divider()
 
@@ -498,7 +516,7 @@ if st.sidebar.button("🔄 Cập nhật hệ thống", use_container_width=True)
 
 st.sidebar.divider()
 
-with st.sidebar.popover("💬 Chat với Trợ lý AI", use_container_width=True):
+with st.sidebar.popover("💬 Trợ lý tra cứu", use_container_width=True):
     st.markdown("👋 **Xin chào! Mình là Trợ lý LIMS.**")
     st.caption("Tra cứu tiến độ mẫu, mẻ, phân công hoặc hỏi về SOP.")
     
@@ -535,78 +553,97 @@ today_date = datetime.today().date()
 # 6. GIAO DIỆN CÁC TRANG
 # ==========================================
 
+if DEMO_MODE:
+    st.caption("🧪 CHẾ ĐỘ DEMO — Mẫu và hóa chất minh họa; các thay đổi chỉ lưu trong phiên thử.")
+
 if menu == "🏠 Trang chủ (Tổng quan)":
-    st.markdown("<h1 class='main-title'>📊 Bảng Điều Khiển Trung Tâm</h1>", unsafe_allow_html=True)
+    st.markdown(f"""<div class="hero"><div><div class="eyebrow">Không gian vận hành / Tổng quan</div><h1>Một ngày làm việc hiệu quả.</h1><p>Theo dõi mẫu, kiểm soát tiến độ và chuẩn bị cho lượt chạy tiếp theo.</p></div><div class="date-pill">◷ &nbsp; {today_date.strftime('%d / %m / %Y')}</div></div>""",unsafe_allow_html=True)
+    active = ~df_current["Trạng Thái"].isin(STATUSES[-2:])
+    received = int((df_current["Ngày Nhận"] == today_date).sum())
+    ready = int(df_current["Trạng Thái"].eq(STATUSES[2]).sum())
+    pending = int(((df_current["Ngày Nhận"] < today_date) & active).sum())
+    done = int((~active).sum())
     
-    col1, col2, col3, col4 = st.columns(4)
-    tong_hom_nay = len(df_current[df_current["Ngày Nhận"] == today_date])
-    cho_chay_may = len(df_current[df_current["Trạng Thái"] == "🟡 3. Chờ chạy máy"])
-    ton_dong = len(df_current[(df_current["Ngày Nhận"] < today_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))])
-    da_luu = len(df_current[df_current["Trạng Thái"] == "🟢 6. Lưu kho"])
-    da_huy = len(df_current[df_current["Trạng Thái"] == "⚫ 7. Đã tiêu hủy"])
-    tong_hoan_thanh = da_luu + da_huy
+    cards=[("TIẾP NHẬN HÔM NAY",received,"Theo ngày nhận mẫu", "#239f8d"),("SẴN SÀNG CHẠY MÁY",ready,"Đã chuyển sang chờ chạy", "#5d8fbe"),("MẪU CÒN TỒN",pending,"Nhận trước hôm nay, chưa lưu/hủy", "#dbab5b"),("ĐÃ LƯU / TIÊU HỦY",done,"Trên toàn bộ danh sách", "#8b82be")]
+    for col,(label,n,foot,color) in zip(st.columns(4),cards):
+        col.markdown(f'<div class="kpi" style="--accent:{color}"><div class="kpi-label">{label}</div><div class="kpi-number">{n:02}</div><div class="kpi-foot">{foot}</div></div>',unsafe_allow_html=True)
+    st.write("")
     
-    col1.metric("📥 Tổng nhận hôm nay", tong_hom_nay)
-    col2.metric("⏳ Đang chờ chạy GC", cho_chay_may)
-    col3.metric("⚠️ Tồn đọng chưa xử lý", ton_dong, delta="-Cần xử lý", delta_color="inverse")
-    col4.metric("✅ Đã hoàn thành", tong_hoan_thanh, f"Lưu/Hủy", delta_color="off")
-    
-    st.markdown("<div class='sub-title'>Tra cứu & Cập nhật Trạng thái</div>", unsafe_allow_html=True)
+    shortcuts=[("＋ Tiếp nhận mẫu","📥 Quản lý Tiếp nhận"),("▷ Xử lý GC-MS","⚙️ Vận hành GC-MS"),("▤ Lập biên bản","📝 Báo cáo & Lập Biên bản"),("⇄ Quy đổi đơn vị","🔄 Quy đổi đơn vị")]
+    for col,(label,target) in zip(st.columns(4),shortcuts):
+        col.button(label,on_click=go_page,args=(target,),use_container_width=True)
+        
+    left,right=st.columns([1.5,1],gap="large")
+    with left,st.container(border=True):
+        st.markdown('<div class="section-title">Tiến độ phòng lab</div><div class="section-note">Phân bố mẫu theo trạng thái hiện tại</div>',unsafe_allow_html=True)
+        for status in STATUSES[:5]:
+            count=int(df_current["Trạng Thái"].eq(status).sum())
+            label=status.split(". ",1)[-1]
+            st.markdown(f'<div class="flow-row"><span class="flow-label">{label}</span><div class="flow-track"><div class="flow-fill" style="width:{100*count/max(len(df_current),1):.1f}%"></div></div><span class="flow-count">{count}</span></div>',unsafe_allow_html=True)
+            
+    with right,st.container(border=True):
+        st.markdown('<div class="section-title">Cần chú ý</div><div class="section-note">Kiểm tra trước khi phân tích</div>',unsafe_allow_html=True)
+        chem=st.session_state.df_chem
+        dates=pd.to_datetime(chem['Hạn Sử Dụng'],errors='coerce')
+        expired=int((dates.dt.date<today_date).sum())
+        soon=int(((dates.dt.date>=today_date)&(dates.dt.date<=today_date+timedelta(days=30))).sum())
+        if st.session_state.get('chem_error'):
+            st.warning("Chưa đọc được kho hóa chất. Mở kho để kiểm tra kết nối.")
+        else:
+            st.markdown(f'<div class="notice">◷ &nbsp; <b>{soon} hóa chất</b> hết hạn trong 30 ngày · <b>{expired}</b> đã hết hạn</div>',unsafe_allow_html=True)
+            st.caption(f"{int(dates.isna().sum())} dòng chưa xác định hạn sử dụng.")
+        unassigned=int((active & df_current['Người Giữ'].fillna('').str.strip().eq('')).sum())
+        st.caption(f"{unassigned} mẫu đang xử lý chưa có người phụ trách.")
+        st.button("Mở kho hóa chất →",on_click=go_page,args=("🧪 Kiểm soát Hóa chất",),use_container_width=True)
+        
+    st.markdown('<div class="section-title">Danh sách công việc</div>',unsafe_allow_html=True)
+    st.caption("Tra cứu, phân công và cập nhật trạng thái mẫu tại một nơi.")
     
     with st.container(border=True):
-        col_date, col_status, col_search = st.columns([1.2, 1.5, 2])
-        with col_date: selected_date = st.date_input("📅 Chọn Ngày Giao Mẫu:", today_date)
-        with col_status: filter_status = st.multiselect("Lọc trạng thái:", STATUSES, default=[])
-        with col_search: search_query = st.text_input("🔍 Tìm kiếm (Mã mẫu, Tên mẻ, Chỉ tiêu):")
-
-    mask_ton_dong = (df_current["Ngày Nhận"] < selected_date) & (~df_current["Trạng Thái"].isin(["🟢 6. Lưu kho", "⚫ 7. Đã tiêu hủy"]))
-    mask_trong_ngay = (df_current["Ngày Nhận"] == selected_date)
-
-    df_display = df_current[mask_ton_dong | mask_trong_ngay].copy()
-    df_display["Phân Loại"] = "🟢 Nhận trong ngày"
-    df_display.loc[mask_ton_dong, "Phân Loại"] = "⚠️ TỒN ĐỌNG CHƯA XONG"
-    df_display = df_display.sort_values(by=["Phân Loại", "Giờ Nhận"], ascending=[True, True])
-
-    if search_query:
-        mask_id = df_display["Mã Mẫu"].astype(str).str.contains(search_query, case=False, na=False)
-        mask_me = df_display["Tên Mẻ"].astype(str).str.contains(search_query, case=False, na=False)
-        mask_chitieu = df_display["Chỉ Tiêu"].astype(str).str.contains(search_query, case=False, na=False)
-        df_display = df_display[mask_id | mask_me | mask_chitieu]
-        
-    if filter_status:
-        df_display = df_display[df_display["Trạng Thái"].isin(filter_status)]
-
-    st.caption("✨ **Mẹo:** Chọn dòng và bấm `Delete` để xóa. Bấm đúp vào ô để sửa dữ liệu.")
-    edited_df = st.data_editor(
-        df_display,
-        column_config={
-            "Trạng Thái": st.column_config.SelectboxColumn("Trạng Thái Hiện Tại", options=STATUSES, required=True),
-            "Nền Mẫu": st.column_config.SelectboxColumn("Nền Mẫu", options=["Khí", "Nước"], required=True),
-            "Phân Loại": st.column_config.TextColumn("Phân Loại", disabled=True),
-            "Giờ Nhận": st.column_config.DatetimeColumn("Giờ Nhận", format="DD/MM/YYYY HH:mm", disabled=True),
-            "Ngày Nhận": None 
-        },
-        disabled=["Mã Mẫu", "Tên Mẻ", "Chỉ Tiêu", "Phân Loại", "Giờ Nhận"], 
-        use_container_width=True, num_rows="dynamic", key="data_editor", height=450
-    )
-
-    if st.button("💾 Lưu các thay đổi vào Hệ thống", type="primary"):
-        for index, row in edited_df.iterrows():
-            st.session_state.df.loc[index, "Trạng Thái"] = row["Trạng Thái"]
-            st.session_state.df.loc[index, "Nền Mẫu"] = row["Nền Mẫu"]
-            st.session_state.df.loc[index, "Người Giữ"] = row["Người Giữ"]
-            st.session_state.df.loc[index, "Ghi Chú"] = row["Ghi Chú"]
+        c1,c2,c3=st.columns([2,1,1])
+        search=c1.text_input("Tìm mẫu, mẻ hoặc chỉ tiêu",placeholder="Nhập mã mẫu, tên mẻ, Benzen…")
+        scope=c2.selectbox("Phạm vi",["Đang xử lý","Tất cả","Nhận hôm nay","Mẫu còn tồn"])
+        statuses=c3.multiselect("Trạng thái",STATUSES)
+        with st.expander("Bộ lọc bổ sung"):
+            f1,f2,f3=st.columns(3)
+            batches=f1.multiselect("Mẻ phân tích",sorted(df_current["Tên Mẻ"].dropna().astype(str).unique()))
+            owners=f2.multiselect("Người giữ mẫu",sorted(df_current["Người Giữ"].dropna().astype(str).unique()))
+            matrices=f3.multiselect("Nền mẫu",sorted(df_current["Nền Mẫu"].dropna().astype(str).unique()))
             
-        original_indices = df_display.index.tolist()
-        remaining_indices = edited_df.index.tolist()
-        deleted_indices = list(set(original_indices) - set(remaining_indices))
+    mask=pd.Series(True,index=df_current.index)
+    if scope=="Đang xử lý":mask &= active
+    elif scope=="Nhận hôm nay":mask &= df_current["Ngày Nhận"].eq(today_date)
+    elif scope=="Mẫu còn tồn":mask &= active & (df_current["Ngày Nhận"]<today_date)
+    if search:
+        query=lab_norm(search)
+        mask &= df_current[["Mã Mẫu","Tên Mẻ","Chỉ Tiêu"]].fillna('').astype(str).apply(lambda row:query in lab_norm(' '.join(row)),axis=1)
+    for col,values in [("Trạng Thái",statuses),("Tên Mẻ",batches),("Người Giữ",owners),("Nền Mẫu",matrices)]:
+        if values:mask &= df_current[col].isin(values)
         
-        if deleted_indices:
-            st.session_state.df = st.session_state.df.drop(index=deleted_indices).reset_index(drop=True)
-            
-        save_data(st.session_state.df)
-        st.success("✅ Đã đồng bộ thành công lên cơ sở dữ liệu chung!")
-        st.rerun()
+    df_display=df_current.loc[mask].sort_values("Giờ Nhận",ascending=False).copy()
+    st.caption(f"Hiển thị {len(df_display)} / {len(df_current)} mẫu · Thay đổi chỉ được ghi khi bấm Lưu.")
+    
+    edited_df=st.data_editor(df_display,column_order=["Mã Mẫu","Tên Mẻ","Trạng Thái","Nền Mẫu","Chỉ Tiêu","Người Giữ","Ghi Chú","Giờ Nhận"],column_config={"Trạng Thái":st.column_config.SelectboxColumn(options=STATUSES,required=True),"Nền Mẫu":st.column_config.SelectboxColumn(options=["Khí","Nước","Chưa xác định"],required=True),"Giờ Nhận":st.column_config.DatetimeColumn(format="DD/MM/YYYY HH:mm"),"Ngày Nhận":None},disabled=["Mã Mẫu","Tên Mẻ","Chỉ Tiêu","Giờ Nhận","Ngày Nhận"],hide_index=True,use_container_width=True,num_rows="fixed",key="work_editor",height=350)
+    
+    savecol,exportcol=st.columns([1,3])
+    if savecol.button("Lưu cập nhật",type="primary",use_container_width=True):
+        candidate=st.session_state.df.copy()
+        cols=["Trạng Thái","Nền Mẫu","Người Giữ","Ghi Chú"]
+        candidate.loc[edited_df.index,cols]=edited_df[cols]
+        try:
+            save_data(candidate)
+            st.session_state.df=candidate
+            st.toast("Đã lưu cập nhật")
+            st.rerun()
+        except Exception as exc:
+            st.error(f"Chưa lưu được: {exc}. Dữ liệu trong phiên chưa bị thay thế.")
+    exportcol.download_button("↓ Xuất danh sách đang lọc",df_display.drop(columns=["Ngày Nhận"]).to_csv(index=False).encode('utf-8-sig'),"Danh_sach_mau.csv","text/csv")
+    
+    with st.expander("Phân công & chất lượng dữ liệu"):
+        st.dataframe(df_current.loc[active].groupby("Người Giữ",dropna=False).size().reset_index(name="Mẫu đang xử lý"),hide_index=True,use_container_width=True)
+        duplicated=df_current["Mã Mẫu"].fillna('').astype(str).str.strip().str.casefold().duplicated(keep=False)
+        st.caption(f"{int(duplicated.sum())} dòng có mã mẫu trùng · {int(df_current['Giờ Nhận'].isna().sum())} dòng thiếu ngày nhận hợp lệ.")
+        if duplicated.any():st.dataframe(df_current.loc[duplicated],hide_index=True)
 
 elif menu == "📥 Quản lý Tiếp nhận":
     st.markdown("<h1 class='main-title'>📥 Khu vực Tiếp nhận mẫu mới</h1>", unsafe_allow_html=True)
@@ -721,18 +758,14 @@ elif menu == "⚙️ Vận hành GC-MS":
                 st.download_button("📥 Tải File Sequence.csv", data=seq_df.to_csv(index=False).encode('utf-8'), file_name=f"MassHunter_Seq_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary")
             
     with tab_auto:
+        unit_cfg=u_controls("auto_")
         with st.container(border=True):
             st.markdown("<div class='sub-title'>Xử lý Kết quả Hàng loạt (SOP)</div>", unsafe_allow_html=True)
-            st.info("💡 Tự động bóc tách số liệu, nội suy nồng độ $C_{surr}$ chuẩn, so khớp Giới hạn MDL/LOQ và hỗ trợ quy đổi đơn vị.")
-            
-            target_unit_auto = st.selectbox(
-                "🔄 Tùy chọn quy đổi đơn vị đầu ra:", 
-                ["Mặc định", "mg/L", "µg/L", "mg/m3", "µg/m3", "ppm", "ppb"]
-            )
+            st.info("💡 Tự động bóc tách số liệu, nội suy nồng độ $C_{surr}$ chuẩn và so khớp Giới hạn MDL/LOQ theo đúng chuẩn phòng Lab.")
             
             gc_file = st.file_uploader("Kéo thả báo cáo GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
 
-            if gc_file is not None:
+            if gc_file is not None and unit_cfg["confirmed"]:
                 calc_results = []
                 try:
                     dynamic_compounds = []
@@ -772,6 +805,10 @@ elif menu == "⚙️ Vận hành GC-MS":
                         compound_col = next((c for c in df_gc.columns if c.lower() in ['name', 'compound', 'compound name', 'tên chất']), None)
 
                     if 'Data File' in df_gc.columns and 'Final Conc.' in df_gc.columns and compound_col:
+                        unit_column=next((c for c in ['Units','Unit','Đơn vị'] if c in df_gc.columns),None)
+                        if unit_column:
+                            declared={u_canonical(v) for v in df_gc[unit_column].dropna() if str(v).strip()}
+                            if declared and declared!={u_canonical(unit_cfg['src'])}:raise ValueError('Đơn vị trong file khác đơn vị đã chọn hoặc có nhiều đơn vị. Chọn đúng đơn vị nguồn hoặc tách file theo đơn vị trước khi tính.')
                         surrogate_dict = {}
                         for _, row in df_gc.iterrows():
                             comp_name = str(row[compound_col]).upper()
@@ -779,6 +816,7 @@ elif menu == "⚙️ Vận hành GC-MS":
                                 sample_name = str(row['Data File']).replace('.d', '')
                                 raw_conc = pd.to_numeric(row['Final Conc.'], errors='coerce')
                                 if pd.notna(raw_conc) and raw_conc > 0:
+                                    raw_conc = u_convert(raw_conc,unit_cfg["src"],unit_cfg["ref"])
                                     c_exp = get_dynamic_surrogate_expected(raw_conc)
                                     recovery = (raw_conc / c_exp) * 100.0
                                     surrogate_dict[sample_name] = {"recovery": recovery, "c_exp": c_exp, "c_do": raw_conc}
@@ -813,36 +851,20 @@ elif menu == "⚙️ Vận hành GC-MS":
                             mdl_val, loq_val, unit = get_limit_info(comp_name, nen_mau)
                             
                             c_thuc_str = evaluate_result(raw_conc, v_param, mdl_val, loq_val, unit, loai_mau, recovery=sample_recovery)
-                            final_unit = unit if target_unit_auto == "Mặc định" else target_unit_auto
-                            
-                            if target_unit_auto != "Mặc định":
-                                if c_thuc_str.startswith("KPH") and mdl_val is not None:
-                                    conv_mdl = convert_unit_value(mdl_val, unit, target_unit_auto)
-                                    c_thuc_str = f"KPH (< MDL: {conv_mdl} {final_unit})"
-                                elif c_thuc_str.startswith("<") and loq_val is not None:
-                                    conv_loq = convert_unit_value(loq_val, unit, target_unit_auto)
-                                    c_thuc_str = f"< LOQ ({conv_loq} {final_unit})"
-                                else:
-                                    try:
-                                        c_thuc_numeric = float(c_thuc_str.replace(',', '.'))
-                                        converted_val = convert_unit_value(c_thuc_numeric, unit, target_unit_auto)
-                                        c_thuc_str = str(round(converted_val, 4)).replace('.', ',')
-                                    except: pass
                             
                             limit_display = ""
-                            if loai_mau == 'Khí' and mdl_val is not None: 
-                                limit_display = f"MDL: {convert_unit_value(mdl_val, unit, target_unit_auto) if target_unit_auto != 'Mặc định' else mdl_val} {final_unit}"
-                            elif loai_mau == 'Nước' and loq_val is not None: 
-                                limit_display = f"LOQ: {convert_unit_value(loq_val, unit, target_unit_auto) if target_unit_auto != 'Mặc định' else loq_val} {final_unit}"
+                            if loai_mau == 'Khí' and mdl_val is not None: limit_display = f"MDL: {mdl_val} {unit}"
+                            elif loai_mau == 'Nước' and loq_val is not None: limit_display = f"LOQ: {loq_val} {unit}"
                             
                             calc_results.append({
                                 "Tên mẫu": sample_name, "Tên chỉ tiêu": comp_name, "C đo": round(raw_conc, 4), 
                                 "C thực": c_thuc_str, "Giới hạn": limit_display, "R(%)": f"{round(sample_recovery, 1)}%",
-                                "C_surr_truoc": c_surr_truoc, "C_surr_sau": c_surr_sau
+                                "C_surr_truoc": c_surr_truoc, "C_surr_sau": c_surr_sau,
+                                "Đơn vị C đo":unit_cfg["src"],"Đơn vị Csurr":unit_cfg["ref"],"Đơn vị kết quả":unit_cfg["water"] if loai_mau=="Nước" else unit_cfg["gas_out"]
                             })
 
                     if calc_results:
-                        st.success(f"✅ Đã xử lý {len(calc_results)} dòng kết quả. Tự động áp dụng tiêu chuẩn Khí/Nước và Quy đổi đơn vị.")
+                        st.success(f"✅ Đã xử lý {len(calc_results)} dòng kết quả. Tự động áp dụng tiêu chuẩn Khí/Nước.")
                         
                         df_results = pd.DataFrame(calc_results)
                         df_results = df_results.sort_values(by=["Tên mẫu", "Tên chỉ tiêu"]).reset_index(drop=True)
@@ -850,7 +872,7 @@ elif menu == "⚙️ Vận hành GC-MS":
                         st.session_state.results = df_results
                         st.session_state.results_stale = False
                         
-                        display_cols = ["Tên mẫu", "Tên chỉ tiêu", "C đo", "C thực", "Giới hạn", "R(%)"]
+                        display_cols = ["Tên mẫu", "Tên chỉ tiêu", "C đo", "Đơn vị C đo", "C thực", "Đơn vị kết quả", "Giới hạn", "R(%)"]
                         st.dataframe(df_results[display_cols], use_container_width=True, hide_index=True)
                         
                         csv_results = df_results.to_csv(index=False).encode('utf-8-sig')
@@ -915,6 +937,7 @@ elif menu == "🧮 Tiện ích Phân tích":
     tab_manual, tab_calib = st.tabs(["1. Tính toán & Nhập liệu Thủ công", "2. Pha Đường Chuẩn Đa Thành Phần"])
     
     with tab_manual:
+        unit_cfg=u_controls("manual_")
         with st.container(border=True):
             st.markdown("<div class='sub-title'>Tính toán & Nhập liệu Thủ công (Gồm tính Tổng)</div>", unsafe_allow_html=True)
             st.info("💡 Điền thông số đo để máy tự tính, hoặc nhập thẳng vào cột 'Kết quả'. Có thể thêm dòng chỉ tiêu bị thiếu. Đánh dấu các chất cần tính dồn để cộng thành một chỉ tiêu Tổng chung.")
@@ -933,27 +956,12 @@ elif menu == "🧮 Tiện ích Phân tích":
                 
                 st.write(f"**Phân loại:** {loai_mau_def} ({nen_mau_code}) | **Chỉ tiêu theo Database:** {len(chi_tieu_list)}")
                 
-                st.markdown("### 🔄 Tùy chọn Quy đổi Đơn vị")
-                col_u1, col_u2 = st.columns(2)
-                with col_u1:
-                    target_unit = st.selectbox(
-                        f"Đơn vị đầu ra mong muốn cho mẫu {loai_mau_def}:", 
-                        ["Mặc định", "mg/L", "µg/L", "mg/m3", "µg/m3", "ppm", "ppb"],
-                        key=f"unit_manual_{selected_sample_manual}"
-                    )
-
                 manual_data = []
                 for ct in chi_tieu_list:
                     mdl_val, loq_val, unit = get_limit_info(ct, nen_mau_code)
                     limit_str = ""
-                    final_unit = unit if target_unit == "Mặc định" else target_unit
-                    
-                    if loai_mau_def == 'Khí' and mdl_val is not None: 
-                        conv_mdl = convert_unit_value(mdl_val, unit, target_unit) if target_unit != "Mặc định" else mdl_val
-                        limit_str = f"MDL: {conv_mdl} {final_unit}"
-                    elif loai_mau_def == 'Nước' and loq_val is not None: 
-                        conv_loq = convert_unit_value(loq_val, unit, target_unit) if target_unit != "Mặc định" else loq_val
-                        limit_str = f"LOQ: {conv_loq} {final_unit}"
+                    if loai_mau_def == 'Khí' and mdl_val is not None: limit_str = f"MDL: {mdl_val} {unit}"
+                    elif loai_mau_def == 'Nước' and loq_val is not None: limit_str = f"LOQ: {loq_val} {unit}"
 
                     manual_data.append({
                         "Cộng Tổng": False,
@@ -990,169 +998,146 @@ elif menu == "🧮 Tiện ích Phân tích":
                 st.markdown("---")
                 total_param_name = st.text_input("📝 Nhập tên chỉ tiêu Tổng (Chỉ áp dụng nếu có tick chọn 'Cộng Tổng' ở bảng trên):", placeholder="VD: Tổng VOCs, Tổng PCB...")
                 
-                if st.button("💾 Tính Toán & Lưu Mẫu Này", type="primary"):
-                    new_results = []
-                    sum_val = 0.0
-                    has_sum = False
+                if st.button("💾 Tính Toán & Lưu Mẫu Này", type="primary",disabled=not unit_cfg["confirmed"]):
+                    try:
+                        new_results = []
+                        sum_val = 0.0
+                        has_sum = False
                     
-                    for _, row in edited_manual.iterrows():
-                        ct = str(row["Chỉ Tiêu"]).strip()
-                        if not ct or ct == "nan": continue
+                        for _, row in edited_manual.iterrows():
+                            ct = str(row["Chỉ Tiêu"]).strip()
+                            if not ct or ct == "nan": continue
                         
-                        v = float(row.get("Độ làm giàu (V)", v_param_def) or v_param_def)
-                        c_truoc = float(row.get("C_surr thực", 10.0) or 10.0)
-                        c_sau = float(row.get("C_surr đo", 10.0) or 10.0)
-                        c_do = float(row.get("C_đo chỉ tiêu", 0.0) or 0.0)
-                        override_res = str(row.get("Kết quả (Ghi đè)", "")).strip()
-                        is_sum = bool(row.get("Cộng Tổng", False))
+                            v = float(row.get("Độ làm giàu (V)", v_param_def) or v_param_def)
+                            c_truoc = float(row.get("C_surr thực", 10.0) or 10.0)
+                            c_sau = float(row.get("C_surr đo", 10.0) or 10.0)
+                            c_do = float(row.get("C_đo chỉ tiêu", 0.0) or 0.0)
+                            override_res = str(row.get("Kết quả (Ghi đè)", "")).strip()
+                            is_sum = bool(row.get("Cộng Tổng", False))
                         
-                        recovery = (c_sau / c_truoc) * 100.0 if c_truoc > 0 else 100.0
-                        mdl_val, loq_val, unit = get_limit_info(ct, nen_mau_code)
+                            c_sau=u_convert(c_sau,unit_cfg["src"],unit_cfg["ref"])
+                            if c_truoc<=0: raise ValueError("Csurr trước phải >0")
+                            recovery = (c_sau / c_truoc) * 100.0
+                            mdl_val, loq_val, unit = get_limit_info(ct, nen_mau_code)
                         
-                        final_unit = unit if target_unit == "Mặc định" else target_unit
-                        limit_display = ""
-                        if loai_mau_def == 'Khí' and mdl_val is not None: 
-                            conv_mdl = convert_unit_value(mdl_val, unit, target_unit) if target_unit != "Mặc định" else mdl_val
-                            limit_display = f"MDL: {conv_mdl} {final_unit}"
-                        elif loai_mau_def == 'Nước' and loq_val is not None: 
-                            conv_loq = convert_unit_value(loq_val, unit, target_unit) if target_unit != "Mặc định" else loq_val
-                            limit_display = f"LOQ: {conv_loq} {final_unit}"
+                            limit_display = ""
+                            if loai_mau_def == 'Khí' and mdl_val is not None: limit_display = f"MDL: {mdl_val} {unit}"
+                            elif loai_mau_def == 'Nước' and loq_val is not None: limit_display = f"LOQ: {loq_val} {unit}"
                         
-                        c_thuc_str = ""
-                        c_thuc_numeric = 0.0
+                            c_thuc_str = ""
+                            c_thuc_numeric = 0.0
                         
-                        if override_res and override_res.lower() != "nan":
-                            c_thuc_str = override_res
-                            try: c_thuc_numeric = float(override_res.replace(',', '.'))
-                            except: c_thuc_numeric = 0.0
-                        else:
-                            c_thuc_str = evaluate_result(c_do, v, mdl_val, loq_val, unit, loai_mau_def, recovery)
-                            
-                            if c_thuc_str.startswith("KPH") or c_thuc_str.startswith("<"):
-                                c_thuc_numeric = 0.0
-                                if target_unit != "Mặc định":
-                                    if c_thuc_str.startswith("KPH") and mdl_val is not None:
-                                        c_thuc_str = f"KPH (< MDL: {convert_unit_value(mdl_val, unit, target_unit)} {final_unit})"
-                                    elif c_thuc_str.startswith("<") and loq_val is not None:
-                                        c_thuc_str = f"< LOQ ({convert_unit_value(loq_val, unit, target_unit)} {final_unit})"
+                            if override_res and override_res.lower() != "nan":
+                                c_thuc_str = override_res
+                                try: c_thuc_numeric = float(override_res.replace(',', '.'))
+                                except: c_thuc_numeric = 0.0
                             else:
-                                try: 
-                                    c_thuc_numeric = float(c_thuc_str.replace(',', '.'))
-                                    if target_unit != "Mặc định":
-                                        c_thuc_numeric = convert_unit_value(c_thuc_numeric, unit, target_unit)
-                                        c_thuc_str = str(round(c_thuc_numeric, 4)).replace('.', ',')
-                                except: 
+                                c_thuc_str = evaluate_result(c_do, v, mdl_val, loq_val, unit, loai_mau_def, recovery)
+                                if c_thuc_str.startswith("KPH") or c_thuc_str.startswith("<"):
                                     c_thuc_numeric = 0.0
+                                else:
+                                    try: c_thuc_numeric = float(c_thuc_str.replace(',', '.'))
+                                    except: c_thuc_numeric = 0.0
                         
-                        if is_sum:
-                            has_sum = True
-                            sum_val += c_thuc_numeric
+                            if is_sum:
+                                has_sum = True
+                                sum_val += c_thuc_numeric
                             
-                        new_results.append({
-                            "Tên mẫu": selected_sample_manual,
-                            "Tên chỉ tiêu": ct,
-                            "C đo": round(c_do, 4),
-                            "C thực": c_thuc_str,
-                            "Giới hạn": limit_display,
-                            "R(%)": f"{round(recovery, 1)}%",
-                            "C_surr_truoc": c_truoc,
-                            "C_surr_sau": c_sau
-                        })
+                            new_results.append({
+                                "Tên mẫu": selected_sample_manual,
+                                "Tên chỉ tiêu": ct,
+                                "C đo": round(c_do, 4),
+                                "C thực": c_thuc_str,
+                                "Giới hạn": limit_display,
+                                "R(%)": f"{round(recovery, 1)}%",
+                                "C_surr_truoc": c_truoc,
+                                "C_surr_sau": c_sau,
+                                "Đơn vị C đo":unit_cfg["src"],"Đơn vị Csurr":unit_cfg["ref"],"Đơn vị kết quả":unit_cfg["water"] if loai_mau_def=="Nước" else unit_cfg["gas_out"]
+                            })
                     
-                    if has_sum and total_param_name:
-                        new_results.append({
-                            "Tên mẫu": selected_sample_manual,
-                            "Tên chỉ tiêu": total_param_name,
-                            "C đo": "",
-                            "C thực": str(round(sum_val, 4)).replace('.', ','),
-                            "Giới hạn": "", 
-                            "R(%)": "",
-                            "C_surr_truoc": "",
-                            "C_surr_sau": ""
-                        })
+                        if has_sum and total_param_name:
+                            new_results.append({
+                                "Tên mẫu": selected_sample_manual,
+                                "Tên chỉ tiêu": total_param_name,
+                                "C đo": "",
+                                "C thực": str(round(sum_val, 4)).replace('.', ','),
+                                "Giới hạn": "", 
+                                "R(%)": "",
+                                "C_surr_truoc": "",
+                                "C_surr_sau": "",
+                                "Đơn vị kết quả":unit_cfg["water"] if loai_mau_def=="Nước" else unit_cfg["gas_out"]
+                            })
                     
-                    new_df = pd.DataFrame(new_results)
-                    if 'results' not in st.session_state or st.session_state.results.empty:
-                        st.session_state.results = new_df
-                    else:
-                        existing = st.session_state.results
-                        existing = existing[existing["Tên mẫu"] != selected_sample_manual]
-                        st.session_state.results = pd.concat([existing, new_df], ignore_index=True)
+                        new_df = pd.DataFrame(new_results)
+                        if 'results' not in st.session_state or st.session_state.results.empty:
+                            st.session_state.results = new_df
+                        else:
+                            existing = st.session_state.results
+                            existing = existing[existing["Tên mẫu"] != selected_sample_manual]
+                            st.session_state.results = pd.concat([existing, new_df], ignore_index=True)
                     
-                    st.session_state.results_stale = False
+                        st.session_state.results_stale = False
                     
-                    mask = st.session_state.df["Mã Mẫu"] == selected_sample_manual
-                    if mask.any():
-                        st.session_state.df.loc[mask, "Trạng Thái"] = "🟣 5. Đang tính số liệu"
-                        save_data(st.session_state.df)
+                        mask = st.session_state.df["Mã Mẫu"] == selected_sample_manual
+                        if mask.any():
+                            st.session_state.df.loc[mask, "Trạng Thái"] = "🟣 5. Đang tính số liệu"
+                            save_data(st.session_state.df)
                         
-                    st.success(f"✅ Đã lưu kết quả cho mẫu {selected_sample_manual}! Hệ thống đã cộng dồn vào danh sách tổng chờ xuất Biên bản.")
-                    st.rerun()
+                        st.success(f"✅ Đã lưu kết quả cho mẫu {selected_sample_manual}! Hệ thống đã cộng dồn vào danh sách tổng chờ xuất Biên bản.")
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(str(exc))
 
     with tab_calib:
+        calib_v_unit=st.selectbox("Đơn vị thể tích định mức",["mL","µL","L"],key="calib_v_unit")
+        calib_unit=st.selectbox("Đơn vị nhập dãy chuẩn và nồng độ đích",list(U_GROUPS["Nồng độ dung dịch"]),index=5,key="calib_unit")
+        st.caption("Chọn Đơn vị gốc cho từng dòng; kết quả công thức tự quy về µg/mL. Các thể tích hút xuất bằng µL.")
         with st.container(border=True):
             st.markdown("<div class='sub-title'>🧪 Lập Công Thức Pha Chuẩn Tối Ưu (Smart Mix)</div>", unsafe_allow_html=True)
-            st.info("💡 Bổ sung tính năng tự quy đổi đơn vị: Chọn đơn vị cho Mix gốc và dãy chuẩn đích, hệ thống sẽ tự toán toán lượng thể tích cần hút mà không cần nhập thủ công.")
+            st.info("💡 Hệ thống hỗ trợ tối ưu hóa quy trình pha chuẩn: Gộp các Nội chuẩn/Surrogate thành 1 Master Mix để hút 1 lần; Gộp các Mix chuẩn gốc thành Mix làm việc (Working Standard) để tránh sai số pipet nhỏ.")
             
-            col_v1, col_v2, col_v3 = st.columns([1, 2, 1])
+            col_v1, col_v2 = st.columns(2)
             with col_v1:
-                v_final = st.number_input("Thể tích định mức mỗi điểm (mL)", value=1.0, step=0.1, min_value=0.1)
+                v_final = st.number_input(f"Thể tích định mức mỗi điểm chuẩn ({calib_v_unit})", value=1.0, step=0.1, min_value=0.1)
             with col_v2:
-                levels_input = st.text_input("🎯 Nhập dãy nồng độ chuẩn cần pha:", "0.5, 1, 2, 5, 10, 20")
-            with col_v3:
-                unit_levels = st.selectbox("Đơn vị dãy đích:", ["ppm", "ppb", "mg/L", "µg/L"])
+                levels_input = st.text_input(f"🎯 Dãy chuẩn ({calib_unit}), phân cách bằng dấu phẩy; thập phân dùng dấu chấm:", "0.5, 1, 2, 5, 10, 20")
             
             st.markdown("### ⚙️ Tùy chọn Tối ưu hóa (Optimization)")
             col_opt1, col_opt2 = st.columns(2)
             with col_opt1:
                 opt_mix_is_surr = st.toggle("🧪 Gộp IS & Surrogate thành Master Mix", value=True)
                 if opt_mix_is_surr:
-                    v_spike_is = st.number_input("Thể tích hút Master Mix/vial (µL)", value=50.0, step=10.0)
+                    v_spike_is = st.number_input("Thể tích hút Master Mix cho mỗi vial (µL)", value=50.0, step=10.0)
             with col_opt2:
-                opt_mix_std = st.toggle("🧪 Gộp Mix chuẩn gốc thành Mix trung gian", value=True)
+                opt_mix_std = st.toggle("🧪 Gộp các Chuẩn gốc thành Mix Trung gian", value=True)
                 if opt_mix_std:
-                    col_ws1, col_ws2, col_ws3 = st.columns(3)
-                    with col_ws1:
-                        c_ws_std = st.number_input("Nồng độ Mix TG", value=100.0, step=10.0)
-                    with col_ws2:
-                        unit_ws_std = st.selectbox("Đơn vị Mix TG", ["ppm", "ppb", "mg/L", "µg/L"])
-                    with col_ws3:
-                        v_ws_total = st.number_input("Thể tích pha (µL)", value=1000.0, step=100.0)
+                    c_ws_std = st.number_input(f"Nồng độ Mix Trung gian ({calib_unit})", value=100.0, step=10.0)
+                    v_ws_total = st.number_input("Thể tích cần pha Mix Trung gian (µL)", value=1000.0, step=100.0)
 
             st.markdown("**1. Các dung dịch Chuẩn (Mix) thay đổi theo dãy nồng độ:**")
-            if "df_mix_default" not in st.session_state or "Đơn vị gốc" not in st.session_state.df_mix_default.columns:
-                st.session_state.df_mix_default = pd.DataFrame([{"Tên Mix Chuẩn": "Mix VOCs", "C_gốc": 1000.0, "Đơn vị gốc": "ppm"}])
-            df_mix = st.data_editor(
-                st.session_state.df_mix_default, 
-                num_rows="dynamic", 
-                use_container_width=True, 
-                key="mix_editor",
-                column_config={
-                    "Đơn vị gốc": st.column_config.SelectboxColumn("Đơn vị", options=["ppm", "ppb", "mg/L", "µg/L"])
-                }
-            )
+            if "df_mix_default" not in st.session_state:
+                st.session_state.df_mix_default = pd.DataFrame([{"Tên Mix Chuẩn": "Mix VOCs", "C gốc (giá trị nhập)": 1000.0, "Đơn vị gốc":"µg/mL"}])
+            df_mix = st.data_editor(st.session_state.df_mix_default, num_rows="dynamic", use_container_width=True, key="mix_editor")
             
             st.markdown("**2. Các dung dịch Nội chuẩn (IS) & Đồng hành (Surrogate) cố định:**")
-            if "df_is_default" not in st.session_state or "Đơn vị gốc" not in st.session_state.df_is_default.columns:
+            if "df_is_default" not in st.session_state:
                 st.session_state.df_is_default = pd.DataFrame([
-                    {"Phân Loại": "Nội chuẩn (IS)", "Tên Hợp Chất": "Fluorobenzene", "C_gốc": 1000.0, "Đơn vị gốc": "ppm", "C_đích mỗi vial": 10.0, "Đơn vị đích": "ppm"},
-                    {"Phân Loại": "Surrogate", "Tên Hợp Chất": "Toluene-D8", "C_gốc": 1000.0, "Đơn vị gốc": "ppm", "C_đích mỗi vial": 10.0, "Đơn vị đích": "ppm"}
+                    {"Phân Loại": "Nội chuẩn (IS)", "Tên Hợp Chất": "Fluorobenzene", "C gốc (giá trị nhập)": 1000.0, "Đơn vị gốc":"µg/mL", "C đích (đơn vị đang chọn)": 10.0},
+                    {"Phân Loại": "Surrogate", "Tên Hợp Chất": "Toluene-D8", "C gốc (giá trị nhập)": 1000.0, "Đơn vị gốc":"µg/mL", "C đích (đơn vị đang chọn)": 10.0}
                 ])
-            df_is_surr = st.data_editor(
-                st.session_state.df_is_default, 
-                num_rows="dynamic", 
-                use_container_width=True, 
-                key="is_surr_editor", 
-                column_config={
-                    "Phân Loại": st.column_config.SelectboxColumn(options=["Nội chuẩn (IS)", "Surrogate", "Khác"]),
-                    "Đơn vị gốc": st.column_config.SelectboxColumn("Đơn vị gốc", options=["ppm", "ppb", "mg/L", "µg/L"]),
-                    "Đơn vị đích": st.column_config.SelectboxColumn("Đơn vị đích", options=["ppm", "ppb", "mg/L", "µg/L"])
-                }
-            )
+            df_is_surr = st.data_editor(st.session_state.df_is_default, num_rows="dynamic", use_container_width=True, key="is_surr_editor", column_config={"Phân Loại": st.column_config.SelectboxColumn(options=["Nội chuẩn (IS)", "Surrogate", "Khác"])})
             
             if st.button("🚀 Tính Toán Bảng Pha Chuẩn & Tối Ưu", type="primary"):
                 try:
-                    levels = sorted([float(x.strip()) for x in levels_input.split(",") if x.strip()])
+                    v_final=u_convert(v_final,calib_v_unit,"mL")
+                    levels = sorted([u_convert(float(x.strip()),calib_unit,"µg/mL") for x in levels_input.split(",") if x.strip()])
+                    if not levels or any(x<0 for x in levels):raise ValueError("Dãy chuẩn không hợp lệ")
+                    if opt_mix_std:c_ws_std=u_convert(c_ws_std,calib_unit,"µg/mL")
+                    if opt_mix_is_surr and v_spike_is<=0:raise ValueError("Thể tích hút phải >0")
+                    for frame in [df_mix,df_is_surr]:
+                        for _,r in frame.iterrows():
+                            if float(r.get("C gốc (giá trị nhập)",0))<=0:raise ValueError("Nồng độ gốc phải >0")
+                    if opt_mix_std and (c_ws_std<=0 or v_ws_total<=0):raise ValueError("Thông số mix trung gian phải >0")
                     calib_data = []
                     instructions = []
 
@@ -1161,26 +1146,21 @@ elif menu == "🧮 Tiện ích Phân tích":
                     
                     if opt_mix_is_surr:
                         v_master_total = (len(levels) + 3) * v_spike_is
-                        instructions.append("### 🧪 BƯỚC 1: PHA MASTER MIX NỘI CHUẨN (IS) & SURROGATE")
+                        instructions.append("### 🧪 BƯỚC 1: PHA MASTER MIX NỘI chuẩn (IS) & SURROGATE")
                         instructions.append(f"*(Pha tổng cộng {v_master_total} µL Master Mix dùng chung cho toàn bộ các điểm chuẩn. Mỗi điểm chuẩn sẽ hút {v_spike_is} µL)*")
                         sum_v = 0.0
                         for _, row in df_is_surr.iterrows():
                             name = str(row.get("Tên Hợp Chất", "")).strip()
                             if not name or name == "nan": continue
-                            c_s_raw = float(row.get("C_gốc", 0))
-                            unit_s = str(row.get("Đơn vị gốc", "ppm")).strip()
-                            c_t_raw = float(row.get("C_đích mỗi vial", 0))
-                            unit_t = str(row.get("Đơn vị đích", "ppm")).strip()
-                            
-                            c_s_converted = convert_unit_value(c_s_raw, unit_s, unit_t)
-                            
-                            v_stock = (c_t_raw * v_final * 1000 * v_master_total) / (c_s_converted * v_spike_is) if c_s_converted > 0 else 0
-                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} gốc ({c_s_raw} {unit_s})")
+                            c_s = u_convert(float(row.get("C gốc (giá trị nhập)", 0)),row.get("Đơn vị gốc","µg/mL"),"µg/mL")
+                            if c_s<=0:raise ValueError("Nồng độ chuẩn gốc phải >0")
+                            c_t = u_convert(float(row.get("C đích (đơn vị đang chọn)", 0)),calib_unit,"µg/mL")
+                            v_stock = (c_t * v_final * 1000 * v_master_total) / (c_s * v_spike_is) if c_s > 0 else 0
+                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} gốc ({c_s} µg/mL)")
                             sum_v += v_stock
                         v_solv = v_master_total - sum_v
                         instructions.append(f"- Thêm **{v_solv:.2f} µL** dung môi. Lắc đều.")
-                        if sum_v > v_master_total:
-                            instructions.append("❌ **LỖI:** Thể tích các chất gốc vượt quá tổng thể tích Master Mix. Hãy tăng Thể tích hút mỗi vial.")
+                        if sum_v > v_master_total:raise ValueError("Master Mix vượt thể tích. Giảm nồng độ đích hoặc tăng thể tích hút.")
                         
                         is_surr_columns["Hút IS/Surr Master Mix (µL)"] = v_spike_is
                         total_is_v_per_vial = v_spike_is
@@ -1188,55 +1168,44 @@ elif menu == "🧮 Tiện ích Phân tích":
                         for _, row in df_is_surr.iterrows():
                             name = str(row.get("Tên Hợp Chất", "")).strip()
                             if not name or name == "nan": continue
-                            c_s_raw = float(row.get("C_gốc", 0))
-                            unit_s = str(row.get("Đơn vị gốc", "ppm")).strip()
-                            c_t_raw = float(row.get("C_đích mỗi vial", 0))
-                            unit_t = str(row.get("Đơn vị đích", "ppm")).strip()
-                            
-                            c_s_converted = convert_unit_value(c_s_raw, unit_s, unit_t)
-                            v_ul = (c_t_raw * v_final * 1000) / c_s_converted if c_s_converted > 0 else 0
+                            c_s = u_convert(float(row.get("C gốc (giá trị nhập)", 0)),row.get("Đơn vị gốc","µg/mL"),"µg/mL")
+                            if c_s<=0:raise ValueError("Nồng độ chuẩn gốc phải >0")
+                            c_t = u_convert(float(row.get("C đích (đơn vị đang chọn)", 0)),calib_unit,"µg/mL")
+                            v_ul = (c_t * v_final * 1000) / c_s if c_s > 0 else 0
                             prefix = "IS" if "IS" in str(row.get("Phân Loại", "")) else "Surr"
                             is_surr_columns[f"Hút {prefix}: {name} (µL)"] = v_ul
                             total_is_v_per_vial += v_ul
 
                     if opt_mix_std:
                         instructions.append("### 🧪 BƯỚC 2: PHA MIX CHUẨN LÀM VIỆC (WORKING STANDARD)")
-                        instructions.append(f"*(Gộp các Mix chuẩn gốc thành Mix trung gian duy nhất có nồng độ {c_ws_std} {unit_ws_std}. Thể tích pha: {v_ws_total} µL)*")
+                        instructions.append(f"*(Gộp các Mix chuẩn gốc thành Mix trung gian duy nhất có nồng độ {c_ws_std} µg/mL. Thể tích pha: {v_ws_total} µL)*")
                         sum_v = 0.0
                         for _, r in df_mix.iterrows():
                             name = str(r.get("Tên Mix Chuẩn", "")).strip()
                             if not name or name == "nan": continue
-                            c_s_raw = float(r.get("C_gốc", 0))
-                            unit_s = str(r.get("Đơn vị gốc", "ppm")).strip()
-                            
-                            c_s_converted = convert_unit_value(c_s_raw, unit_s, unit_ws_std)
-                            v_stock = (c_ws_std * v_ws_total) / c_s_converted if c_s_converted > 0 else 0
-                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} ({c_s_raw} {unit_s})")
+                            c_s = u_convert(float(r.get("C gốc (giá trị nhập)", 0)),r.get("Đơn vị gốc","µg/mL"),"µg/mL")
+                            v_stock = (c_ws_std * v_ws_total) / c_s if c_s > 0 else 0
+                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} ({c_s} µg/mL)")
                             sum_v += v_stock
                         v_solv = v_ws_total - sum_v
                         instructions.append(f"- Thêm **{v_solv:.2f} µL** dung môi. Lắc đều.")
-                        if sum_v > v_ws_total:
-                            instructions.append("❌ **LỖI:** Thể tích chuẩn gốc vượt quá thể tích Mix trung gian. Hãy tăng Thể tích pha hoặc giảm nồng độ trung gian.")
+                        if sum_v > v_ws_total:raise ValueError("Mix trung gian vượt thể tích.")
 
                     instructions.append("### 🧪 BƯỚC 3: PHA DÃY CHUẨN VÀO VIAL CUỐI CÙNG")
                     for lvl in levels:
-                        row_data = {"Điểm chuẩn": f"Level {lvl} {unit_levels}"}
+                        row_data = {"Điểm chuẩn": f"Level {lvl} µg/mL"}
                         total_std_v = 0.0
                         
                         if opt_mix_std:
-                            c_ws_converted = convert_unit_value(c_ws_std, unit_ws_std, unit_levels)
-                            v_ws = (lvl * v_final * 1000) / c_ws_converted if c_ws_converted > 0 else 0
-                            row_data[f"Hút Mix Làm Việc {c_ws_std}{unit_ws_std} (µL)"] = round(v_ws, 2)
+                            v_ws = (lvl * v_final * 1000) / c_ws_std if c_ws_std > 0 else 0
+                            row_data[f"Hút Mix Làm Việc {c_ws_std}µg/mL (µL)"] = round(v_ws, 2)
                             total_std_v += v_ws
                         else:
                             for _, r in df_mix.iterrows():
                                 name = str(r.get("Tên Mix Chuẩn", "")).strip()
                                 if not name or name == "nan": continue
-                                c_s_raw = float(r.get("C_gốc", 0))
-                                unit_s = str(r.get("Đơn vị gốc", "ppm")).strip()
-                                
-                                c_s_converted = convert_unit_value(c_s_raw, unit_s, unit_levels)
-                                v_ul = (lvl * v_final * 1000) / c_s_converted if c_s_converted > 0 else 0
+                                c_s = u_convert(float(r.get("C gốc (giá trị nhập)", 0)),r.get("Đơn vị gốc","µg/mL"),"µg/mL")
+                                v_ul = (lvl * v_final * 1000) / c_s if c_s > 0 else 0
                                 row_data[f"Hút Mix {name} (µL)"] = round(v_ul, 2)
                                 total_std_v += v_ul
                         
@@ -1244,6 +1213,7 @@ elif menu == "🧮 Tiện ích Phân tích":
                             row_data[k] = round(v, 2)
                             
                         v_dungmoi = (v_final * 1000) - total_std_v - total_is_v_per_vial
+                        if v_dungmoi<0:raise ValueError("Điểm chuẩn vượt thể tích vial; chưa xuất bảng pha.")
                         row_data["Dung môi bù (µL)"] = round(v_dungmoi, 2) if v_dungmoi >= 0 else "Quá thể tích!"
                         row_data["V tổng đích (mL)"] = v_final
                         calib_data.append(row_data)
@@ -1263,7 +1233,8 @@ elif menu == "📝 Báo cáo & Lập Biên bản":
     
     tab_report, tab_qr = st.tabs(["1. Lập Biên Bản Xử Lý Mẫu", "2. Sinh Mã Vạch QR"])
 
-    with tab_report: 
+    with tab_report:
+        st.info("Biên bản dùng thẻ {{ row.don_vi_cdo }}, {{ row.don_vi_csurr }}, {{ row.don_vi_kq }} để hiển thị đơn vị đã chọn. Template có đơn vị cố định cần sửa nhãn cho khớp; không tự thay toàn bộ chữ ppm trong mẫu.") 
         st.info("💡 **Hệ thống Thông minh:** Tự động lấy kết quả bạn vừa tính ở tab Phân tích để điền vào Biểu mẫu Word/Excel. Mọi định dạng Form, Chữ ký được bảo lưu 100%.")
         
         with st.container(border=True):
@@ -1308,7 +1279,8 @@ elif menu == "📝 Báo cáo & Lập Biên bản":
                                 "c_surr_truoc": c_surr_truoc, 
                                 "c_surr_sau": c_surr_sau, 
                                 "de": h_phantram,
-                                "ghi_chu": ""
+                                "ghi_chu": "",
+                                "don_vi_kq":str(first_row.get("Đơn vị kết quả",""))
                             }
                             
                             for _, row in group.iterrows():
@@ -1325,7 +1297,10 @@ elif menu == "📝 Báo cáo & Lập Biên bản":
                                     "h_phantram": h_phantram,
                                     "v_khi": v_khi,
                                     "c_do": c_do,
-                                    "kq_thuc": kq_thuc
+                                    "kq_thuc": kq_thuc,
+                                    "don_vi_kq":str(row.get("Đơn vị kết quả","")),
+                                    "don_vi_cdo":str(row.get("Đơn vị C đo","")),
+                                    "don_vi_csurr":str(row.get("Đơn vị Csurr",""))
                                 })
                                 
                                 chi_tieu_upper = chi_tieu.upper()
@@ -1448,17 +1423,18 @@ elif menu == "📝 Báo cáo & Lập Biên bản":
         st.write("Mô đun in tem dán mã vạch (Barcode/QR code) hàng loạt đang chờ tích hợp.")
 
 elif menu == "🧪 Kiểm soát Hóa chất":
-    st.title('🧪 Kho hóa chất và Quản lý nhập liệu')
+    st.markdown("<h1 class='main-title'>🧪 Kho hóa chất và Quản lý nhập liệu</h1>", unsafe_allow_html=True)
     if st.session_state.get('chem_error'): st.error(st.session_state.chem_error)
     base = st.session_state.df_chem.copy()
     
     # DASHBOARD THỐNG KÊ (MỚI)
     if not base.empty:
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Tổng số hóa chất", len(base))
-        col2.metric("Chuẩn phân tích", len(base[base['Phân Loại'] == 'Chất chuẩn phân tích']))
-        col3.metric("Nội chuẩn/Surrogate", len(base[base['Phân Loại'] == 'Chất chuẩn (IS/Surrogate)']))
-        col4.metric("⚠️ Cần rà soát", len(base[base['Cần Kiểm Tra'].astype(str).str.strip() != '']) if 'Cần Kiểm Tra' in base.columns else 0)
+        col1.markdown(f'<div class="kpi" style="--accent:#239f8d; min-height:110px; padding:15px"><div class="kpi-label">Tổng số hóa chất</div><div class="kpi-number">{len(base)}</div></div>', unsafe_allow_html=True)
+        col2.markdown(f'<div class="kpi" style="--accent:#5d8fbe; min-height:110px; padding:15px"><div class="kpi-label">Chuẩn phân tích</div><div class="kpi-number">{len(base[base["Phân Loại"] == "Chất chuẩn phân tích"])}</div></div>', unsafe_allow_html=True)
+        col3.markdown(f'<div class="kpi" style="--accent:#8b82be; min-height:110px; padding:15px"><div class="kpi-label">Nội chuẩn/Surrogate</div><div class="kpi-number">{len(base[base["Phân Loại"] == "Chất chuẩn (IS/Surrogate)"])}</div></div>', unsafe_allow_html=True)
+        col4.markdown(f'<div class="kpi" style="--accent:#dbab5b; min-height:110px; padding:15px"><div class="kpi-label">Cần rà soát</div><div class="kpi-number">{len(base[base["Cần Kiểm Tra"].astype(str).str.strip() != ""]) if "Cần Kiểm Tra" in base.columns else 0}</div></div>', unsafe_allow_html=True)
+        st.write("")
 
     # NÂNG CẤP FORM THÊM THỦ CÔNG
     with st.expander('➕ Thêm hóa chất thủ công'):
@@ -1490,69 +1466,68 @@ elif menu == "🧪 Kiểm soát Hóa chất":
                     save_chemical_data(updated); st.session_state.df_chem = stock_frame(updated); st.rerun()
                 except Exception as exc: st.error(str(exc))
                 
-    st.markdown("### 📥 Nạp dữ liệu tự động (PDF / CSV)")
-    col_up1, col_up2 = st.columns(2)
-    with col_up1:
-        upload_pdf = st.file_uploader('Tải lên PDF (Hóa chất chuẩn GC)', type=['pdf'], key='stock_pdf')
-    with col_up2:
-        upload_csv = st.file_uploader('Hoặc tải lên CSV (File bóc tách)', type=['csv'], key='stock_csv')
+    st.markdown("<div class='section-title'>📥 Nạp dữ liệu tự động (PDF / CSV)</div>", unsafe_allow_html=True)
+    with st.container(border=True):
+        col_up1, col_up2 = st.columns(2)
+        with col_up1:
+            upload_pdf = st.file_uploader('Tải lên PDF (Hóa chất chuẩn GC)', type=['pdf'], key='stock_pdf')
+        with col_up2:
+            upload_csv = st.file_uploader('Hoặc tải lên CSV (File bóc tách)', type=['csv'], key='stock_csv')
 
-    parsed = None
-    file_name_display = ""
-    
-    if upload_pdf:
-        try:
-            @st.cache_data(show_spinner=False, max_entries=3)
-            def cached_stock(data, name): return read_stock_pdf(data, name)
-            parsed = cached_stock(upload_pdf.getvalue(), upload_pdf.name)
-            file_name_display = upload_pdf.name
-        except Exception as exc: st.error(f"Lỗi đọc PDF: {exc}")
+        parsed = None
+        file_name_display = ""
         
-    elif upload_csv:
-        try:
-            parsed = pd.read_csv(upload_csv)
-            parsed = stock_frame(parsed)
-            file_name_display = upload_csv.name
-        except Exception as exc: st.error(f"Lỗi đọc CSV: {exc}")
-
-    # TIẾP NHẬN DỮ LIỆU TỪ FILE VÀ HIỂN THỊ TRƯỚC
-    if parsed is not None and not parsed.empty:
-        st.success(f'✔️ Đã đọc được {len(parsed)} dòng từ file {file_name_display}.')
-        st.caption('Chọn dòng cần nhập vào kho chung. Chú ý các dòng có ghi chú trong cột Cần Kiểm Tra.')
-        preview = parsed.copy(); preview.insert(0, 'Nhập', False)
-        
-        col_config = {
-            'Hạn Sử Dụng': st.column_config.DateColumn(),
-            'Nồng Độ': st.column_config.NumberColumn(),
-            'Đơn Vị Nồng Độ': st.column_config.SelectboxColumn(options=list(U_GROUPS['Nồng độ dung dịch']))
-        }
-        disabled_cols = ['ID Nguồn', 'Nguồn PDF', 'Trang PDF', 'Dòng PDF', 'HSD Gốc', 'Tình Trạng Gốc', 'Quy Cách Gốc']
-        
-        edited_preview = st.data_editor(preview, num_rows='fixed', hide_index=True, use_container_width=True, 
-                                key='stock_preview_' + hashlib.sha256(str(file_name_display).encode()).hexdigest(),
-                                column_config=col_config, disabled=disabled_cols)
-                                
         if upload_pdf:
-            st.download_button('📥 Tải kết quả bóc tách PDF (CSV)', parsed.to_csv(index=False).encode('utf-8-sig'), 'Kho_hoa_chat_tu_PDF.csv', 'text/csv')
-            
-        if st.button('🚀 Ghi các dòng đã chọn vào Kho chung', disabled=bool(st.session_state.get('chem_error'))):
             try:
-                incoming = edited_preview[edited_preview['Nhập']].drop(columns='Nhập')
-                if incoming.empty: raise ValueError('Bạn chưa tick chọn dòng nào để nhập.')
-                updated = stock_merge(base, incoming)
-                save_chemical_data(updated)
-                st.session_state.df_chem = stock_frame(updated)
-                st.success("Nhập kho thành công!")
-                st.rerun()
-            except Exception as exc: st.error(str(exc))
+                @st.cache_data(show_spinner=False, max_entries=3)
+                def cached_stock(data, name): return read_stock_pdf(data, name)
+                parsed = cached_stock(upload_pdf.getvalue(), upload_pdf.name)
+                file_name_display = upload_pdf.name
+            except Exception as exc: st.error(f"Lỗi đọc PDF: {exc}")
+            
+        elif upload_csv:
+            try:
+                parsed = pd.read_csv(upload_csv)
+                parsed = stock_frame(parsed)
+                file_name_display = upload_csv.name
+            except Exception as exc: st.error(f"Lỗi đọc CSV: {exc}")
 
-    st.divider()
+        # TIẾP NHẬN DỮ LIỆU TỪ FILE VÀ HIỂN THỊ TRƯỚC
+        if parsed is not None and not parsed.empty:
+            st.success(f'✔️ Đã đọc được {len(parsed)} dòng từ file {file_name_display}.')
+            st.caption('Chọn dòng cần nhập vào kho chung. Chú ý các dòng có ghi chú trong cột Cần Kiểm Tra.')
+            preview = parsed.copy(); preview.insert(0, 'Nhập', False)
+            
+            col_config = {
+                'Hạn Sử Dụng': st.column_config.DateColumn(),
+                'Nồng Độ': st.column_config.NumberColumn(),
+                'Đơn Vị Nồng Độ': st.column_config.SelectboxColumn(options=list(U_GROUPS['Nồng độ dung dịch']))
+            }
+            disabled_cols = ['ID Nguồn', 'Nguồn PDF', 'Trang PDF', 'Dòng PDF', 'HSD Gốc', 'Tình Trạng Gốc', 'Quy Cách Gốc']
+            
+            edited_preview = st.data_editor(preview, num_rows='fixed', hide_index=True, use_container_width=True, 
+                                    key='stock_preview_' + hashlib.sha256(str(file_name_display).encode()).hexdigest(),
+                                    column_config=col_config, disabled=disabled_cols)
+                                    
+            if upload_pdf:
+                st.download_button('📥 Tải kết quả bóc tách PDF (CSV)', parsed.to_csv(index=False).encode('utf-8-sig'), 'Kho_hoa_chat_tu_PDF.csv', 'text/csv')
+                
+            if st.button('🚀 Ghi các dòng đã chọn vào Kho chung', type="primary", disabled=bool(st.session_state.get('chem_error'))):
+                try:
+                    incoming = edited_preview[edited_preview['Nhập']].drop(columns='Nhập')
+                    if incoming.empty: raise ValueError('Bạn chưa tick chọn dòng nào để nhập.')
+                    updated = stock_merge(base, incoming)
+                    save_chemical_data(updated)
+                    st.session_state.df_chem = stock_frame(updated)
+                    st.success("Nhập kho thành công!")
+                    st.rerun()
+                except Exception as exc: st.error(str(exc))
     
     # QUẢN LÝ KHO CHUNG & CẢNH BÁO
     if base.empty:
         st.info('Kho chưa có dữ liệu. Hãy thêm thủ công hoặc tải lên file PDF/CSV.')
     else:
-        st.markdown("### 📋 Danh sách Hóa chất & Vật tư")
+        st.markdown("<div class='section-title' style='margin-top:20px'>📋 Danh sách Hóa chất & Vật tư</div>", unsafe_allow_html=True)
         expires = pd.to_datetime(base['Hạn Sử Dụng'], errors='coerce')
         today = pd.Timestamp.now().normalize()
         
@@ -1568,44 +1543,66 @@ elif menu == "🧪 Kiểm soát Hóa chất":
                 st.markdown("🔍 **Hóa chất cần kiểm tra lại thông tin (Sai CAS, lỗi ngày tháng...):**")
                 st.dataframe(needs_check[['Tên Hóa Chất', 'Nhà Sản Xuất', 'CAS', 'Cần Kiểm Tra']], use_container_width=True)
 
-        col_f1, col_f2 = st.columns([2, 1])
-        with col_f1: search = st.text_input('🔍 Lọc theo Tên / CAS / Nhà sản xuất')
-        with col_f2: systems = st.multiselect('Lọc Hệ máy', sorted(set(base['Hệ Máy'].dropna().astype(str))))
-        
-        mask = pd.Series(True, index=base.index)
-        if search: mask &= base[['Tên Hóa Chất', 'CAS', 'Nhà Sản Xuất']].fillna('').astype(str).apply(lambda c: c.str.contains(search, case=False, regex=False)).any(axis=1)
-        if systems: mask &= base['Hệ Máy'].isin(systems)
-        selected = base[mask].copy()
-        
-        st.caption('Sửa cột Đơn Vị Nồng Độ là sửa khai báo dữ liệu gốc. Muốn đổi đơn vị và giữ nguyên nồng độ thực, hãy dùng bảng Quy đổi bên dưới.')
-        
-        edited_inventory = st.data_editor(selected, num_rows='fixed', hide_index=True, use_container_width=True, key='stock_edit',
-            column_config={
-                'Hạn Sử Dụng': st.column_config.DateColumn(),
-                'Ngày Mở Nắp': st.column_config.DateColumn(),
-                'Hệ Máy': st.column_config.SelectboxColumn(options=CHEM_SYSTEMS),
-                'Tình Trạng Kho': st.column_config.SelectboxColumn(options=CHEM_STATUS + ['Chưa xác nhận lượng tồn']),
-                'Đơn Vị Nồng Độ': st.column_config.SelectboxColumn(options=list(U_GROUPS['Nồng độ dung dịch']))
-            }, disabled=['ID Nguồn', 'Nguồn PDF', 'Trang PDF', 'Dòng PDF'])
+        with st.container(border=True):
+            col_f1, col_f2 = st.columns([2, 1])
+            with col_f1: search = st.text_input('🔍 Lọc theo Tên / CAS / Nhà sản xuất')
+            with col_f2: systems = st.multiselect('Lọc Hệ máy', sorted(set(base['Hệ Máy'].dropna().astype(str))))
             
-        if st.button('💾 Lưu các chỉnh sửa vào Kho', disabled=bool(st.session_state.get('chem_error'))):
-            try:
-                updated = base.copy(); updated.loc[selected.index, edited_inventory.columns] = edited_inventory.values
-                save_chemical_data(updated); st.session_state.df_chem = stock_frame(updated); st.rerun()
-            except Exception as exc: st.error(str(exc))
+            mask = pd.Series(True, index=base.index)
+            if search: mask &= base[['Tên Hóa Chất', 'CAS', 'Nhà Sản Xuất']].fillna('').astype(str).apply(lambda c: c.str.contains(search, case=False, regex=False)).any(axis=1)
+            if systems: mask &= base['Hệ Máy'].isin(systems)
+            selected = base[mask].copy()
             
-        with st.expander('🔄 Công cụ Quy đổi nồng độ (Không ghi đè giá trị gốc)'):
-            target = st.selectbox('Đơn vị xem nồng độ mong muốn', list(U_GROUPS['Nồng độ dung dịch']), index=1)
-            view = selected[['Tên Hóa Chất', 'Nồng Độ', 'Đơn Vị Nồng Độ']].copy()
-            def cv(row):
-                try: return u_convert(row['Nồng Độ'], row['Đơn Vị Nồng Độ'], target)
-                except (ValueError, TypeError): return None
-            view['Nồng độ quy đổi'] = view.apply(cv, axis=1); view['Đơn vị đích'] = target
-            st.dataframe(view, use_container_width=True)
+            st.caption('Sửa cột Đơn Vị Nồng Độ là sửa khai báo dữ liệu gốc. Muốn đổi đơn vị và giữ nguyên nồng độ thực, hãy dùng bảng Quy đổi bên dưới.')
             
-        st.download_button('📥 Xuất toàn bộ Kho ra CSV', stock_serial(base).to_csv(index=False).encode('utf-8-sig'), 'Kho_hoa_chat_Hien_Tai.csv', 'text/csv')
+            edited_inventory = st.data_editor(selected, num_rows='fixed', hide_index=True, use_container_width=True, key='stock_edit',
+                column_config={
+                    'Hạn Sử Dụng': st.column_config.DateColumn(),
+                    'Ngày Mở Nắp': st.column_config.DateColumn(),
+                    'Hệ Máy': st.column_config.SelectboxColumn(options=CHEM_SYSTEMS),
+                    'Tình Trạng Kho': st.column_config.SelectboxColumn(options=CHEM_STATUS + ['Chưa xác nhận lượng tồn']),
+                    'Đơn Vị Nồng Độ': st.column_config.SelectboxColumn(options=list(U_GROUPS['Nồng độ dung dịch']))
+                }, disabled=['ID Nguồn', 'Nguồn PDF', 'Trang PDF', 'Dòng PDF'])
+                
+            if st.button('💾 Lưu các chỉnh sửa vào Kho', type="primary", disabled=bool(st.session_state.get('chem_error'))):
+                try:
+                    updated = base.copy(); updated.loc[selected.index, edited_inventory.columns] = edited_inventory.values
+                    save_chemical_data(updated); st.session_state.df_chem = stock_frame(updated); st.rerun()
+                except Exception as exc: st.error(str(exc))
+                
+            with st.expander('🔄 Công cụ Quy đổi nồng độ (Không ghi đè giá trị gốc)'):
+                target = st.selectbox('Đơn vị xem nồng độ mong muốn', list(U_GROUPS['Nồng độ dung dịch']), index=1)
+                view = selected[['Tên Hóa Chất', 'Nồng Độ', 'Đơn Vị Nồng Độ']].copy()
+                def cv(row):
+                    try: return u_convert(row['Nồng Độ'], row['Đơn Vị Nồng Độ'], target)
+                    except (ValueError, TypeError): return None
+                view['Nồng độ quy đổi'] = view.apply(cv, axis=1); view['Đơn vị đích'] = target
+                st.dataframe(view, use_container_width=True)
+                
+            st.download_button('📥 Xuất toàn bộ Kho ra CSV', stock_serial(base).to_csv(index=False).encode('utf-8-sig'), 'Kho_hoa_chat_Hien_Tai.csv', 'text/csv')
+
+elif menu == "🔄 Quy đổi đơn vị":
+    unit_utility()
 
 elif menu == "⚙️ Cấu hình Hệ thống":
+    with st.expander('Quy đổi đơn vị thư viện MDL/LOQ để tải xuống'):
+        target_limit=st.selectbox('Đơn vị đích cho các dòng tương thích',[u for g in U_GROUPS.values() for u in g],key='limit_target')
+        if st.button('Tạo bản thư viện quy đổi'):
+            converted=st.session_state.df_limit.copy()
+            errors=[]
+            for index,row in converted.iterrows():
+                try:
+                    factor=u_convert(1,row.get('Đơn Vị',''),target_limit)
+                    values={}
+                    for col in ['MDL','LOQ']:
+                        val=row.get(col)
+                        if pd.notna(val) and str(val).strip():values[col]=float(str(val).replace(',','.'))*factor
+                    for col,value in values.items():converted.at[index,col]=value
+                    converted.at[index,'Đơn Vị']=target_limit
+                except (ValueError,TypeError):errors.append(index+1)
+            st.dataframe(converted,use_container_width=True)
+            if errors:st.info(f'{len(errors)} dòng khác đại lượng/thiếu đơn vị được giữ nguyên, không đổi nhãn.')
+            st.download_button('Tải thư viện đã quy đổi CSV',converted.to_csv(index=False).encode('utf-8-sig'),'Thu_vien_quy_doi.csv','text/csv')
     st.markdown("<h1 class='main-title'>⚙️ Cấu hình & Quản trị Hệ thống</h1>", unsafe_allow_html=True)
     
     st.markdown("<div class='sub-title'>Quản lý Thư viện MDL & LOQ</div>", unsafe_allow_html=True)
