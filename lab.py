@@ -327,7 +327,7 @@ def lab_local_answer(question, df):
 # ==========================================
 # 4. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
-st.sidebar.markdown("<h2 style='text-align: center; color: #1E293B;'>🔬 GC</h2>", unsafe_allow_html=True)
+st.sidebar.markdown("<h2 style='text-align: center; color: #1E293B;'>🔬 LIMS HATICO</h2>", unsafe_allow_html=True)
 st.sidebar.caption("<div style='text-align: center; margin-bottom: 20px;'>Phần mềm Quản lý Phòng Lab Tự động</div>", unsafe_allow_html=True)
 
 menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
