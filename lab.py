@@ -895,19 +895,27 @@ elif menu == "🧮 Tiện ích Phân tích":
 
     with tab_calib:
         with st.container(border=True):
-            st.markdown("<div class='sub-title'>🧪 Lập Công Thức Pha Chuẩn Đa Thành Phần (Smart Auto-Dilution)</div>", unsafe_allow_html=True)
-            st.info("💡 Tính toán thể tích hút (µL) từ các dung dịch Stock. Tích hợp **AI Tối ưu hóa**: Tự động đề xuất quy trình pha loãng trung gian (Working Solution) nếu thể tích hút quá nhỏ (< 10µL), giúp loại bỏ sai số pipet.")
-            
-            smart_mode = st.toggle("🧠 Bật Trợ lý Tối ưu hóa Pha loãng trung gian", value=True)
+            st.markdown("<div class='sub-title'>🧪 Lập Công Thức Pha Chuẩn Tối Ưu (Smart Mix)</div>", unsafe_allow_html=True)
+            st.info("💡 Hệ thống hỗ trợ tối ưu hóa quy trình pha chuẩn: Gộp các Nội chuẩn/Surrogate thành 1 Master Mix để hút 1 lần; Gộp các Mix chuẩn gốc thành Mix làm việc (Working Standard) để tránh sai số pipet nhỏ.")
             
             col_v1, col_v2 = st.columns(2)
             with col_v1:
                 v_final = st.number_input("Thể tích định mức mỗi điểm chuẩn (mL)", value=1.0, step=0.1, min_value=0.1)
             with col_v2:
-                v_min_ul = st.number_input("Thể tích hút tối thiểu an toàn của Pipet (µL)", value=10.0, step=1.0) if smart_mode else 0.0
-
-            levels_input = st.text_input("🎯 Nhập dãy nồng độ chuẩn cần pha (ppm) - cách nhau dấu phẩy:", "0.5, 1, 2, 5, 10, 20")
+                levels_input = st.text_input("🎯 Nhập dãy nồng độ chuẩn cần pha (ppm):", "0.5, 1, 2, 5, 10, 20")
             
+            st.markdown("### ⚙️ Tùy chọn Tối ưu hóa (Optimization)")
+            col_opt1, col_opt2 = st.columns(2)
+            with col_opt1:
+                opt_mix_is_surr = st.toggle("🧪 Gộp IS & Surrogate thành Master Mix", value=True)
+                if opt_mix_is_surr:
+                    v_spike_is = st.number_input("Thể tích hút Master Mix cho mỗi vial (µL)", value=50.0, step=10.0)
+            with col_opt2:
+                opt_mix_std = st.toggle("🧪 Gộp các Chuẩn gốc thành Mix Trung gian", value=True)
+                if opt_mix_std:
+                    c_ws_std = st.number_input("Nồng độ Mix Trung gian cần pha (ppm)", value=100.0, step=10.0)
+                    v_ws_total = st.number_input("Thể tích cần pha Mix Trung gian (µL)", value=1000.0, step=100.0)
+
             st.markdown("**1. Các dung dịch Chuẩn (Mix) thay đổi theo dãy nồng độ:**")
             if "df_mix_default" not in st.session_state:
                 st.session_state.df_mix_default = pd.DataFrame([{"Tên Mix Chuẩn": "Mix VOCs", "C_gốc (ppm)": 1000.0}])
@@ -921,100 +929,97 @@ elif menu == "🧮 Tiện ích Phân tích":
                 ])
             df_is_surr = st.data_editor(st.session_state.df_is_default, num_rows="dynamic", use_container_width=True, key="is_surr_editor", column_config={"Phân Loại": st.column_config.SelectboxColumn(options=["Nội chuẩn (IS)", "Surrogate", "Khác"])})
             
-            if st.button("🚀 Lập Bảng Pha Chuẩn Tối Ưu", type="primary"):
+            if st.button("🚀 Tính Toán Bảng Pha Chuẩn & Tối Ưu", type="primary"):
                 try:
-                    levels = [float(x.strip()) for x in levels_input.split(",") if x.strip()]
-                    levels = sorted(levels)
+                    levels = sorted([float(x.strip()) for x in levels_input.split(",") if x.strip()])
                     calib_data = []
-                    working_solutions = {}
+                    instructions = []
+
+                    is_surr_columns = {} 
+                    total_is_v_per_vial = 0.0
                     
-                    constant_additions = {}
-                    total_constant_v = 0.0
-                    
-                    # Tính toán cho IS và Surrogate (Cố định)
-                    for _, row in df_is_surr.iterrows():
-                        name = str(row.get("Tên Hợp Chất", "")).strip()
-                        if not name or name == "nan": continue
-                        c_stock = float(row.get("C_gốc (ppm)", 0))
-                        c_target = float(row.get("C_đích mỗi vial (ppm)", 0))
-                        prefix = "IS" if "IS" in str(row.get("Phân Loại", "")) else "Surr"
-                        col_name = f"Hút {prefix}: {name}"
+                    if opt_mix_is_surr:
+                        v_master_total = (len(levels) + 3) * v_spike_is
+                        instructions.append("### 🧪 BƯỚC 1: PHA MASTER MIX NỘI CHUẨN (IS) & SURROGATE")
+                        instructions.append(f"*(Pha tổng cộng {v_master_total} µL Master Mix dùng chung cho toàn bộ các điểm chuẩn. Mỗi điểm chuẩn sẽ hút {v_spike_is} µL)*")
+                        sum_v = 0.0
+                        for _, row in df_is_surr.iterrows():
+                            name = str(row.get("Tên Hợp Chất", "")).strip()
+                            if not name or name == "nan": continue
+                            c_s = float(row.get("C_gốc (ppm)", 0))
+                            c_t = float(row.get("C_đích mỗi vial (ppm)", 0))
+                            v_stock = (c_t * v_final * 1000 * v_master_total) / (c_s * v_spike_is) if c_s > 0 else 0
+                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} gốc ({c_s} ppm)")
+                            sum_v += v_stock
+                        v_solv = v_master_total - sum_v
+                        instructions.append(f"- Thêm **{v_solv:.2f} µL** dung môi. Lắc đều.")
+                        if sum_v > v_master_total:
+                            instructions.append("❌ **LỖI:** Thể tích các chất gốc vượt quá tổng thể tích Master Mix. Hãy tăng Thể tích hút mỗi vial.")
                         
-                        v_ul = (c_target * v_final * 1000) / c_stock if c_stock > 0 else 0
-                        
-                        source_name = "Gốc"
-                        actual_v_ul = v_ul
-                        if smart_mode and 0 < v_ul < v_min_ul:
-                            k = 10
-                            while (v_ul * k) < v_min_ul and k <= 10000:
-                                k *= 10
-                            c_ws = c_stock / k
-                            actual_v_ul = v_ul * k
-                            source_name = f"WS {c_ws}ppm"
-                            if name not in working_solutions: working_solutions[name] = set()
-                            working_solutions[name].add((k, c_ws, c_stock))
-                        
-                        constant_additions[col_name] = (actual_v_ul, source_name)
-                        total_constant_v += actual_v_ul
-                        
-                    # Tính toán cho Mix (Tịnh tiến theo dãy chuẩn)
+                        is_surr_columns["Hút IS/Surr Master Mix (µL)"] = v_spike_is
+                        total_is_v_per_vial = v_spike_is
+                    else:
+                        for _, row in df_is_surr.iterrows():
+                            name = str(row.get("Tên Hợp Chất", "")).strip()
+                            if not name or name == "nan": continue
+                            c_s = float(row.get("C_gốc (ppm)", 0))
+                            c_t = float(row.get("C_đích mỗi vial (ppm)", 0))
+                            v_ul = (c_t * v_final * 1000) / c_s if c_s > 0 else 0
+                            prefix = "IS" if "IS" in str(row.get("Phân Loại", "")) else "Surr"
+                            is_surr_columns[f"Hút {prefix}: {name} (µL)"] = v_ul
+                            total_is_v_per_vial += v_ul
+
+                    if opt_mix_std:
+                        instructions.append("### 🧪 BƯỚC 2: PHA MIX CHUẨN LÀM VIỆC (WORKING STANDARD)")
+                        instructions.append(f"*(Gộp các Mix chuẩn gốc thành Mix trung gian duy nhất có nồng độ {c_ws_std} ppm. Thể tích pha: {v_ws_total} µL)*")
+                        sum_v = 0.0
+                        for _, r in df_mix.iterrows():
+                            name = str(r.get("Tên Mix Chuẩn", "")).strip()
+                            if not name or name == "nan": continue
+                            c_s = float(r.get("C_gốc (ppm)", 0))
+                            v_stock = (c_ws_std * v_ws_total) / c_s if c_s > 0 else 0
+                            instructions.append(f"- Hút **{v_stock:.2f} µL** {name} ({c_s} ppm)")
+                            sum_v += v_stock
+                        v_solv = v_ws_total - sum_v
+                        instructions.append(f"- Thêm **{v_solv:.2f} µL** dung môi. Lắc đều.")
+                        if sum_v > v_ws_total:
+                            instructions.append("❌ **LỖI:** Thể tích chuẩn gốc vượt quá thể tích Mix trung gian. Hãy tăng Thể tích pha hoặc giảm nồng độ trung gian.")
+
+                    instructions.append("### 🧪 BƯỚC 3: PHA DÃY CHUẨN VÀO VIAL CUỐI CÙNG")
                     for lvl in levels:
                         row_data = {"Điểm chuẩn": f"Level {lvl} ppm"}
-                        total_mix_v = 0.0
+                        total_std_v = 0.0
                         
-                        for _, r in df_mix.iterrows():
-                            mix_name = str(r.get("Tên Mix Chuẩn", "")).strip()
-                            if not mix_name or mix_name == "nan": continue
-                            c_mix_stock = float(r.get("C_gốc (ppm)", 0))
-                            col_mix_name = f"Hút Mix: {mix_name}"
-                            
-                            v_mix_ul = (lvl * v_final * 1000) / c_mix_stock if c_mix_stock > 0 else 0
-                            source_name = "Gốc"
-                            actual_v_ul = v_mix_ul
-                            
-                            if smart_mode and 0 < v_mix_ul < v_min_ul:
-                                k = 10
-                                while (v_mix_ul * k) < v_min_ul and k <= 10000:
-                                    k *= 10
-                                c_ws = c_mix_stock / k
-                                actual_v_ul = v_mix_ul * k
-                                source_name = f"WS {c_ws}ppm"
-                                if mix_name not in working_solutions: working_solutions[mix_name] = set()
-                                working_solutions[mix_name].add((k, c_ws, c_mix_stock))
-                                
-                            row_data[col_mix_name] = f"{round(actual_v_ul, 2)} µL ({source_name})"
-                            total_mix_v += actual_v_ul
-                            
-                        # Ghép constant vào row
-                        for col_name, (act_v, src_name) in constant_additions.items():
-                            row_data[col_name] = f"{round(act_v, 2)} µL ({src_name})"
-                            
-                        v_dungmoi_ul = (v_final * 1000) - total_mix_v - total_constant_v
-                        row_data["Dung môi bù"] = f"{round(v_dungmoi_ul, 2)} µL" if v_dungmoi_ul >= 0 else "Quá thể tích!"
+                        if opt_mix_std:
+                            v_ws = (lvl * v_final * 1000) / c_ws_std if c_ws_std > 0 else 0
+                            row_data[f"Hút Mix Làm Việc {c_ws_std}ppm (µL)"] = round(v_ws, 2)
+                            total_std_v += v_ws
+                        else:
+                            for _, r in df_mix.iterrows():
+                                name = str(r.get("Tên Mix Chuẩn", "")).strip()
+                                if not name or name == "nan": continue
+                                c_s = float(r.get("C_gốc (ppm)", 0))
+                                v_ul = (lvl * v_final * 1000) / c_s if c_s > 0 else 0
+                                row_data[f"Hút Mix {name} (µL)"] = round(v_ul, 2)
+                                total_std_v += v_ul
                         
+                        for k, v in is_surr_columns.items():
+                            row_data[k] = round(v, 2)
+                            
+                        v_dungmoi = (v_final * 1000) - total_std_v - total_is_v_per_vial
+                        row_data["Dung môi bù (µL)"] = round(v_dungmoi, 2) if v_dungmoi >= 0 else "Quá thể tích!"
+                        row_data["V tổng đích (mL)"] = v_final
                         calib_data.append(row_data)
+
+                    for ins in instructions:
+                        st.markdown(ins)
                     
-                    # Hiển thị Cảnh báo & Hướng dẫn Pha trung gian
-                    if working_solutions:
-                        st.warning("⚠️ **Trợ lý AI:** Phát hiện thể tích hút dưới mức an toàn của Pipet. Đã tự động thiết kế các Bước pha loãng trung gian để loại bỏ sai số!")
-                        st.markdown("### 🧪 BƯỚC 1: PHA CÁC DUNG DỊCH TRUNG GIAN (WORKING SOLUTIONS)")
-                        st.caption(f"Khuyến nghị pha trong vial 1mL (hoặc bình định mức 1mL tương ứng). Thể tích hút tối thiểu thiết lập: {v_min_ul} µL.")
-                        for chem, ws_set in working_solutions.items():
-                            ws_sorted = sorted(list(ws_set), key=lambda x: x[0])
-                            for k, c_ws, c_g in ws_sorted:
-                                v_stock = 1000 / k
-                                v_solv = 1000 - v_stock
-                                st.markdown(f"- Tạo dung dịch **{chem} ({c_ws} ppm)**: Hút **{v_stock:.1f} µL** dung dịch {c_g} ppm + **{v_solv:.1f} µL** Dung môi.")
-                        st.markdown("### 🧪 BƯỚC 2: PHA DÃY CHUẨN CUỐI CÙNG")
-                    else:
-                        st.success("✅ Đã tạo bảng công thức pha chuẩn thành công!")
-                        
                     df_calib = pd.DataFrame(calib_data)
                     st.dataframe(df_calib, use_container_width=True, hide_index=True)
                     
                     st.download_button("📥 Tải Bảng Pha Chuẩn (CSV)", data=df_calib.to_csv(index=False).encode('utf-8-sig'), file_name=f"Quy_trinh_Pha_chuan_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv")
                 except Exception as e:
-                    st.error(f"Lỗi tính toán: {e}. Vui lòng kiểm tra lại dãy nồng độ chuẩn.")
+                    st.error(f"Lỗi tính toán: {e}. Vui lòng kiểm tra lại dữ liệu.")
 
 elif menu == "📝 Báo cáo & Lập Biên bản":
     st.markdown("<h1 class='main-title'>📝 Báo cáo & Lập Biên Bản</h1>", unsafe_allow_html=True)
