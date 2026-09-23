@@ -278,7 +278,7 @@ def lab_local_answer(question, df):
     if any(x in q for x in ['cong thuc', 'cach tinh']):
         return "💡 **Công thức SOP:**\n- Mẫu Nước: C = C đo × 100/R.\n- Mẫu Khí: C = C đo ÷ V × 100/R.\nHệ thống tự động gợi ý V=24L cho mẫu Khí (KT) và V=4L cho mẫu Xung quanh (KXQ/KLV)."
     if any(x in q for x in ['bien ban', 'huong dan', 'cach nhap', 'loi', 'mdl', 'loq']):
-        return "💡 **Hướng dẫn:**\n- Tiếp nhận mẫu ở Tab 2.\n- Tính kết quả ở Tab 3 (GC-MS).\n- Quản lý Hóa chất ở Tab Kiểm soát Hóa chất.\n- Thư viện ở Tab cuối (CauHinh_MDL_LOQ).\n- Tính xong sang Tab Cuối ném file Word/Excel vào để Lập Biên Bản tự động."
+        return "💡 **Hướng dẫn:**\n- Tiếp nhận mẫu ở Tab 2.\n- Tính kết quả tự động ở GC-MS.\n- Tính tay & Pha chuẩn ở Công cụ Phân tích.\n- Lập Biên bản & In tem ở Báo cáo & Lập Biên bản."
 
     filters = []
     code = re.search(r'\b(?:ns|nt|nm|nn|kt|kxq|kkxq|klv)[.\-]?\d[\w.\-]*', q)
@@ -333,11 +333,13 @@ st.sidebar.caption("<div style='text-align: center; margin-bottom: 20px;'>Phần
 menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
     "🏠 Trang chủ (Tổng quan)", 
     "📥 Quản lý Tiếp nhận", 
-    "⚙️ Vận hành GC-MS (VOCs)",
+    "⚙️ Vận hành GC-MS",
     "🔥 Vận hành GC-FID",
     "🧬 Vận hành Thermo",
+    "🧮 Tiện ích Phân tích",
+    "📝 Báo cáo & Lập Biên bản",
     "🧪 Kiểm soát Hóa chất",
-    "🚀 Tiện ích & Cấu hình"
+    "⚙️ Cấu hình Hệ thống"
 ])
 
 st.sidebar.divider()
@@ -558,10 +560,10 @@ elif menu == "📥 Quản lý Tiếp nhận":
                     save_data(st.session_state.df)
                     st.success(f"✅ Đã thêm mẫu {new_id} thành công!")
 
-elif menu == "⚙️ Vận hành GC-MS (VOCs)":
+elif menu == "⚙️ Vận hành GC-MS":
     st.markdown("<h1 class='main-title'>⚙️ Phân tích & Vận hành Máy đo GC-MS</h1>", unsafe_allow_html=True)
     
-    tab_seq, tab_auto, tab_manual, tab_calib = st.tabs(["1. Xuất Sequence", "2. Xử lý Tự động (File Máy)", "3. Tính toán & Nhập liệu Thủ công", "4. Pha Đường Chuẩn"])
+    tab_seq, tab_auto = st.tabs(["1. Xuất Sequence Chạy Máy", "2. Xử lý Tự động (File PDF/Excel)"])
     
     with tab_seq:
         with st.container(border=True):
@@ -706,6 +708,47 @@ elif menu == "⚙️ Vận hành GC-MS (VOCs)":
                         st.warning("⚠️ Báo cáo không chứa mẫu hợp lệ (KT, KXQ, NS, NT...) hoặc thiếu dữ liệu phân tích.")
                 except Exception as e: st.error(f"❌ Lỗi xử lý: {e}")
 
+elif menu == "🔥 Vận hành GC-FID":
+    st.markdown("<h1 class='main-title'>🔥 Hệ thống GC-FID (Agilent)</h1>", unsafe_allow_html=True)
+    st.caption("Module chuyên biệt xử lý dữ liệu từ đầu dò FID")
+    
+    col_seq, col_import = st.columns(2)
+    with col_seq:
+        with st.container(border=True):
+            st.markdown("<div class='sub-title'>1. Xuất Sequence GC-FID</div>", unsafe_allow_html=True)
+            st.info("Sẽ tích hợp thuật toán xuất file Sequence định dạng cho máy GC-FID Agilent.")
+        
+    with col_import:
+        with st.container(border=True):
+            st.markdown("<div class='sub-title'>2. Xử lý kết quả GC-FID</div>", unsafe_allow_html=True)
+            st.info("Khu vực chờ tích hợp thuật toán đọc file báo cáo từ máy GC-FID.")
+            fid_file = st.file_uploader("Kéo thả báo cáo GC-FID (PDF/Excel/CSV/TXT)", type=["pdf", "xlsx", "xls", "csv", "txt"])
+            if fid_file:
+                st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report FID.")
+
+elif menu == "🧬 Vận hành Thermo":
+    st.markdown("<h1 class='main-title'>🧬 Hệ thống Thermo GC-MS</h1>", unsafe_allow_html=True)
+    st.caption("Module chuyên biệt xử lý dữ liệu OCP, OPP, PCB và Phenol")
+    
+    col_seq, col_import = st.columns(2)
+    with col_seq:
+        with st.container(border=True):
+            st.markdown("<div class='sub-title'>1. Xuất Sequence Thermo</div>", unsafe_allow_html=True)
+            st.info("Sẽ tích hợp thuật toán xuất file Sequence định dạng tương thích phần mềm Thermo.")
+        
+    with col_import:
+        with st.container(border=True):
+            st.markdown("<div class='sub-title'>2. Xử lý kết quả Thermo</div>", unsafe_allow_html=True)
+            st.info("Khu vực chờ tích hợp thuật toán đọc file xuất từ máy Thermo.")
+            thermo_file = st.file_uploader("Kéo thả báo cáo Thermo (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
+            if thermo_file:
+                st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report Thermo.")
+
+elif menu == "🧮 Tiện ích Phân tích":
+    st.markdown("<h1 class='main-title'>🧮 Tiện ích Phân tích & Tính toán</h1>", unsafe_allow_html=True)
+    
+    tab_manual, tab_calib = st.tabs(["1. Tính toán & Nhập liệu Thủ công", "2. Pha Đường Chuẩn"])
+    
     with tab_manual:
         with st.container(border=True):
             st.markdown("<div class='sub-title'>Tính toán & Nhập liệu Thủ công (Gồm tính Tổng)</div>", unsafe_allow_html=True)
@@ -886,7 +929,6 @@ elif menu == "⚙️ Vận hành GC-MS (VOCs)":
                     levels = [float(x.strip()) for x in levels_input.split(",") if x.strip()]
                     calib_data = []
                     
-                    # V (uL) = (C_target * V_final * 1000) / C_stock
                     v_is_ul = (c_is_target * v_final * 1000) / c_is_stock if c_is_stock > 0 else 0
                     v_surr_ul = (c_surr_target * v_final * 1000) / c_surr_stock if c_surr_stock > 0 else 0
                     
@@ -917,221 +959,13 @@ elif menu == "⚙️ Vận hành GC-MS (VOCs)":
                 except Exception as e:
                     st.error(f"Lỗi nhập liệu: {e}. Vui lòng kiểm tra lại dãy điểm chuẩn (VD: 1, 2, 5).")
 
-elif menu == "🔥 Vận hành GC-FID":
-    st.markdown("<h1 class='main-title'>🔥 Hệ thống GC-FID (Agilent)</h1>", unsafe_allow_html=True)
-    st.caption("Module chuyên biệt xử lý dữ liệu từ đầu dò FID")
+elif menu == "📝 Báo cáo & Lập Biên bản":
+    st.markdown("<h1 class='main-title'>📝 Báo cáo & Lập Biên Bản</h1>", unsafe_allow_html=True)
     
-    col_seq, col_import = st.columns(2)
-    with col_seq:
-        with st.container(border=True):
-            st.markdown("<div class='sub-title'>1. Xuất Sequence GC-FID</div>", unsafe_allow_html=True)
-            st.info("Sẽ tích hợp thuật toán xuất file Sequence định dạng cho máy GC-FID Agilent.")
-        
-    with col_import:
-        with st.container(border=True):
-            st.markdown("<div class='sub-title'>2. Xử lý kết quả GC-FID</div>", unsafe_allow_html=True)
-            st.info("Khu vực chờ tích hợp thuật toán đọc file báo cáo từ máy GC-FID.")
-            fid_file = st.file_uploader("Kéo thả báo cáo GC-FID (PDF/Excel/CSV/TXT)", type=["pdf", "xlsx", "xls", "csv", "txt"])
-            if fid_file:
-                st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report FID.")
-
-elif menu == "🧬 Vận hành Thermo":
-    st.markdown("<h1 class='main-title'>🧬 Hệ thống Thermo GC-MS</h1>", unsafe_allow_html=True)
-    st.caption("Module chuyên biệt xử lý dữ liệu OCP, OPP, PCB và Phenol")
-    
-    col_seq, col_import = st.columns(2)
-    with col_seq:
-        with st.container(border=True):
-            st.markdown("<div class='sub-title'>1. Xuất Sequence Thermo</div>", unsafe_allow_html=True)
-            st.info("Sẽ tích hợp thuật toán xuất file Sequence định dạng tương thích phần mềm Thermo.")
-        
-    with col_import:
-        with st.container(border=True):
-            st.markdown("<div class='sub-title'>2. Xử lý kết quả Thermo</div>", unsafe_allow_html=True)
-            st.info("Khu vực chờ tích hợp thuật toán đọc file xuất từ máy Thermo.")
-            thermo_file = st.file_uploader("Kéo thả báo cáo Thermo (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
-            if thermo_file:
-                st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report Thermo.")
-
-elif menu == "🧪 Kiểm soát Hóa chất":
-    st.markdown("<h1 class='main-title'>🧪 Quản lý Hóa chất & Vật tư tiêu hao</h1>", unsafe_allow_html=True)
-    st.caption("Module kiểm soát chất chuẩn, dung môi và vật tư riêng biệt cho 3 hệ máy.")
-    
-    df_chem = st.session_state.df_chem.copy()
-    
-    today = datetime.now().date()
-    df_chem['Hạn Sử Dụng'] = pd.to_datetime(df_chem['Hạn Sử Dụng'], errors='coerce').dt.date
-    
-    warnings = []
-    for idx, row in df_chem.iterrows():
-        exp_date = row['Hạn Sử Dụng']
-        if pd.notna(exp_date):
-            days_left = (exp_date - today).days
-            if days_left < 0:
-                warnings.append(f"❌ **ĐÃ HẾT HẠN:** {row['Tên Hóa Chất']} (Hệ: {row['Hệ Máy']}, Lô: {row['Số Lô (Lot)']}) - Hết hạn từ {exp_date.strftime('%d/%m/%Y')}.")
-            elif days_left <= 30:
-                warnings.append(f"⚠️ **SẮP HẾT HẠN:** {row['Tên Hóa Chất']} (Hệ: {row['Hệ Máy']}) - Còn lại {days_left} ngày (EXP: {exp_date.strftime('%d/%m/%Y')}).")
-        
-        if str(row['Tình Trạng Kho']) == "🔴 Đã hết":
-            warnings.append(f"🛒 **HẾT HÀNG TRONG KHO:** {row['Tên Hóa Chất']} ({row['Hệ Máy']}). Cần lên kế hoạch mua sắm (PO) ngay!")
-
-    if warnings:
-        st.markdown("<div class='warning-box'><strong>🚨 DANH SÁCH CẢNH BÁO CẦN LƯU Ý:</strong><br>", unsafe_allow_html=True)
-        for w in warnings:
-            st.markdown(w)
-        st.markdown("</div>", unsafe_allow_html=True)
-    
-    with st.container(border=True):
-        tab_all, tab_gcms, tab_gcfid, tab_thermo = st.tabs(["Tất cả Hóa chất", "🔬 GC-MS", "🔥 GC-FID", "🧬 Thermo"])
-        
-        def render_chem_editor(filter_system=None):
-            if filter_system:
-                mask = df_chem["Hệ Máy"] == filter_system
-                df_view = df_chem[mask].copy()
-            else:
-                df_view = df_chem.copy()
-                
-            edited_chem = st.data_editor(
-                df_view,
-                num_rows="dynamic",
-                use_container_width=True,
-                column_config={
-                    "Hệ Máy": st.column_config.SelectboxColumn("Hệ Máy", options=CHEM_SYSTEMS, required=True),
-                    "Phân Loại": st.column_config.SelectboxColumn("Phân Loại", options=CHEM_TYPES, required=True),
-                    "Tên Hóa Chất": st.column_config.TextColumn("Tên Hóa Chất / Vật Tư", required=True),
-                    "Ngày Mở Nắp": st.column_config.DateColumn("Ngày Mở Nắp", format="YYYY-MM-DD"),
-                    "Hạn Sử Dụng": st.column_config.DateColumn("Hạn Sử Dụng (EXP)", format="YYYY-MM-DD"),
-                    "Tình Trạng Kho": st.column_config.SelectboxColumn("Tình Trạng Kho", options=CHEM_STATUS)
-                },
-                key=f"chem_editor_{filter_system if filter_system else 'all'}",
-                height=400
-            )
-            return edited_chem
-
-        with tab_all: edited_all = render_chem_editor()
-        with tab_gcms: edited_gcms = render_chem_editor("GC-MS")
-        with tab_gcfid: edited_gcfid = render_chem_editor("GC-FID")
-        with tab_thermo: edited_thermo = render_chem_editor("Thermo")
-            
-        st.caption("✨ **Mẹo:** Thêm, sửa, xóa các hóa chất trực tiếp trên bảng. Hệ thống sẽ tự động cập nhật cảnh báo khi bạn lưu lại.")
-
-        if st.button("💾 Lưu Cập nhật Kho Hóa chất", type="primary"):
-            st.session_state.df_chem = edited_all
-            save_chemical_data(st.session_state.df_chem)
-            st.success("🎉 Đã lưu danh mục Hóa chất & Vật tư thành công!")
-            st.rerun()
-
-elif menu == "🚀 Tiện ích & Cấu hình":
-    st.markdown("<h1 class='main-title'>🛠️ Tiện ích & Quản trị Hệ thống</h1>", unsafe_allow_html=True)
-    
-    tab_limit, tab_report, tab_qr = st.tabs(["📚 Quản lý Thư viện MDL & LOQ", "📝 Lập Biên Bản", "🏷️ Sinh Mã QR"])
-    
-    with tab_limit:
-        st.markdown("<div class='sub-title'>1. Thư viện Chỉ tiêu & Giới hạn</div>", unsafe_allow_html=True)
-        if st.session_state.get('results_stale'):
-            st.warning("⚠️ Thư viện đã bị thay đổi! Vui lòng quay lại tab Vận hành GC-MS và bấm 'Tính lại' để có kết quả mới nhất.")
-            
-        st.info("💡 Bạn có thể chỉnh sửa, thêm, xóa các mức giới hạn trực tiếp trên bảng. Nhớ ấn **Lưu thay đổi**.")
-        
-        with st.container(border=True):
-            df_current_limit = st.session_state.df_limit.copy()
-            if df_current_limit.empty:
-                df_current_limit = pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
-                df_current_limit.loc[0] = ["", "", "", "", ""]
-                
-            edited_limit = st.data_editor(
-                df_current_limit, 
-                num_rows="dynamic", 
-                use_container_width=True,
-                key="limit_editor",
-                height=350
-            )
-            
-            if st.button("💾 Lưu thay đổi Thư viện", type="primary"):
-                try:
-                    st.cache_data.clear() 
-                    edited_limit = edited_limit[edited_limit["Tên Chất"].str.strip() != ""] 
-                    
-                    conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=edited_limit)
-                    st.session_state.df_limit = edited_limit
-                    if 'results' in st.session_state:
-                        st.session_state.results_stale = True
-                    st.success("🎉 Đã lưu thư viện lên Google Sheets thành công!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"⚠️ Lỗi kết nối Google Sheets: {e}")
-
-        with st.container(border=True):
-            st.markdown("<div class='sub-title'>2. Cập nhật Hàng loạt (Import Excel)</div>", unsafe_allow_html=True)
-            limit_file = st.file_uploader("Kéo thả file Bảng giới hạn (.xlsx)", type=["xlsx"])
-            if limit_file:
-                try:
-                    xls = pd.ExcelFile(limit_file)
-                    limit_data = []
-                    for sheet in xls.sheet_names:
-                        df_sheet = pd.read_excel(xls, sheet_name=sheet, header=None)
-                        header_idx = -1
-                        c_ten, c_mdl, c_loq = None, None, None
-                        
-                        for r in range(min(20, len(df_sheet))):
-                            row_vals = [str(val).lower() for val in df_sheet.iloc[r].values]
-                            c_ten_temp = next((i for i, v in enumerate(row_vals) if 'tên' in v or 'hợp chất' in v), None)
-                            c_mdl_temp = next((i for i, v in enumerate(row_vals) if 'mdl' in v), None)
-                            c_loq_temp = next((i for i, v in enumerate(row_vals) if 'loq' in v), None)
-                            
-                            if c_ten_temp is not None and (c_mdl_temp is not None or c_loq_temp is not None):
-                                header_idx, c_ten, c_mdl, c_loq = r, c_ten_temp, c_mdl_temp, c_loq_temp
-                                break
-                        
-                        if header_idx != -1:
-                            unit = "Chưa rõ"
-                            if c_loq is not None:
-                                unit_match = re.search(r'\((.*?)\)', str(df_sheet.iloc[header_idx, c_loq]))
-                                if unit_match: unit = unit_match.group(1)
-                            if unit == "Chưa rõ" and c_mdl is not None:
-                                unit_match = re.search(r'\((.*?)\)', str(df_sheet.iloc[header_idx, c_mdl]))
-                                if unit_match: unit = unit_match.group(1)
-
-                            s_lower = sheet.lower()
-                            nen_mau = "KT" if "thải" in s_lower else ("KXQ" if "xung quanh" in s_lower else ("KLV" if "làm việc" in s_lower else ("NS" if "nước" in s_lower or "voc" in s_lower else sheet)))
-                            
-                            for r in range(header_idx + 1, len(df_sheet)):
-                                ten_val = df_sheet.iloc[r, c_ten]
-                                if pd.isna(ten_val) or str(ten_val).strip() == "" or str(ten_val).lower() == 'nan': continue
-                                
-                                val_mdl = str(df_sheet.iloc[r, c_mdl]).replace(',', '.').strip() if c_mdl is not None and pd.notna(df_sheet.iloc[r, c_mdl]) else ""
-                                val_loq = str(df_sheet.iloc[r, c_loq]).replace(',', '.').strip() if c_loq is not None and pd.notna(df_sheet.iloc[r, c_loq]) else ""
-                                if val_mdl.lower() == 'nan': val_mdl = ""
-                                if val_loq.lower() == 'nan': val_loq = ""
-                                
-                                if val_mdl or val_loq:
-                                    limit_data.append({"Nền Mẫu": nen_mau, "Tên Chất": str(ten_val).strip(), "MDL": val_mdl, "LOQ": val_loq, "Đơn Vị": unit})
-                    
-                    if limit_data:
-                        df_limit_new = pd.DataFrame(limit_data)
-                        st.success(f"✔️ Đã nhận diện {len(df_limit_new)} chỉ tiêu mới.")
-                        st.dataframe(df_limit_new, use_container_width=True)
-                        
-                        if st.button("🚀 Trộn và Lưu vào Thư viện chung", type="primary"):
-                            try:
-                                st.cache_data.clear() 
-                                combined_df = pd.concat([st.session_state.df_limit, df_limit_new], ignore_index=True)
-                                combined_df = combined_df.drop_duplicates(subset=['Nền Mẫu', 'Tên Chất'], keep='last').reset_index(drop=True)
-                                
-                                conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=combined_df)
-                                st.session_state.df_limit = combined_df
-                                if 'results' in st.session_state:
-                                    st.session_state.results_stale = True
-                                st.success(f"🎉 Ghi đè thành công! Tổng bộ nhớ: {len(combined_df)} chỉ tiêu.")
-                                st.rerun()
-                            except Exception as sheet_err:
-                                st.error(f"⚠️ Lỗi kết nối: {sheet_err}")
-                    else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên / Cột MDL / Cột LOQ).")
-                except Exception as e: st.error(f"Lỗi đọc file: {e}")
+    tab_report, tab_qr = st.tabs(["1. Lập Biên Bản Xử Lý Mẫu", "2. Sinh Mã Vạch QR"])
 
     with tab_report: 
-        st.markdown("<div class='sub-title'>📝 Lập Biên Bản Xử Lý Mẫu Tự Động</div>", unsafe_allow_html=True)
-        st.info("💡 **Hệ thống Thông minh:** Tự động lấy kết quả bạn vừa tính ở tab GC-MS để điền vào Biểu mẫu Word/Excel. Mọi định dạng Form, Chữ ký được bảo lưu 100%.")
+        st.info("💡 **Hệ thống Thông minh:** Tự động lấy kết quả bạn vừa tính ở tab Phân tích để điền vào Biểu mẫu Word/Excel. Mọi định dạng Form, Chữ ký được bảo lưu 100%.")
         
         with st.container(border=True):
             col_tpl, col_data = st.columns(2)
@@ -1148,9 +982,9 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                         df_kq = st.session_state.get('results', pd.DataFrame())
                     
                     if df_kq.empty or "Tên mẫu" not in df_kq.columns or "Tên chỉ tiêu" not in df_kq.columns:
-                        st.error("⚠️ Hệ thống đang không có số liệu kết quả trong bộ nhớ. Bạn hãy qua tab **Vận hành GC-MS** tính số liệu trước, hoặc thả thủ công file `.csv` kết quả vào ô số 2 nhé!")
+                        st.error("⚠️ Hệ thống đang không có số liệu kết quả trong bộ nhớ. Bạn hãy qua tab **Vận hành Máy Đo** hoặc **Tiện ích Phân tích** tính số liệu trước, hoặc thả thủ công file `.csv` kết quả vào ô số 2 nhé!")
                     elif st.session_state.get('results_stale') and data_file is None:
-                        st.warning("⚠️ **Cảnh báo lệch số liệu:** Thư viện giới hạn MDL/LOQ vừa bị sửa. Bạn nên quay lại tab GC-MS bấm 'Tính lại' để kết quả được cập nhật chuẩn xác nhất!")
+                        st.warning("⚠️ **Cảnh báo lệch số liệu:** Thư viện giới hạn MDL/LOQ vừa bị sửa. Bạn nên quay lại tab phân tích bấm 'Tính lại' để kết quả được cập nhật chuẩn xác nhất!")
                     else:
                         ket_qua_list = []
                         danh_sach_mau = []
@@ -1311,5 +1145,177 @@ elif menu == "🚀 Tiện ích & Cấu hình":
                     st.error(f"❌ Có lỗi xảy ra trong quá trình xử lý: {e}")
 
     with tab_qr: 
-        st.markdown("<div class='sub-title'>🏷️ Sinh Mã Vạch QR Tự Động</div>", unsafe_allow_html=True)
         st.write("Mô đun in tem dán mã vạch (Barcode/QR code) hàng loạt đang chờ tích hợp.")
+
+elif menu == "🧪 Kiểm soát Hóa chất":
+    st.markdown("<h1 class='main-title'>🧪 Quản lý Hóa chất & Vật tư tiêu hao</h1>", unsafe_allow_html=True)
+    st.caption("Module kiểm soát chất chuẩn, dung môi và vật tư riêng biệt cho 3 hệ máy.")
+    
+    df_chem = st.session_state.df_chem.copy()
+    
+    today = datetime.now().date()
+    df_chem['Hạn Sử Dụng'] = pd.to_datetime(df_chem['Hạn Sử Dụng'], errors='coerce').dt.date
+    
+    warnings = []
+    for idx, row in df_chem.iterrows():
+        exp_date = row['Hạn Sử Dụng']
+        if pd.notna(exp_date):
+            days_left = (exp_date - today).days
+            if days_left < 0:
+                warnings.append(f"❌ **ĐÃ HẾT HẠN:** {row['Tên Hóa Chất']} (Hệ: {row['Hệ Máy']}, Lô: {row['Số Lô (Lot)']}) - Hết hạn từ {exp_date.strftime('%d/%m/%Y')}.")
+            elif days_left <= 30:
+                warnings.append(f"⚠️ **SẮP HẾT HẠN:** {row['Tên Hóa Chất']} (Hệ: {row['Hệ Máy']}) - Còn lại {days_left} ngày (EXP: {exp_date.strftime('%d/%m/%Y')}).")
+        
+        if str(row['Tình Trạng Kho']) == "🔴 Đã hết":
+            warnings.append(f"🛒 **HẾT HÀNG TRONG KHO:** {row['Tên Hóa Chất']} ({row['Hệ Máy']}). Cần lên kế hoạch mua sắm (PO) ngay!")
+
+    if warnings:
+        st.markdown("<div class='warning-box'><strong>🚨 DANH SÁCH CẢNH BÁO CẦN LƯU Ý:</strong><br>", unsafe_allow_html=True)
+        for w in warnings:
+            st.markdown(w)
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    with st.container(border=True):
+        tab_all, tab_gcms, tab_gcfid, tab_thermo = st.tabs(["Tất cả Hóa chất", "🔬 GC-MS", "🔥 GC-FID", "🧬 Thermo"])
+        
+        def render_chem_editor(filter_system=None):
+            if filter_system:
+                mask = df_chem["Hệ Máy"] == filter_system
+                df_view = df_chem[mask].copy()
+            else:
+                df_view = df_chem.copy()
+                
+            edited_chem = st.data_editor(
+                df_view,
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "Hệ Máy": st.column_config.SelectboxColumn("Hệ Máy", options=CHEM_SYSTEMS, required=True),
+                    "Phân Loại": st.column_config.SelectboxColumn("Phân Loại", options=CHEM_TYPES, required=True),
+                    "Tên Hóa Chất": st.column_config.TextColumn("Tên Hóa Chất / Vật Tư", required=True),
+                    "Ngày Mở Nắp": st.column_config.DateColumn("Ngày Mở Nắp", format="YYYY-MM-DD"),
+                    "Hạn Sử Dụng": st.column_config.DateColumn("Hạn Sử Dụng (EXP)", format="YYYY-MM-DD"),
+                    "Tình Trạng Kho": st.column_config.SelectboxColumn("Tình Trạng Kho", options=CHEM_STATUS)
+                },
+                key=f"chem_editor_{filter_system if filter_system else 'all'}",
+                height=400
+            )
+            return edited_chem
+
+        with tab_all: edited_all = render_chem_editor()
+        with tab_gcms: edited_gcms = render_chem_editor("GC-MS")
+        with tab_gcfid: edited_gcfid = render_chem_editor("GC-FID")
+        with tab_thermo: edited_thermo = render_chem_editor("Thermo")
+            
+        st.caption("✨ **Mẹo:** Thêm, sửa, xóa các hóa chất trực tiếp trên bảng. Hệ thống sẽ tự động cập nhật cảnh báo khi bạn lưu lại.")
+
+        if st.button("💾 Lưu Cập nhật Kho Hóa chất", type="primary"):
+            st.session_state.df_chem = edited_all
+            save_chemical_data(st.session_state.df_chem)
+            st.success("🎉 Đã lưu danh mục Hóa chất & Vật tư thành công!")
+            st.rerun()
+
+elif menu == "⚙️ Cấu hình Hệ thống":
+    st.markdown("<h1 class='main-title'>⚙️ Cấu hình & Quản trị Hệ thống</h1>", unsafe_allow_html=True)
+    
+    st.markdown("<div class='sub-title'>Quản lý Thư viện MDL & LOQ</div>", unsafe_allow_html=True)
+    if st.session_state.get('results_stale'):
+        st.warning("⚠️ Thư viện đã bị thay đổi! Vui lòng quay lại tab Vận hành máy đo và bấm 'Tính lại' để có kết quả mới nhất.")
+        
+    st.info("💡 Bạn có thể chỉnh sửa, thêm, xóa các mức giới hạn trực tiếp trên bảng. Nhớ ấn **Lưu thay đổi**.")
+    
+    with st.container(border=True):
+        df_current_limit = st.session_state.df_limit.copy()
+        if df_current_limit.empty:
+            df_current_limit = pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
+            df_current_limit.loc[0] = ["", "", "", "", ""]
+            
+        edited_limit = st.data_editor(
+            df_current_limit, 
+            num_rows="dynamic", 
+            use_container_width=True,
+            key="limit_editor",
+            height=350
+        )
+        
+        if st.button("💾 Lưu thay đổi Thư viện", type="primary"):
+            try:
+                st.cache_data.clear() 
+                edited_limit = edited_limit[edited_limit["Tên Chất"].str.strip() != ""] 
+                
+                conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=edited_limit)
+                st.session_state.df_limit = edited_limit
+                if 'results' in st.session_state:
+                    st.session_state.results_stale = True
+                st.success("🎉 Đã lưu thư viện lên Google Sheets thành công!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"⚠️ Lỗi kết nối Google Sheets: {e}")
+
+    with st.container(border=True):
+        st.markdown("<div class='sub-title'>Cập nhật Hàng loạt (Import Excel)</div>", unsafe_allow_html=True)
+        limit_file = st.file_uploader("Kéo thả file Bảng giới hạn (.xlsx)", type=["xlsx"])
+        if limit_file:
+            try:
+                xls = pd.ExcelFile(limit_file)
+                limit_data = []
+                for sheet in xls.sheet_names:
+                    df_sheet = pd.read_excel(xls, sheet_name=sheet, header=None)
+                    header_idx = -1
+                    c_ten, c_mdl, c_loq = None, None, None
+                    
+                    for r in range(min(20, len(df_sheet))):
+                        row_vals = [str(val).lower() for val in df_sheet.iloc[r].values]
+                        c_ten_temp = next((i for i, v in enumerate(row_vals) if 'tên' in v or 'hợp chất' in v), None)
+                        c_mdl_temp = next((i for i, v in enumerate(row_vals) if 'mdl' in v), None)
+                        c_loq_temp = next((i for i, v in enumerate(row_vals) if 'loq' in v), None)
+                        
+                        if c_ten_temp is not None and (c_mdl_temp is not None or c_loq_temp is not None):
+                            header_idx, c_ten, c_mdl, c_loq = r, c_ten_temp, c_mdl_temp, c_loq_temp
+                            break
+                    
+                    if header_idx != -1:
+                        unit = "Chưa rõ"
+                        if c_loq is not None:
+                            unit_match = re.search(r'\((.*?)\)', str(df_sheet.iloc[header_idx, c_loq]))
+                            if unit_match: unit = unit_match.group(1)
+                        if unit == "Chưa rõ" and c_mdl is not None:
+                            unit_match = re.search(r'\((.*?)\)', str(df_sheet.iloc[header_idx, c_mdl]))
+                            if unit_match: unit = unit_match.group(1)
+
+                        s_lower = sheet.lower()
+                        nen_mau = "KT" if "thải" in s_lower else ("KXQ" if "xung quanh" in s_lower else ("KLV" if "làm việc" in s_lower else ("NS" if "nước" in s_lower or "voc" in s_lower else sheet)))
+                        
+                        for r in range(header_idx + 1, len(df_sheet)):
+                            ten_val = df_sheet.iloc[r, c_ten]
+                            if pd.isna(ten_val) or str(ten_val).strip() == "" or str(ten_val).lower() == 'nan': continue
+                            
+                            val_mdl = str(df_sheet.iloc[r, c_mdl]).replace(',', '.').strip() if c_mdl is not None and pd.notna(df_sheet.iloc[r, c_mdl]) else ""
+                            val_loq = str(df_sheet.iloc[r, c_loq]).replace(',', '.').strip() if c_loq is not None and pd.notna(df_sheet.iloc[r, c_loq]) else ""
+                            if val_mdl.lower() == 'nan': val_mdl = ""
+                            if val_loq.lower() == 'nan': val_loq = ""
+                            
+                            if val_mdl or val_loq:
+                                limit_data.append({"Nền Mẫu": nen_mau, "Tên Chất": str(ten_val).strip(), "MDL": val_mdl, "LOQ": val_loq, "Đơn Vị": unit})
+                
+                if limit_data:
+                    df_limit_new = pd.DataFrame(limit_data)
+                    st.success(f"✔️ Đã nhận diện {len(df_limit_new)} chỉ tiêu mới.")
+                    st.dataframe(df_limit_new, use_container_width=True)
+                    
+                    if st.button("🚀 Trộn và Lưu vào Thư viện chung", type="primary"):
+                        try:
+                            st.cache_data.clear() 
+                            combined_df = pd.concat([st.session_state.df_limit, df_limit_new], ignore_index=True)
+                            combined_df = combined_df.drop_duplicates(subset=['Nền Mẫu', 'Tên Chất'], keep='last').reset_index(drop=True)
+                            
+                            conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=combined_df)
+                            st.session_state.df_limit = combined_df
+                            if 'results' in st.session_state:
+                                st.session_state.results_stale = True
+                            st.success(f"🎉 Ghi đè thành công! Tổng bộ nhớ: {len(combined_df)} chỉ tiêu.")
+                            st.rerun()
+                        except Exception as sheet_err:
+                            st.error(f"⚠️ Lỗi kết nối: {sheet_err}")
+                else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên / Cột MDL / Cột LOQ).")
+            except Exception as e: st.error(f"Lỗi đọc file: {e}")
