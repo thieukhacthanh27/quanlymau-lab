@@ -561,7 +561,7 @@ elif menu == "📥 Quản lý Tiếp nhận":
 elif menu == "⚙️ Vận hành GC-MS (VOCs)":
     st.markdown("<h1 class='main-title'>⚙️ Phân tích & Vận hành Máy đo GC-MS</h1>", unsafe_allow_html=True)
     
-    tab_seq, tab_auto, tab_manual = st.tabs(["1. Xuất Sequence", "2. Xử lý Tự động (File PDF/Excel)", "3. Tính toán & Nhập liệu Thủ công"])
+    tab_seq, tab_auto, tab_manual = st.tabs(["1. Xuất Sequence", "2. Xử lý Tự động (File Máy)", "3. Tính toán & Nhập liệu Thủ công"])
     
     with tab_seq:
         with st.container(border=True):
@@ -577,7 +577,7 @@ elif menu == "⚙️ Vận hành GC-MS (VOCs)":
             
     with tab_auto:
         with st.container(border=True):
-            st.markdown("<div class='sub-title'>Xử lý Kết quả Hàng loạt (Từ File máy)</div>", unsafe_allow_html=True)
+            st.markdown("<div class='sub-title'>Xử lý Kết quả Hàng loạt (SOP)</div>", unsafe_allow_html=True)
             st.info("💡 Tự động bóc tách số liệu, nội suy nồng độ $C_{surr}$ chuẩn và so khớp Giới hạn MDL/LOQ theo đúng chuẩn phòng Lab.")
             
             gc_file = st.file_uploader("Kéo thả báo cáo GC (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
@@ -695,7 +695,6 @@ elif menu == "⚙️ Vận hành GC-MS (VOCs)":
                             type="primary"
                         )
                         
-                        # Tự động cập nhật trạng thái các mẫu đã tính
                         processed_samples = df_results["Tên mẫu"].unique().tolist()
                         for smp in processed_samples:
                             mask = st.session_state.df["Mã Mẫu"] == smp
@@ -709,8 +708,8 @@ elif menu == "⚙️ Vận hành GC-MS (VOCs)":
 
     with tab_manual:
         with st.container(border=True):
-            st.markdown("<div class='sub-title'>Tính toán & Nhập liệu Thủ công (Ghi đè SOP)</div>", unsafe_allow_html=True)
-            st.info("💡 Chức năng điền tay số liệu cho từng mẫu lẻ. Kết quả sẽ được gộp chung vào bảng kết quả tổng bên trên để xuất Biên bản.")
+            st.markdown("<div class='sub-title'>Tính toán & Nhập liệu Thủ công (Gồm tính Tổng)</div>", unsafe_allow_html=True)
+            st.info("💡 Điền thông số đo để máy tự tính, hoặc nhập thẳng vào cột 'Kết quả'. Có thể thêm dòng chỉ tiêu bị thiếu. Đánh dấu các chất cần tính dồn để cộng thành một chỉ tiêu Tổng chung.")
             
             valid_samples = df_current[df_current['Chỉ Tiêu'].str.strip() != ""]['Mã Mẫu'].tolist()
             selected_sample_manual = st.selectbox("🔍 Chọn Mã Mẫu để nhập liệu:", ["-- Chọn mẫu --"] + valid_samples)
@@ -720,86 +719,136 @@ elif menu == "⚙️ Vận hành GC-MS (VOCs)":
                 chi_tieu_raw = str(sample_info['Chỉ Tiêu'])
                 chi_tieu_list = [ct.strip() for ct in re.split(r'[;,]', chi_tieu_raw) if ct.strip()]
                 
-                if chi_tieu_list:
-                    v_param_def, nen_mau_code, loai_mau_def = parse_sample_matrix(selected_sample_manual)
-                    if v_param_def is None:
-                        v_param_def, nen_mau_code, loai_mau_def = 24.0, 'KT', 'Khí'
+                v_param_def, nen_mau_code, loai_mau_def = parse_sample_matrix(selected_sample_manual)
+                if v_param_def is None:
+                    v_param_def, nen_mau_code, loai_mau_def = 24.0, 'KT', 'Khí'
+                
+                st.write(f"**Phân loại:** {loai_mau_def} ({nen_mau_code}) | **Chỉ tiêu theo Database:** {len(chi_tieu_list)}")
+                
+                manual_data = []
+                for ct in chi_tieu_list:
+                    mdl_val, loq_val, unit = get_limit_info(ct, nen_mau_code)
+                    limit_str = ""
+                    if loai_mau_def == 'Khí' and mdl_val is not None: limit_str = f"MDL: {mdl_val} {unit}"
+                    elif loai_mau_def == 'Nước' and loq_val is not None: limit_str = f"LOQ: {loq_val} {unit}"
+
+                    manual_data.append({
+                        "Cộng Tổng": False,
+                        "Chỉ Tiêu": ct,
+                        "Giới hạn (Tới hạn)": limit_str,
+                        "Độ làm giàu (V)": v_param_def,
+                        "C_surr thực": 10.0,
+                        "C_surr đo": 10.0,
+                        "C_đo chỉ tiêu": 0.0,
+                        "Kết quả (Ghi đè)": ""
+                    })
+                
+                df_manual = pd.DataFrame(manual_data)
+                
+                st.caption("Có thể thêm hàng mới (dấu + ở dưới bảng) nếu mẫu có chỉ tiêu con bị sót.")
+                edited_manual = st.data_editor(
+                    df_manual,
+                    num_rows="dynamic",
+                    column_config={
+                        "Cộng Tổng": st.column_config.CheckboxColumn("Cộng Tổng?"),
+                        "Chỉ Tiêu": st.column_config.TextColumn("Chỉ Tiêu"),
+                        "Giới hạn (Tới hạn)": st.column_config.TextColumn(disabled=True),
+                        "Độ làm giàu (V)": st.column_config.NumberColumn(format="%.2f"),
+                        "C_surr thực": st.column_config.NumberColumn(format="%.3f"),
+                        "C_surr đo": st.column_config.NumberColumn(format="%.3f"),
+                        "C_đo chỉ tiêu": st.column_config.NumberColumn(format="%.4f"),
+                        "Kết quả (Ghi đè)": st.column_config.TextColumn("Kết quả (Tự nhập)")
+                    },
+                    use_container_width=True,
+                    hide_index=True,
+                    key=f"manual_editor_{selected_sample_manual}"
+                )
+                
+                st.markdown("---")
+                total_param_name = st.text_input("📝 Nhập tên chỉ tiêu Tổng (Chỉ áp dụng nếu có tick chọn 'Cộng Tổng' ở bảng trên):", placeholder="VD: Tổng VOCs, Tổng PCB...")
+                
+                if st.button("💾 Tính Toán & Lưu Mẫu Này", type="primary"):
+                    new_results = []
+                    sum_val = 0.0
+                    has_sum = False
                     
-                    st.write(f"**Phân loại:** {loai_mau_def} ({nen_mau_code}) | **Chỉ tiêu cần phân tích:** {len(chi_tieu_list)}")
-                    
-                    manual_data = []
-                    for ct in chi_tieu_list:
-                        manual_data.append({
-                            "Chỉ Tiêu": ct,
-                            "Độ làm giàu (V)": v_param_def,
-                            "C_surr thực": 10.0,
-                            "C_surr đo": 10.0,
-                            "C_đo chỉ tiêu": 0.0
+                    for _, row in edited_manual.iterrows():
+                        ct = str(row["Chỉ Tiêu"]).strip()
+                        if not ct or ct == "nan": continue
+                        
+                        v = float(row.get("Độ làm giàu (V)", v_param_def) or v_param_def)
+                        c_truoc = float(row.get("C_surr thực", 10.0) or 10.0)
+                        c_sau = float(row.get("C_surr đo", 10.0) or 10.0)
+                        c_do = float(row.get("C_đo chỉ tiêu", 0.0) or 0.0)
+                        override_res = str(row.get("Kết quả (Ghi đè)", "")).strip()
+                        is_sum = bool(row.get("Cộng Tổng", False))
+                        
+                        recovery = (c_sau / c_truoc) * 100.0 if c_truoc > 0 else 100.0
+                        mdl_val, loq_val, unit = get_limit_info(ct, nen_mau_code)
+                        
+                        limit_display = ""
+                        if loai_mau_def == 'Khí' and mdl_val is not None: limit_display = f"MDL: {mdl_val} {unit}"
+                        elif loai_mau_def == 'Nước' and loq_val is not None: limit_display = f"LOQ: {loq_val} {unit}"
+                        
+                        c_thuc_str = ""
+                        c_thuc_numeric = 0.0
+                        
+                        if override_res and override_res.lower() != "nan":
+                            c_thuc_str = override_res
+                            try: c_thuc_numeric = float(override_res.replace(',', '.'))
+                            except: c_thuc_numeric = 0.0
+                        else:
+                            c_thuc_str = evaluate_result(c_do, v, mdl_val, loq_val, unit, loai_mau_def, recovery)
+                            if c_thuc_str.startswith("KPH") or c_thuc_str.startswith("<"):
+                                c_thuc_numeric = 0.0
+                            else:
+                                try: c_thuc_numeric = float(c_thuc_str.replace(',', '.'))
+                                except: c_thuc_numeric = 0.0
+                        
+                        if is_sum:
+                            has_sum = True
+                            sum_val += c_thuc_numeric
+                            
+                        new_results.append({
+                            "Tên mẫu": selected_sample_manual,
+                            "Tên chỉ tiêu": ct,
+                            "C đo": round(c_do, 4),
+                            "C thực": c_thuc_str,
+                            "Giới hạn": limit_display,
+                            "R(%)": f"{round(recovery, 1)}%",
+                            "C_surr_truoc": c_truoc,
+                            "C_surr_sau": c_sau
                         })
                     
-                    df_manual = pd.DataFrame(manual_data)
-                    edited_manual = st.data_editor(
-                        df_manual,
-                        column_config={
-                            "Chỉ Tiêu": st.column_config.TextColumn(disabled=True),
-                            "Độ làm giàu (V)": st.column_config.NumberColumn(format="%.2f"),
-                            "C_surr thực": st.column_config.NumberColumn(format="%.3f"),
-                            "C_surr đo": st.column_config.NumberColumn(format="%.3f"),
-                            "C_đo chỉ tiêu": st.column_config.NumberColumn(format="%.4f")
-                        },
-                        use_container_width=True,
-                        hide_index=True,
-                        key=f"manual_editor_{selected_sample_manual}"
-                    )
+                    if has_sum and total_param_name:
+                        new_results.append({
+                            "Tên mẫu": selected_sample_manual,
+                            "Tên chỉ tiêu": total_param_name,
+                            "C đo": "",
+                            "C thực": str(round(sum_val, 4)).replace('.', ','),
+                            "Giới hạn": "", 
+                            "R(%)": "",
+                            "C_surr_truoc": "",
+                            "C_surr_sau": ""
+                        })
                     
-                    if st.button("💾 Tính Toán & Lưu Mẫu Này", type="primary"):
-                        new_results = []
-                        for _, row in edited_manual.iterrows():
-                            ct = str(row["Chỉ Tiêu"])
-                            v = float(row["Độ làm giàu (V)"])
-                            c_truoc = float(row["C_surr thực"])
-                            c_sau = float(row["C_surr đo"])
-                            c_do = float(row["C_đo chỉ tiêu"])
-                            
-                            recovery = (c_sau / c_truoc) * 100.0 if c_truoc > 0 else 100.0
-                            mdl_val, loq_val, unit = get_limit_info(ct, nen_mau_code)
-                            c_thuc_str = evaluate_result(c_do, v, mdl_val, loq_val, unit, loai_mau_def, recovery)
-                            
-                            limit_display = ""
-                            if loai_mau_def == 'Khí' and mdl_val is not None: limit_display = f"MDL: {mdl_val} {unit}"
-                            elif loai_mau_def == 'Nước' and loq_val is not None: limit_display = f"LOQ: {loq_val} {unit}"
-                            
-                            new_results.append({
-                                "Tên mẫu": selected_sample_manual,
-                                "Tên chỉ tiêu": ct,
-                                "C đo": round(c_do, 4),
-                                "C thực": c_thuc_str,
-                                "Giới hạn": limit_display,
-                                "R(%)": f"{round(recovery, 1)}%",
-                                "C_surr_truoc": c_truoc,
-                                "C_surr_sau": c_sau
-                            })
+                    new_df = pd.DataFrame(new_results)
+                    if 'results' not in st.session_state or st.session_state.results.empty:
+                        st.session_state.results = new_df
+                    else:
+                        existing = st.session_state.results
+                        existing = existing[existing["Tên mẫu"] != selected_sample_manual]
+                        st.session_state.results = pd.concat([existing, new_df], ignore_index=True)
+                    
+                    st.session_state.results_stale = False
+                    
+                    mask = st.session_state.df["Mã Mẫu"] == selected_sample_manual
+                    if mask.any():
+                        st.session_state.df.loc[mask, "Trạng Thái"] = "🟣 5. Đang tính số liệu"
+                        save_data(st.session_state.df)
                         
-                        new_df = pd.DataFrame(new_results)
-                        if 'results' not in st.session_state or st.session_state.results.empty:
-                            st.session_state.results = new_df
-                        else:
-                            existing = st.session_state.results
-                            existing = existing[existing["Tên mẫu"] != selected_sample_manual]
-                            st.session_state.results = pd.concat([existing, new_df], ignore_index=True)
-                        
-                        st.session_state.results_stale = False
-                        
-                        # Cập nhật trạng thái mẫu sang Đang tính số liệu
-                        mask = st.session_state.df["Mã Mẫu"] == selected_sample_manual
-                        if mask.any():
-                            st.session_state.df.loc[mask, "Trạng Thái"] = "🟣 5. Đang tính số liệu"
-                            save_data(st.session_state.df)
-                            
-                        st.success(f"✅ Đã lưu kết quả cho mẫu {selected_sample_manual}! Bạn có thể chuyển sang mẫu khác hoặc qua tab Tiện ích xuất biên bản.")
-                        st.rerun()
-                else:
-                    st.warning("Mẫu này chưa được chỉ định Chỉ Tiêu phân tích. Hãy vào 'Quản lý Tiếp nhận' cập nhật lại.")
+                    st.success(f"✅ Đã lưu kết quả cho mẫu {selected_sample_manual}! Hệ thống đã cộng dồn vào danh sách tổng chờ xuất Biên bản.")
+                    st.rerun()
 
 elif menu == "🔥 Vận hành GC-FID":
     st.markdown("<h1 class='main-title'>🔥 Hệ thống GC-FID (Agilent)</h1>", unsafe_allow_html=True)
