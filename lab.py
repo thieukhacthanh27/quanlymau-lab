@@ -561,7 +561,7 @@ elif menu == "📥 Quản lý Tiếp nhận":
 elif menu == "⚙️ Vận hành GC-MS (VOCs)":
     st.markdown("<h1 class='main-title'>⚙️ Phân tích & Vận hành Máy đo GC-MS</h1>", unsafe_allow_html=True)
     
-    tab_seq, tab_auto, tab_manual = st.tabs(["1. Xuất Sequence", "2. Xử lý Tự động (File Máy)", "3. Tính toán & Nhập liệu Thủ công"])
+    tab_seq, tab_auto, tab_manual, tab_calib = st.tabs(["1. Xuất Sequence", "2. Xử lý Tự động (File Máy)", "3. Tính toán & Nhập liệu Thủ công", "4. Pha Đường Chuẩn"])
     
     with tab_seq:
         with st.container(border=True):
@@ -849,6 +849,73 @@ elif menu == "⚙️ Vận hành GC-MS (VOCs)":
                         
                     st.success(f"✅ Đã lưu kết quả cho mẫu {selected_sample_manual}! Hệ thống đã cộng dồn vào danh sách tổng chờ xuất Biên bản.")
                     st.rerun()
+
+    with tab_calib:
+        with st.container(border=True):
+            st.markdown("<div class='sub-title'>🧪 Lập Công Thức Pha Đường Chuẩn</div>", unsafe_allow_html=True)
+            st.info("💡 Tính toán thể tích cần hút (µL) từ các dung dịch Stock để pha ra dãy đường chuẩn theo đúng thể tích đích.")
+            
+            col_comp1, col_comp2 = st.columns(2)
+            with col_comp1:
+                is_name = st.text_input("Tên Nội chuẩn (IS) sử dụng:", value="Fluorobenzene")
+            with col_comp2:
+                surr_name = st.text_input("Tên Surrogate sử dụng:", value="Toluene-D8")
+            
+            st.markdown("**1. Thông số Nồng độ gốc (Stock):**")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                c_stock = st.number_input("Nồng độ Chuẩn Mix gốc (ppm)", value=1000.0, step=100.0)
+            with col2:
+                c_is_stock = st.number_input("Nồng độ IS gốc (ppm)", value=1000.0, step=100.0)
+            with col3:
+                c_surr_stock = st.number_input("Nồng độ Surrogate gốc (ppm)", value=1000.0, step=100.0)
+                
+            st.markdown("**2. Thông số Đích (Mức cần pha):**")
+            col4, col5, col6 = st.columns(3)
+            with col4:
+                v_final = st.number_input("Thể tích vial/bình định mức (mL)", value=1.0, step=0.1)
+            with col5:
+                c_is_target = st.number_input("Nồng độ IS chốt mỗi vial (ppm)", value=10.0, step=1.0)
+            with col6:
+                c_surr_target = st.number_input("Nồng độ Surrogate chốt mỗi vial (ppm)", value=10.0, step=1.0)
+                
+            levels_input = st.text_input("🎯 Nhập dãy nồng độ chuẩn cần pha (ppm) - cách nhau bằng dấu phẩy:", "1, 2, 5, 10, 20, 50")
+            
+            if st.button("🚀 Lập Bảng Pha Chuẩn", type="primary"):
+                try:
+                    levels = [float(x.strip()) for x in levels_input.split(",") if x.strip()]
+                    calib_data = []
+                    
+                    # V (uL) = (C_target * V_final * 1000) / C_stock
+                    v_is_ul = (c_is_target * v_final * 1000) / c_is_stock if c_is_stock > 0 else 0
+                    v_surr_ul = (c_surr_target * v_final * 1000) / c_surr_stock if c_surr_stock > 0 else 0
+                    
+                    for lvl in sorted(levels):
+                        v_stock_ul = (lvl * v_final * 1000) / c_stock
+                        
+                        v_dungmoi_ul = (v_final * 1000) - v_stock_ul - v_is_ul - v_surr_ul
+                        
+                        calib_data.append({
+                            "Điểm chuẩn": f"Level {lvl} ppm",
+                            "Hút Chuẩn Gốc (µL)": round(v_stock_ul, 2),
+                            "Hút Nội Chuẩn (µL)": round(v_is_ul, 2),
+                            "Hút Surrogate (µL)": round(v_surr_ul, 2),
+                            "Dung môi bù (µL)": round(v_dungmoi_ul, 2) if v_dungmoi_ul > 0 else "Quá thể tích!",
+                            "V tổng đích (mL)": v_final
+                        })
+                        
+                    df_calib = pd.DataFrame(calib_data)
+                    st.success("✅ Đã tạo bảng công thức pha chuẩn thành công!")
+                    st.dataframe(df_calib, use_container_width=True)
+                    
+                    st.download_button(
+                        label="📥 Tải Bảng Pha Chuẩn (CSV)",
+                        data=df_calib.to_csv(index=False).encode('utf-8-sig'),
+                        file_name=f"Bang_Pha_Chuan_{datetime.now().strftime('%Y%m%d')}.csv",
+                        mime="text/csv",
+                    )
+                except Exception as e:
+                    st.error(f"Lỗi nhập liệu: {e}. Vui lòng kiểm tra lại dãy điểm chuẩn (VD: 1, 2, 5).")
 
 elif menu == "🔥 Vận hành GC-FID":
     st.markdown("<h1 class='main-title'>🔥 Hệ thống GC-FID (Agilent)</h1>", unsafe_allow_html=True)
