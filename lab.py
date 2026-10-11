@@ -785,6 +785,128 @@ def render_batch_analysis():
     except (ValueError,TypeError,KeyError,OverflowError) as exc:st.error(str(exc))
 
 
+def limit_fingerprint(frame):
+    # Sheets can return numeric cells as strings; normalize representations for comparison.
+    out=frame.copy().reset_index(drop=True)
+    for c in out:
+        if c in ['MDL','LOQ']:
+            def number(v):
+                try:return format(float(str(v).replace(',','.')),'.15g') if u_text(v) else ''
+                except ValueError:return u_text(v)
+            out[c]=out[c].map(number)
+        else:out[c]=out[c].map(u_text)
+    return hashlib.sha256(out.to_json().encode()).hexdigest()
+
+def limit_validate(frame):
+    out=frame.copy().reset_index(drop=True);errors=[];seen={}
+    required=['Nền Mẫu','Tên Chất','MDL','LOQ','Đơn Vị']
+    if not set(required).issubset(out):return out,[{'Dòng':'','Lỗi':'Thiếu cột bắt buộc.'}]
+    allowed=set(AN_LIQUID)|set(U_GROUPS['Nồng độ khí thực'])|set(U_GROUPS['Nồng độ khí chuẩn'])|set(U_GROUPS['Hàm lượng khối lượng'])
+    for i,row in out.iterrows():
+        try:
+            for col in ['Nền Mẫu','Tên Chất','Đơn Vị']:
+                out.at[i,col]=u_text(row[col])
+                if not out.at[i,col]:raise ValueError('Thiếu '+col)
+            key=(out.at[i,'Nền Mẫu'].casefold(),out.at[i,'Tên Chất'].casefold())
+            if key in seen:raise ValueError(f'Trùng nền/tên chất với dòng {seen[key]}. Không tự gộp.')
+            seen[key]=i+1
+            mdl=an_number(row['MDL'],'MDL',positive=True,optional=True)
+            loq=an_number(row['LOQ'],'LOQ',positive=True,optional=True)
+            if mdl is None and loq is None:raise ValueError('Cần ít nhất MDL hoặc LOQ; ô thiếu để trống.')
+            if mdl is not None and loq is not None and mdl>loq:raise ValueError('MDL phải ≤ LOQ.')
+            unit=u_canonical(row['Đơn Vị'])
+            if unit not in allowed:raise ValueError('Đơn vị không rõ cơ sở hoặc không phải nồng độ/hàm lượng.')
+            out.at[i,'MDL']=mdl;out.at[i,'LOQ']=loq;out.at[i,'Đơn Vị']=unit
+        except (ValueError,TypeError) as exc:errors.append({'Dòng':i+1,'Tên Chất':u_text(row.get('Tên Chất')),'Lỗi':str(exc)})
+    return out,errors
+
+def limit_search(frame,query='',matrices=(),units=()):
+    if frame.empty:return frame.copy()
+    mask=pd.Series(True,index=frame.index)
+    text=frame.reindex(columns=['Tên Chất','Nền Mẫu','Đơn Vị']).fillna('').astype(str).agg(' '.join,axis=1).map(lab_norm)
+    for word in lab_norm(query).split():mask &= text.str.contains(word,regex=False)
+    if matrices:mask &= frame['Nền Mẫu'].map(u_text).isin(matrices)
+    if units:mask &= frame['Đơn Vị'].map(u_canonical).isin(units)
+    return frame.loc[mask]
+
+def limit_save(frame,base):
+    validated,errors=limit_validate(frame)
+    if errors:raise ValueError('Thư viện còn lỗi; sửa các dòng được đánh dấu trước khi lưu.')
+    if st.session_state.get('limit_error'):raise ValueError(st.session_state.limit_error)
+    if not DEMO_MODE:
+        current=conn.read(spreadsheet=SHEET_URL,worksheet='CauHinh_MDL_LOQ',ttl=0)
+        if limit_fingerprint(current)!=limit_fingerprint(base):raise ValueError('Thư viện trên Sheets đã thay đổi. Tải bản nháp CSV để giữ sửa đổi, rồi tải lại dữ liệu và đối chiếu trước khi lưu.')
+        conn.update(spreadsheet=SHEET_URL,worksheet='CauHinh_MDL_LOQ',data=validated.fillna(''))
+    st.session_state.df_limit=validated
+    st.session_state.results_stale=True
+    st.session_state.pop('limit_draft',None)
+    st.session_state.pop('limit_draft_base',None)
+    return validated
+
+def render_limit_library():
+    st.title('Quản lý Thư viện MDL & LOQ')
+    st.caption('Tìm không phân biệt dấu/hoa thường. Việc tra giới hạn khi tính vẫn khớp chính xác tên chất và nền mẫu.')
+    base=st.session_state.df_limit
+    fp=limit_fingerprint(base)
+    if 'limit_draft' not in st.session_state:
+        st.session_state.limit_draft=base.copy().reset_index(drop=True)
+        st.session_state.limit_draft_base=fp
+    draft=st.session_state.limit_draft
+    changed=limit_fingerprint(draft)!=fp
+    conflict=st.session_state.limit_draft_base!=fp
+    if conflict:st.warning('Dữ liệu gốc vừa thay đổi. Giữ bản nháp bằng CSV rồi bấm Bỏ bản nháp để tải lại; chưa cho lưu đè.')
+    if st.session_state.get('limit_error'):st.error(st.session_state.limit_error)
+    query=st.text_input('🔎 Tìm tên chất, nền mẫu hoặc đơn vị',placeholder='Ví dụ: benzen, nước, KT, µg/L',key='limit_search')
+    a,b=st.columns(2)
+    matrices=a.multiselect('Lọc nền mẫu',sorted(set(draft['Nền Mẫu'].map(u_text))-{''}),key='limit_filter_matrix')
+    units=b.multiselect('Lọc đơn vị',sorted(set(draft['Đơn Vị'].map(u_canonical))-{''}),key='limit_filter_units')
+    validated,errors=limit_validate(draft)
+    only_errors=st.checkbox('Chỉ xem dòng cần sửa',key='limit_only_errors')
+    filtered=limit_search(draft,query,matrices,units)
+    if only_errors:
+        indices=[e['Dòng']-1 for e in errors if isinstance(e['Dòng'],int)]
+        filtered=filtered.loc[filtered.index.isin(indices)]
+    st.caption(f'Hiển thị {len(filtered)} / {len(draft)} dòng · {len(errors)} lỗi · '+('Có thay đổi chưa lưu' if changed else 'Đã đồng bộ với dữ liệu trong phiên'))
+    st.dataframe(filtered,use_container_width=True,height=380)
+    st.download_button('Tải kết quả đang lọc CSV',filtered.to_csv(index=False).encode('utf-8-sig'),'MDL_LOQ_ket_qua_loc.csv','text/csv')
+    st.download_button('Tải toàn bộ bản nháp CSV',draft.to_csv(index=False).encode('utf-8-sig'),'MDL_LOQ_ban_nhap.csv','text/csv')
+    if errors:
+        with st.expander(f'Chi tiết {len(errors)} lỗi cần sửa'):st.dataframe(pd.DataFrame(errors),hide_index=True)
+    options=['new']+list(filtered.index)
+    selected=st.selectbox('Chọn dòng để sửa hoặc thêm mới',options,format_func=lambda i:'＋ Thêm chất mới' if i=='new' else f"Dòng {i+1} · {u_text(draft.at[i,'Tên Chất'])} · {u_text(draft.at[i,'Nền Mẫu'])}",key='limit_pick')
+    row={c:'' for c in draft.columns} if selected=='new' else draft.loc[selected].to_dict()
+    revision=limit_fingerprint(draft)[:12]
+    with st.form('limit_form_'+str(selected)+'_'+revision):
+        x,y=st.columns(2)
+        name=x.text_input('Tên chất',value=u_text(row.get('Tên Chất')))
+        matrix=y.text_input('Nền mẫu',value=u_text(row.get('Nền Mẫu')))
+        mdl=x.text_input('MDL',value=u_text(row.get('MDL')))
+        loq=y.text_input('LOQ',value=u_text(row.get('LOQ')))
+        unit=st.text_input('Đơn vị',value=u_text(row.get('Đơn Vị')),help='Ví dụ µg/L, mg/L, µg/m³, µg/Nm³. Không nhập ppm/ppb thiếu cơ sở.')
+        st.caption('Chấp nhận dấu phẩy thập phân và số khoa học (1e-3). Không dùng dấu phân cách hàng nghìn. MDL/LOQ phải trên cùng cơ sở kết quả mẫu.')
+        delete=st.checkbox('Xóa dòng đã chọn khỏi bản nháp',disabled=selected=='new')
+        if st.form_submit_button('Áp dụng vào bản nháp'):
+            candidate=draft.copy()
+            if delete and selected!='new':candidate=candidate.drop(index=selected)
+            else:
+                row.update({'Tên Chất':name,'Nền Mẫu':matrix,'MDL':mdl,'LOQ':loq,'Đơn Vị':unit})
+                if selected=='new':candidate=pd.concat([candidate,pd.DataFrame([row])],ignore_index=True)
+                else:
+                    for col,value in row.items():candidate.at[selected,col]=value
+            st.session_state.limit_draft=candidate.reset_index(drop=True)
+            st.session_state.pop('limit_pick',None)
+            st.rerun()
+    left,right=st.columns(2)
+    if left.button('💾 Lưu toàn bộ thay đổi Thư viện',type='primary',disabled=not changed or bool(errors) or conflict or bool(st.session_state.get('limit_error'))):
+        try:
+            limit_save(draft,base)
+            st.rerun()
+        except Exception as exc:st.error(f'Chưa lưu: {exc}')
+    if right.button('Bỏ bản nháp / tải lại dữ liệu trong phiên',disabled=not changed and not conflict):
+        st.session_state.pop('limit_draft',None);st.session_state.pop('limit_draft_base',None);st.session_state.pop('limit_pick',None);st.rerun()
+    st.caption('Lưu luôn ghi toàn bộ thư viện, gồm cả dòng đang bị bộ lọc ẩn. Bản nháp chỉ giữ trong phiên; tải CSV trước khi đóng trang. Thay đổi giới hạn yêu cầu tính lại kết quả mẫu.')
+
+
 def render_sop_reference():
     st.subheader('Đối chiếu SOP & kiểm tra QC')
     st.caption('Trích từ ba tài liệu đã cung cấp. Kiểm tra từng tiêu chí; không thay phê duyệt cả mẻ hoặc xác nhận phiên bản SOP đang hiệu lực.')
@@ -2067,41 +2189,7 @@ elif menu == "⚙️ Cấu hình Hệ thống":
             st.dataframe(converted,use_container_width=True)
             if errors:st.info(f'{len(errors)} dòng khác đại lượng/thiếu đơn vị được giữ nguyên, không đổi nhãn.')
             st.download_button('Tải thư viện đã quy đổi CSV',converted.to_csv(index=False).encode('utf-8-sig'),'Thu_vien_quy_doi.csv','text/csv')
-    st.markdown("<h1 class='main-title'>⚙️ Cấu hình & Quản trị Hệ thống</h1>", unsafe_allow_html=True)
-    
-    st.markdown("<div class='sub-title'>Quản lý Thư viện MDL & LOQ</div>", unsafe_allow_html=True)
-    if st.session_state.get('results_stale'):
-        st.warning("⚠️ Thư viện đã bị thay đổi! Vui lòng quay lại tab Vận hành máy đo và bấm 'Tính lại' để có kết quả mới nhất.")
-        
-    st.info("💡 Bạn có thể chỉnh sửa, thêm, xóa các mức giới hạn trực tiếp trên bảng. Nhớ ấn **Lưu thay đổi**.")
-    
-    with st.container(border=True):
-        df_current_limit = st.session_state.df_limit.copy()
-        if df_current_limit.empty:
-            df_current_limit = pd.DataFrame(columns=["Nền Mẫu", "Tên Chất", "MDL", "LOQ", "Đơn Vị"])
-            df_current_limit.loc[0] = ["", "", "", "", ""]
-            
-        edited_limit = st.data_editor(
-            df_current_limit, 
-            num_rows="dynamic", 
-            use_container_width=True,
-            key="limit_editor",
-            height=350
-        )
-        
-        if st.button("💾 Lưu thay đổi Thư viện", type="primary"):
-            try:
-                st.cache_data.clear() 
-                edited_limit = edited_limit[edited_limit["Tên Chất"].str.strip() != ""] 
-                
-                conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=edited_limit)
-                st.session_state.df_limit = edited_limit
-                if 'results' in st.session_state:
-                    st.session_state.results_stale = True
-                st.success("🎉 Đã lưu thư viện lên Google Sheets thành công!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"⚠️ Lỗi kết nối Google Sheets: {e}")
+    render_limit_library()
 
     with st.container(border=True):
         st.markdown("<div class='sub-title'>Cập nhật Hàng loạt (Import Excel)</div>", unsafe_allow_html=True)
@@ -2158,13 +2246,14 @@ elif menu == "⚙️ Cấu hình Hệ thống":
                         try:
                             st.cache_data.clear() 
                             combined_df = pd.concat([st.session_state.df_limit, df_limit_new], ignore_index=True)
-                            combined_df = combined_df.drop_duplicates(subset=['Nền Mẫu', 'Tên Chất'], keep='last').reset_index(drop=True)
+                            if 'limit_draft' in st.session_state and limit_fingerprint(st.session_state.limit_draft)!=limit_fingerprint(st.session_state.df_limit):raise ValueError('Có bản nháp chưa lưu. Lưu hoặc bỏ bản nháp trước khi nhập thêm.')
+                            checked,issues=limit_validate(combined_df)
+                            if issues:raise ValueError(str(issues[:10]))
                             
-                            conn.update(spreadsheet=SHEET_URL, worksheet="CauHinh_MDL_LOQ", data=combined_df)
-                            st.session_state.df_limit = combined_df
+                            limit_save(combined_df,st.session_state.df_limit)
                             if 'results' in st.session_state:
                                 st.session_state.results_stale = True
-                            st.success(f"🎉 Ghi đè thành công! Tổng bộ nhớ: {len(combined_df)} chỉ tiêu.")
+                            st.success(f"🎉 Đã thêm vào thư viện! Tổng: {len(combined_df)} chỉ tiêu.")
                             st.rerun()
                         except Exception as sheet_err:
                             st.error(f"⚠️ Lỗi kết nối: {sheet_err}")
