@@ -326,9 +326,7 @@ def save_chemical_data(df_chem):
     current = stock_frame(conn.read(spreadsheet=SHEET_URL, worksheet='QuanLyHoaChat', ttl=0))
     if stock_fingerprint(current) != st.session_state.get('chem_base'): raise ValueError('Kho đã thay đổi trên Sheets; tải lại trước khi lưu để tránh ghi đè.')
     
-    for column in ['Nồng Độ', 'Độ Tinh Khiết (%)', 'Lượng Quy Cách']:
-        values = pd.to_numeric(df_chem[column], errors='coerce')
-        if (values.dropna() < 0).any(): raise ValueError(f'{column} không được âm.')
+    df_chem=stock_validate_numbers(df_chem)
     if df_chem['Tên Hóa Chất'].fillna('').str.strip().eq('').any(): raise ValueError('Tên hóa chất không được trống.')
     
     saved = stock_serial(df_chem)
@@ -837,6 +835,7 @@ def limit_save(frame,base):
         current=conn.read(spreadsheet=SHEET_URL,worksheet='CauHinh_MDL_LOQ',ttl=0)
         if limit_fingerprint(current)!=limit_fingerprint(base):raise ValueError('Thư viện trên Sheets đã thay đổi. Tải bản nháp CSV để giữ sửa đổi, rồi tải lại dữ liệu và đối chiếu trước khi lưu.')
         conn.update(spreadsheet=SHEET_URL,worksheet='CauHinh_MDL_LOQ',data=validated.fillna(''))
+    if DEMO_MODE:conn.update(spreadsheet=SHEET_URL,worksheet='CauHinh_MDL_LOQ',data=validated.fillna(''))
     st.session_state.df_limit=validated
     st.session_state.results_stale=True
     st.session_state.pop('limit_draft',None)
@@ -905,6 +904,237 @@ def render_limit_library():
     if right.button('Bỏ bản nháp / tải lại dữ liệu trong phiên',disabled=not changed and not conflict):
         st.session_state.pop('limit_draft',None);st.session_state.pop('limit_draft_base',None);st.session_state.pop('limit_pick',None);st.rerun()
     st.caption('Lưu luôn ghi toàn bộ thư viện, gồm cả dòng đang bị bộ lọc ẩn. Bản nháp chỉ giữ trong phiên; tải CSV trước khi đóng trang. Thay đổi giới hạn yêu cầu tính lại kết quả mẫu.')
+
+
+def stock_validate_numbers(frame):
+    out=frame.copy()
+    for column in ['Nồng Độ','Độ Tinh Khiết (%)','Lượng Quy Cách']:
+        for i,value in out[column].items():
+            number=an_number(value,column,optional=True)
+            if column=='Độ Tinh Khiết (%)' and number is not None and number>100:
+                raise ValueError('Độ tinh khiết phải trong khoảng 0–100%.')
+            out.at[i,column]=number
+    return out
+
+def report_validate(frame):
+    needed={'Tên mẫu','Tên chỉ tiêu','C thực','Đơn vị kết quả'}
+    if not needed.issubset(frame):raise ValueError('Bảng báo cáo thiếu cột: '+', '.join(sorted(needed-set(frame.columns))))
+    keys=set()
+    for _,row in frame.iterrows():
+        if any(not u_text(row[c]) for c in needed):raise ValueError('Có dòng thiếu tên mẫu, chỉ tiêu, kết quả hoặc đơn vị.')
+        key=(u_text(row['Tên mẫu']).casefold(),re.sub(r'\W+','',u_text(row['Tên chỉ tiêu']).casefold()))
+        if key in keys:raise ValueError('Trùng mẫu/chỉ tiêu hoặc tên sinh cùng thẻ báo cáo. Tách lần đo hoặc đổi thẻ trước khi xuất.')
+        keys.add(key)
+    return frame
+
+def report_alias(name):
+    # Only exact explicit aliases; Chlorobenzene is not Benzene.
+    return {'benzene':'benzen','benzen':'benzen','toluene':'toluen','toluen':'toluen'}.get(u_text(name).casefold())
+
+
+# BB-KT: explicit mapping from result records to native Word table cells.
+BBKT_COLUMNS=['Ngày PT','Tên mẫu','Csurr trước','TG giải hấp','KH ống','Vial','CIS','Tên chỉ tiêu','K','Csurr sau','H%','Pa','Pm','Nhiệt độ','V khí','C đo','Kết quả']
+
+def bbkt_text(value):
+    if value is None or (not isinstance(value,str) and pd.isna(value)):return ''
+    return str(value).strip()
+
+def bbkt_read_excel(data):
+    import openpyxl
+    wb=openpyxl.load_workbook(io.BytesIO(data),data_only=True)
+    formula_wb=openpyxl.load_workbook(io.BytesIO(data),data_only=False)
+    sheet=wb['Kết quả'] if 'Kết quả' in wb.sheetnames else wb.worksheets[0]
+    header=None;code_col=None
+    for row in sheet.iter_rows(min_row=1,max_row=min(40,sheet.max_row)):
+        for c in row:
+            if bbkt_text(c.value).upper()=='KHM':header=c.row;code_col=c.column;break
+        if header:break
+    if header is None:raise ValueError('Không tìm thấy ô KHM trong 40 dòng đầu.')
+    stop=next((c for c in range(code_col+1,sheet.max_column+1) if lab_norm(sheet.cell(header,c).value)=='ghi chu'),sheet.max_column+1)
+    compounds=[]
+    for col in range(code_col+1,stop):
+        label=bbkt_text(sheet.cell(header,col).value)
+        if not label:continue
+        name=re.sub(r'^\s*\d+\.\s*','',label)
+        name=re.sub(r'\s*\(chọn cái này\)\s*','',name,flags=re.I).strip()
+        compounds.append((col,name))
+    rows=[];issues=[];seen=set()
+    for rownum in range(header+1,sheet.max_row+1):
+        sample=bbkt_text(sheet.cell(rownum,code_col).value)
+        if not sample or sample.upper()=='KHM':continue
+        for col,name in compounds:
+            cell=sheet.cell(rownum,col)
+            gray=cell.fill.patternType=='solid' and cell.fill.fgColor.type=='rgb' and str(cell.fill.fgColor.rgb)[-6:].upper()=='808080'
+            value=bbkt_text(cell.value)
+            if gray and not value:continue
+            if gray and value:issues.append(f'{cell.coordinate}: ô xám vẫn có kết quả; giữ để đối chiếu.')
+            key=(sample.casefold(),name.casefold())
+            if key in seen:raise ValueError(f'Trùng mã mẫu/chỉ tiêu: {sample} / {name}.')
+            seen.add(key)
+            record={k:'' for k in BBKT_COLUMNS}
+            record.update({'Chọn':True,'Tên mẫu':sample,'Tên chỉ tiêu':name,'Kết quả':value,'Ô nguồn':sheet.title+'!'+cell.coordinate,'Tên chỉ tiêu gốc':bbkt_text(sheet.cell(header,col).value),'Ghi chú nguồn':bbkt_text(sheet.cell(rownum,stop).value) if stop<=sheet.max_column else ''})
+            rows.append(record)
+            if not value:issues.append(f'{sample} / {name}: chưa có kết quả tại {cell.coordinate}.')
+            if formula_wb[sheet.title].cell(rownum,col).data_type=='f' and not value:issues.append(f'{cell.coordinate}: công thức chưa có giá trị lưu; mở Excel tính lại rồi lưu.')
+    if not rows:raise ValueError('Không tìm thấy mẫu/chỉ tiêu trong bảng.')
+    return pd.DataFrame(rows),issues
+
+def bbkt_from_results(frame):
+    if not {'Tên mẫu','Tên chỉ tiêu','C thực'}.issubset(frame):raise ValueError('Chưa có bảng kết quả tính hợp lệ trong phiên.')
+    mapping={'C_surr_truoc':'Csurr trước','C_surr_sau':'Csurr sau','R(%)':'H%','Hệ số pha loãng':'K','C thực':'Kết quả'}
+    records=[]
+    for _,r in frame.iterrows():
+        rec={c:bbkt_text(r.get(c)) for c in BBKT_COLUMNS}
+        for old,new in mapping.items():rec[new]=bbkt_text(r.get(old))
+        if r.get('Đơn vị V mẫu')=='L':rec['V khí']=bbkt_text(r.get('V mẫu'))
+        rec.update({'Chọn':True,'Ô nguồn':'Kết quả trong phiên','Đơn vị kết quả nguồn':bbkt_text(r.get('Đơn vị kết quả')),'Đơn vị C đo nguồn':bbkt_text(r.get('Đơn vị C đo')),'Đơn vị Csurr nguồn':bbkt_text(r.get('Đơn vị Csurr'))})
+        records.append(rec)
+    return pd.DataFrame(records)
+
+def bbkt_sort(frame):
+    """Sort complete records: sample first, then analyte; retain result/source pairing."""
+    def natural(value):
+        return tuple((0,int(part)) if part.isdigit() else (1,part)
+                     for part in re.split(r'(\d+)',lab_norm(bbkt_text(value))))
+    positions=sorted(range(len(frame)),key=lambda i:(
+        natural(frame.iloc[i].get('Tên mẫu','')),
+        bbkt_text(frame.iloc[i].get('Tên mẫu','')),
+        natural(frame.iloc[i].get('Tên chỉ tiêu',''))))
+    return frame.iloc[positions].copy().reset_index(drop=True)
+
+def bbkt_groups(frame,capacity):
+    if not 5<=capacity<=21:raise ValueError('Số dòng mỗi trang phải từ 5 đến 21.')
+    pages=[];page=[]
+    for _,group in bbkt_sort(frame).groupby('Tên mẫu',sort=False):
+        records=group.to_dict('records')
+        if len(records)<=capacity:
+            if len(page)+len(records)>capacity:pages.append(page);page=[]
+            page.extend(records)
+        else:
+            if page:pages.append(page);page=[]
+            while len(records)>=capacity:pages.append(records[:capacity]);records=records[capacity:]
+            page=records
+    if page:pages.append(page)
+    return pages
+
+def bbkt_build(template,frame,result_unit,measured_unit='',surr_unit='',capacity=18,draft=False):
+    from docx import Document
+    from docx.table import Table
+    from docx.shared import Pt,Cm
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT,WD_ROW_HEIGHT_RULE
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from copy import deepcopy
+    frame=frame.copy()
+    for c in BBKT_COLUMNS:
+        if c not in frame:frame[c]=''
+        frame[c]=frame[c].map(bbkt_text)
+    if frame.empty:raise ValueError('Chưa chọn dòng để xuất.')
+    if frame[['Tên mẫu','Tên chỉ tiêu']].eq('').any().any():raise ValueError('Có dòng thiếu mã mẫu/chỉ tiêu.')
+    if frame[['Tên mẫu','Tên chỉ tiêu']].apply(lambda c:c.str.casefold()).duplicated().any():raise ValueError('Trùng mẫu/chỉ tiêu trong bản xuất.')
+    if not draft and frame['Kết quả'].eq('').any():raise ValueError('Có kết quả trống; hoàn thiện hoặc chọn xuất bản nháp.')
+    if not draft and not result_unit:raise ValueError('Cần xác nhận đơn vị kết quả trước khi xuất.')
+    for field,unit in [('C đo',measured_unit),('Csurr trước',surr_unit),('Csurr sau',surr_unit)]:
+        if frame[field].ne('').any() and not unit:raise ValueError('Cần chọn đơn vị cho '+field)
+    for source,unit in [('Đơn vị kết quả nguồn',result_unit),('Đơn vị C đo nguồn',measured_unit),('Đơn vị Csurr nguồn',surr_unit)]:
+        if source in frame:
+            declared={u_canonical(x) for x in frame[source].map(bbkt_text) if x}
+            if declared and declared!={u_canonical(unit)}:raise ValueError(source+' không khớp hoặc có nhiều đơn vị. Quy đổi trong phần tính trước khi xuất.')
+    doc=Document(io.BytesIO(template))
+    candidates=[t for t in doc.tables if len(t.columns)==17 and 'chi tieu' in lab_norm(t.rows[0].cells[7].text) and 'ket qua' in lab_norm(t.rows[0].cells[16].text)]
+    if len(candidates)!=1:raise ValueError('Chưa nhận diện duy nhất bảng BB-KT 17 cột. Dùng mẫu BB-KT đã cung cấp.')
+    original=candidates[0]
+    expected={0:'ngay pt',1:'kh mau',2:'csurr truoc',3:'tg giai hap',4:'kh ong',5:'ky hieu vial',6:'cis',7:'chi tieu',8:'he so',9:'csurr sau',10:'h%',11:'pa',12:'pm',13:'nhiet do',14:'v khi',15:'c do',16:'ket qua'}
+    for i,prefix in expected.items():
+        if not lab_norm(original.rows[0].cells[i].text).startswith(prefix):raise ValueError(f'Cột {i+1} khác mẫu BB-KT; chưa tự điền để tránh lệch ô.')
+    prototype=deepcopy(original._tbl)
+    for r in list(prototype.findall(qn('w:tr')))[2:]:prototype.remove(r)
+    parent=original._tbl.getparent();insert_at=parent.index(original._tbl);parent.remove(original._tbl)
+    headers=['Ngày PT','KH mẫu',f'Csurr trước\n({surr_unit})' if surr_unit else 'Csurr trước','TG giải hấp','KH ống đựng mẫu','Ký hiệu Vial', 'CIS','Chỉ tiêu','Hệ số pha loãng (K)',f'Csurr sau\n({surr_unit})' if surr_unit else 'Csurr sau','H%','Pa','Pm','Nhiệt độ (°C)','V khí (L)',f'C đo\n({measured_unit})' if measured_unit else 'C đo',f'Kết quả\n({result_unit})' if result_unit else 'Kết quả\n(chưa rõ đơn vị)']
+    def write(cell,text,bold=False):
+        cell.text=text;cell.vertical_alignment=WD_CELL_VERTICAL_ALIGNMENT.CENTER
+        for p in cell.paragraphs:
+            p.alignment=WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before=Pt(0);p.paragraph_format.space_after=Pt(0)
+            p.paragraph_format.line_spacing=1
+            for r in p.runs:r.font.name='Times New Roman';r.font.size=Pt(9);r.bold=bold
+    for page_no,records in enumerate(bbkt_groups(frame,capacity)):
+        if page_no:
+            para=OxmlElement('w:p');run=OxmlElement('w:r');br=OxmlElement('w:br');br.set(qn('w:type'),'page');run.append(br);para.append(run);parent.insert(insert_at,para);insert_at+=1
+        if draft:
+            para=OxmlElement('w:p');run=OxmlElement('w:r');text=OxmlElement('w:t');text.text='BẢN NHÁP — Đối chiếu dữ liệu và đơn vị trước khi sử dụng';run.append(text);para.append(run);parent.insert(insert_at,para);insert_at+=1
+        tbl=deepcopy(prototype)
+        for floating in list(tbl.xpath('./w:tblPr/w:tblpPr')):floating.getparent().remove(floating)
+        rowproto=deepcopy(tbl.findall(qn('w:tr'))[1]);tbl.remove(tbl.findall(qn('w:tr'))[1])
+        for _ in records:tbl.append(deepcopy(rowproto))
+        parent.insert(insert_at,tbl);insert_at+=1
+        table=Table(tbl,original._parent)
+        for i,label in enumerate(headers):write(table.rows[0].cells[i],label,True)
+        header_repeat=OxmlElement('w:tblHeader');table.rows[0]._tr.get_or_add_trPr().append(header_repeat)
+        for i,record in enumerate(records,1):
+            row=table.rows[i];row.height=Cm(.7);row.height_rule=WD_ROW_HEIGHT_RULE.AT_LEAST
+            row._tr.get_or_add_trPr().append(OxmlElement('w:cantSplit'))
+            for col,key in enumerate(BBKT_COLUMNS):
+                display=re.sub(r'^(KPH)\s*\(',r'\1\n(',record[key],flags=re.I) if key=='Kết quả' else record[key]
+                write(row.cells[col],display)
+        # Merge only identical sample-level fields, only within this page.
+        start=0
+        while start<len(records):
+            end=start+1
+            while end<len(records) and records[end]['Tên mẫu']==records[start]['Tên mẫu']:end+=1
+            if end-start>1:
+                for col in [0,1,2,3,4,5,9,10,11,12,13,14]:
+                    key=BBKT_COLUMNS[col];values={r[key] for r in records[start:end]}
+                    if len(values)==1:
+                        cell=table.rows[start+1].cells[col].merge(table.rows[end].cells[col]);write(cell,records[start][key])
+            start=end
+    out=io.BytesIO();doc.save(out);return out.getvalue()
+
+def render_bbkt():
+    st.subheader('Điền BB-KT trực tiếp từ bảng kết quả')
+    st.caption('Chỉ tiêu → cột Chỉ tiêu; KHM → KH mẫu; kết quả đã báo cáo → Kết quả. Mỗi chỉ tiêu một dòng; gộp thông tin chung theo mẫu, lặp mã khi sang trang.')
+    source=st.radio('Nguồn số liệu',['Phiếu Kết quả mẻ Excel','Kết quả đã tính trong phiên'],horizontal=True,key='bbkt_source')
+    template=st.file_uploader('Mẫu BB-KT Word 17 cột',type=['docx'],key='bbkt_template')
+    frame=None;issues=[];source_id='session'
+    if source.startswith('Phiếu'):
+        uploaded=st.file_uploader('Phiếu Kết quả mẻ (.xlsx), có dòng KHM',type=['xlsx'],key='bbkt_xlsx')
+        if uploaded:
+            try:
+                frame,issues=bbkt_read_excel(uploaded.getvalue());source_id=hashlib.sha256(uploaded.getvalue()).hexdigest()
+            except Exception as exc:st.error(str(exc))
+    else:
+        if st.session_state.get('results_stale'):st.warning('Kết quả đã cũ; tính lại trước khi lập biên bản.');return
+        try:frame=bbkt_from_results(st.session_state.get('results',pd.DataFrame()))
+        except ValueError as exc:st.info(str(exc))
+    if frame is None:return
+    frame=bbkt_sort(frame)
+    st.caption('Thứ tự: mã mẫu tăng dần → các chỉ tiêu A–Z và kết quả tương ứng → mã mẫu tiếp theo. Kết quả và ô nguồn luôn đi cùng chỉ tiêu.')
+    st.write(f"{frame['Tên mẫu'].nunique()} mẫu · {len(frame)} dòng chỉ tiêu · {int(frame['Kết quả'].eq('').sum())} dòng chưa có kết quả")
+    if issues:
+        with st.expander('Các ô cần đối chiếu'):st.write('\n\n'.join(issues))
+    st.info('KPH/<LOQ được giữ nguyên, không đổi thành 0 và không điền vào C đo. Ô xám RGB #808080 trống được bỏ qua; ô trắng trống được giữ để tránh bỏ sót chỉ tiêu. Không lấy Pa/Pm/K in sẵn hoặc số liệu trên ảnh làm số liệu của mẻ mới.')
+    idkey=hashlib.sha256((source_id+frame.to_json()).encode()).hexdigest()[:16]
+    primary=['Chọn','Tên mẫu','Tên chỉ tiêu','Kết quả','C đo']
+    edited=st.data_editor(frame,hide_index=True,use_container_width=True,key='bbkt_edit_'+idkey,column_order=primary+[c for c in frame if c not in primary],column_config={'Chọn':st.column_config.CheckboxColumn(), 'Tên mẫu':st.column_config.TextColumn(width='medium'),'Tên chỉ tiêu':st.column_config.TextColumn(width='medium'),'Kết quả':st.column_config.TextColumn(width='medium')},disabled=[c for c in frame if 'nguồn' in c or c=='Tên chỉ tiêu gốc'])
+    edited=bbkt_sort(edited)
+    with st.expander('Xem thứ tự xuất theo mã mẫu'):
+        st.dataframe(edited[edited['Chọn'].map(lambda v:an_bool(v,'Chọn'))][['Tên mẫu','Tên chỉ tiêu','Kết quả']],hide_index=True,use_container_width=True)
+    a,b,c=st.columns(3)
+    result_unit=a.selectbox('Đơn vị kết quả đã xác nhận',['','µg/Nm³','mg/Nm³','µg/m³','mg/m³'],key='bbkt_result_unit')
+    measured_unit=b.selectbox('Đơn vị C đo (nếu có)',['']+AN_LIQUID,key='bbkt_measured_unit')
+    surr_unit=c.selectbox('Đơn vị Csurr (nếu có)',['']+AN_LIQUID,key='bbkt_surr_unit')
+    st.caption('Chọn đúng đơn vị của nguồn: đây là điền biểu mẫu, không tự đổi trị số KPH/MDL bằng cách đổi nhãn. Hai tiêu đề µg/Nm³ và mg/Nm³ trong mẫu Word sẽ được thống nhất theo lựa chọn đã xác nhận.')
+    capacity=st.number_input('Số dòng tối đa mỗi trang',min_value=5,max_value=21,value=18,key='bbkt_capacity')
+    draft=st.checkbox('Xuất bản nháp nếu còn thiếu kết quả/đơn vị',value=True,key='bbkt_draft')
+    reviewed=st.checkbox('Đã đối chiếu mã mẫu, chỉ tiêu, kết quả và đơn vị với nguồn',key='bbkt_review_'+hashlib.sha256((edited.to_json()+result_unit+measured_unit+surr_unit+str(draft)+str(capacity)).encode()).hexdigest()[:16])
+    if template and reviewed:
+        try:
+            chosen=edited[edited['Chọn'].map(lambda v:an_bool(v,'Chọn'))]
+            output=bbkt_build(template.getvalue(),chosen,result_unit,measured_unit,surr_unit,int(capacity),draft)
+            st.download_button('Tải BB-KT đã điền (.docx)',output,'BBKT_'+('BAN_NHAP_' if draft else '')+lab_now().strftime('%Y%m%d')+'.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document',key='bbkt_download')
+        except Exception as exc:st.error('Chưa xuất được: '+str(exc))
+    elif not template:st.info('Tải mẫu BB-KT Word để xuất đúng bố cục.')
 
 
 def render_sop_reference():
@@ -1814,11 +2044,13 @@ elif menu == "🧮 Tiện ích Phân tích":
 elif menu == "📝 Báo cáo & Lập Biên bản":
     st.markdown("<h1 class='main-title'>📝 Báo cáo & Lập Biên Bản</h1>", unsafe_allow_html=True)
     
-    tab_report, tab_qr = st.tabs(["1. Lập Biên Bản Xử Lý Mẫu", "2. Sinh Mã Vạch QR"])
+    tab_bbkt, tab_report, tab_qr = st.tabs(["1. BB-KT tự điền", "2. Biểu mẫu có thẻ", "3. Sinh Mã Vạch QR"])
+    with tab_bbkt:
+        render_bbkt()
 
     with tab_report:
         st.info("Biên bản dùng thẻ {{ row.don_vi_cdo }}, {{ row.don_vi_csurr }}, {{ row.don_vi_kq }} để hiển thị đơn vị đã chọn. Template có đơn vị cố định cần sửa nhãn cho khớp; không tự thay toàn bộ chữ ppm trong mẫu.") 
-        st.info("💡 **Hệ thống Thông minh:** Tự động lấy kết quả bạn vừa tính ở tab Phân tích để điền vào Biểu mẫu Word/Excel. Mọi định dạng Form, Chữ ký được bảo lưu 100%.")
+        st.info("💡 **Hệ thống Thông minh:** Tự động lấy kết quả bạn vừa tính ở tab Phân tích để điền vào Biểu mẫu Word/Excel. Kiểm tra bố cục, đơn vị và chữ ký trong file xuất trước khi sử dụng.")
         
         with st.container(border=True):
             col_tpl, col_data = st.columns(2)
@@ -1839,6 +2071,7 @@ elif menu == "📝 Báo cáo & Lập Biên bản":
                     elif st.session_state.get('results_stale') and data_file is None:
                         st.warning("⚠️ **Cảnh báo lệch số liệu:** Thư viện giới hạn MDL/LOQ vừa bị sửa. Bạn nên quay lại tab phân tích bấm 'Tính lại' để kết quả được cập nhật chuẩn xác nhất!")
                     else:
+                        df_kq=report_validate(df_kq)
                         ket_qua_list = []
                         danh_sach_mau = []
                         grouped = df_kq.groupby("Tên mẫu")
@@ -1869,10 +2102,13 @@ elif menu == "📝 Báo cáo & Lập Biên bản":
                                 "don_vi_kq":str(first_row.get("Đơn vị kết quả",""))
                             }
                             
+                            if group['Đơn vị kết quả'].map(u_text).nunique()>1:
+                                mau_dict['don_vi_kq']=''
+                                st.warning(f'Mẫu {ten_mau_str}: có nhiều đơn vị kết quả; dùng thẻ đơn vị theo từng dòng.')
                             for _, row in group.iterrows():
                                 chi_tieu = str(row.get("Tên chỉ tiêu", ""))
-                                c_do = str(row.get("C đo", "")).replace('.', ',')
-                                kq_thuc = str(row.get("C thực", "")).replace('.', ',')
+                                c_do = u_text(row.get("C đo", "")).replace('.', ',')
+                                kq_thuc = u_text(row.get("C thực", "")).replace('.', ',')
                                 
                                 ket_qua_list.append({
                                     "ngay": lab_now().strftime("%d/%m/%Y"),
@@ -1894,10 +2130,10 @@ elif menu == "📝 Báo cáo & Lập Biên bản":
                                 mau_dict[f"cdo_{slug}"] = c_do
                                 mau_dict[f"kq_{slug}"] = kq_thuc
                                 
-                                if "BENZENE" in chi_tieu_upper or "BENZEN" in chi_tieu_upper:
+                                if report_alias(chi_tieu)=="benzen":
                                     mau_dict["cdo_benzen"] = c_do
                                     mau_dict["kq_benzen"] = kq_thuc
-                                elif "TOLUENE" in chi_tieu_upper or "TOLUEN" in chi_tieu_upper:
+                                elif report_alias(chi_tieu)=="toluen":
                                     mau_dict["cdo_toluen"] = c_do
                                     mau_dict["kq_toluen"] = kq_thuc
                                     
