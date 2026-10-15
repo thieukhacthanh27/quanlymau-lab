@@ -1164,6 +1164,66 @@ def bbkt_build(template,frame,result_unit,measured_unit='',surr_unit='',capacity
             start=end
     out=io.BytesIO();doc.save(out);return out.getvalue()
 
+def bbkt_bulk_cis(frame,value):
+    from decimal import Decimal,InvalidOperation
+    text=bbkt_text(value).replace(',','.')
+    try:number=Decimal(text)
+    except InvalidOperation:raise ValueError('CIS phải là số hợp lệ.')
+    if not number.is_finite() or number<0:raise ValueError('CIS phải là số hữu hạn không âm.')
+    result=frame.copy();result['CIS']=format(number,'f')
+    return result
+
+def bbkt_excel(word_bytes):
+    """Export the validated Word tables to Excel, retaining per-page sample merges."""
+    from docx import Document
+    from openpyxl import Workbook
+    from openpyxl.styles import Font,Alignment,PatternFill,Border,Side
+    from openpyxl.utils import get_column_letter
+    from openpyxl.worksheet.pagebreak import Break
+    from datetime import datetime
+    doc=Document(io.BytesIO(word_bytes));wb=Workbook();ws=wb.active;ws.title='BB-KT'
+    draft=any('BẢN NHÁP' in p.text for p in doc.paragraphs)
+    ws.cell(1,1,'BẢN NHÁP — Đối chiếu dữ liệu và đơn vị' if draft else 'BIÊN BẢN PHÂN TÍCH')
+    start=2;thin=Side(style='thin',color='607D8B')
+    for table in doc.tables:
+        if len(table.columns) not in (16,17):continue
+        seen={}
+        for ri,row in enumerate(table.rows):
+            for ci,cell in enumerate(row.cells,1):
+                dest=ws.cell(start+ri,ci);text=cell.text
+                # Native Word vertical merges return the same XML cell.
+                key=cell._tc
+                if ri and key in seen:
+                    first,last,col=seen[key];seen[key]=(first,start+ri,col)
+                    continue
+                if ri:seen[key]=(start+ri,start+ri,ci)
+                dest.value=text;dest.data_type='s'
+                if ri and ci in (1,4) and re.fullmatch(r'\d{2}/\d{2}/\d{4}',text):
+                    dest.value=datetime.strptime(text,'%d/%m/%Y');dest.number_format='dd/mm/yyyy'
+                elif ri and ci not in (2,8,len(row.cells)) and re.fullmatch(r'[+-]?\d+(?:[.,]\d+)?',text):
+                    dest.value=float(text.replace(',','.'));dest.number_format='0.############'
+                dest.font=Font(name='Times New Roman',size=10,bold=ri==0)
+                dest.alignment=Alignment(horizontal='center',vertical='top' if ci==2 else 'center',wrap_text=True)
+                dest.border=Border(left=thin,right=thin,top=thin,bottom=thin)
+                if ri==0:dest.fill=PatternFill('solid',fgColor='DFEAF0')
+            ws.row_dimensions[start+ri].height=58 if ri==0 else 32
+        for first,last,col in seen.values():
+            if last>first:ws.merge_cells(start_row=first,end_row=last,start_column=col,end_column=col)
+        start+=len(table.rows)
+        ws.row_breaks.append(Break(id=start-1))
+    if start==2:raise ValueError('Không có bảng BB-KT để xuất Excel.')
+    for ci in range(1,ws.max_column+1):
+        ws.column_dimensions[get_column_letter(ci)].width=22 if ci in (2,8,ws.max_column) else 13
+    ws.merge_cells(start_row=1,end_row=1,start_column=1,end_column=ws.max_column)
+    ws['A1'].font=Font(name='Times New Roman',size=12,bold=True)
+    ws.freeze_panes='C3';ws.sheet_view.showGridLines=False
+    ws.page_setup.orientation='landscape';ws.page_setup.paperSize=ws.PAPERSIZE_A3
+    ws.page_setup.fitToWidth=1;ws.page_setup.fitToHeight=0
+    ws.sheet_properties.pageSetUpPr.fitToPage=True
+    ws.print_options.horizontalCentered=True
+    ws.print_area=f'A1:{get_column_letter(ws.max_column)}{ws.max_row}'
+    out=io.BytesIO();wb.save(out);return out.getvalue()
+
 def render_bbkt():
     st.subheader('Điền BB-KT trực tiếp từ bảng kết quả')
     st.caption('Chỉ tiêu → cột Chỉ tiêu; KHM → KH mẫu; kết quả đã báo cáo → Kết quả. Mỗi chỉ tiêu một dòng; gộp thông tin chung theo mẫu, lặp mã khi sang trang.')
@@ -1205,6 +1265,17 @@ def render_bbkt():
     with st.expander('Chỉnh dữ liệu / chọn dòng xuất'):
         edited=st.data_editor(frame,hide_index=True,use_container_width=True,key='bbkt_edit_'+idkey,column_order=primary+[c for c in frame if c not in primary],column_config={'Chọn':st.column_config.CheckboxColumn(), 'Tên mẫu':st.column_config.TextColumn(width='medium'),'Tên chỉ tiêu':st.column_config.TextColumn(width='medium'),'Kết quả':st.column_config.TextColumn(width='medium')},disabled=[c for c in frame if 'nguồn' in c or c in ('Tên chỉ tiêu gốc','TG giải hấp','KH ống')])
     edited=bbkt_defaults(edited)
+    with st.expander('Điền CIS cho tất cả mẫu',expanded=True):
+        existing=list(dict.fromkeys(v for v in edited['CIS'].map(bbkt_text) if v))
+        cis_choice=st.selectbox('Chọn CIS',['Nhập giá trị khác']+existing,key='bbkt_cis_choice_'+source_id)
+        cis_value=st.text_input('Giá trị CIS',key='bbkt_cis_value_'+source_id) if cis_choice=='Nhập giá trị khác' else cis_choice
+        cis_all=st.checkbox('Áp dụng CIS này cho tất cả mẫu',key='bbkt_cis_all_'+source_id)
+        st.caption('Khi bật, giá trị này thay CIS của mọi dòng, kể cả CIS đã nhập riêng. Tắt để dùng lại CIS trong bảng. CIS giữ theo đơn vị/quy ước của phương pháp, không tự suy từ kết quả.')
+    if cis_all:
+        try:edited=bbkt_bulk_cis(edited,cis_value)
+        except ValueError as exc:st.error(str(exc));return
+        st.success(f"Đã áp dụng CIS = {edited['CIS'].iloc[0]} cho {edited['Tên mẫu'].nunique()} mẫu.")
+
     st.markdown('**Biên bản theo từng mã mẫu**')
     st.caption('Mã mẫu ở dòng chỉ tiêu đầu tiên; các dòng trống mã bên dưới thuộc cùng mẫu. Mỗi chỉ tiêu và kết quả nằm trên cùng một hàng.')
     st.table(bbkt_preview(edited[edited['Chọn'].map(lambda v:an_bool(v,'Chọn'))]).style.hide(axis='index'))
@@ -1221,6 +1292,7 @@ def render_bbkt():
             chosen=edited[edited['Chọn'].map(lambda v:an_bool(v,'Chọn'))]
             output=bbkt_build(template.getvalue(),chosen,result_unit,measured_unit,surr_unit,int(capacity),draft)
             st.download_button('Tải BB-KT đã điền (.docx)',output,'BBKT_'+('BAN_NHAP_' if draft else '')+lab_now().strftime('%Y%m%d')+'.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document',key='bbkt_download')
+            st.download_button('Tải BB-KT Excel (.xlsx)',bbkt_excel(output),'BBKT_'+('BAN_NHAP_' if draft else '')+lab_now().strftime('%Y%m%d')+'.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',key='bbkt_download_excel')
         except Exception as exc:st.error('Chưa xuất được: '+str(exc))
     elif not template:st.info('Tải mẫu BB-KT Word để xuất đúng bố cục.')
 
