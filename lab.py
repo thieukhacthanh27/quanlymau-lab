@@ -963,6 +963,24 @@ def bbkt_start_date(sheet,header):
     if len({d for d,_ in found})>1:raise ValueError('Có nhiều ngày bắt đầu phân tích khác nhau trong tiêu đề.')
     return found[0] if found else ('','')
 
+def bbkt_batch_code(sheet,header):
+    codes=[]
+    for row in sheet.iter_rows(min_row=1,max_row=header-1):
+        for cell in row:
+            text=lab_norm(bbkt_text(cell.value))
+            if not re.match(r'^so\s*:',text):continue
+            match=re.search(r'\b(\d{4}\.\d{2}\.\d+)\b',text)
+            if match:codes.append(match.group(1))
+    unique=list(dict.fromkeys(codes))
+    if len(unique)>1:raise ValueError('Có nhiều mã mẻ khác nhau ở tiêu đề Excel; cần đối chiếu trước khi xuất.')
+    return unique[0] if unique else ''
+
+def bbkt_filename(batch,extension):
+    batch=bbkt_text(batch)
+    if not re.fullmatch(r'\d{4}\.\d{2}\.\d+',batch):raise ValueError('Nhập mã mẻ theo dạng 2026.09.124 để đặt tên file.')
+    if extension not in ('docx','xlsx'):raise ValueError('Định dạng xuất không hỗ trợ.')
+    return batch+'.'+extension
+
 def bbkt_read_excel(data):
     import openpyxl
     wb=openpyxl.load_workbook(io.BytesIO(data),data_only=True)
@@ -975,6 +993,7 @@ def bbkt_read_excel(data):
         if header:break
     if header is None:raise ValueError('Không tìm thấy ô KHM trong 40 dòng đầu.')
     start_date,date_source=bbkt_start_date(sheet,header)
+    batch_code=bbkt_batch_code(sheet,header)
     stop=next((c for c in range(code_col+1,sheet.max_column+1) if lab_norm(sheet.cell(header,c).value)=='ghi chu'),sheet.max_column+1)
     compounds=[]
     for col in range(code_col+1,stop):
@@ -1000,7 +1019,7 @@ def bbkt_read_excel(data):
             if key in seen:raise ValueError(f'Trùng mã mẫu/chỉ tiêu: {sample} / {name}.')
             seen.add(key)
             record={k:'' for k in BBKT_COLUMNS}
-            record.update({'K':'1','Ngày PT':start_date,**conditions})
+            record.update({'K':'1','Ngày PT':start_date,'Mã mẻ nguồn':batch_code,**conditions})
             record.update({'Ngày bắt đầu nguồn':start_date,'Ô ngày nguồn':date_source,'Ô điều kiện nguồn':sheet.title+'!'+sheet.cell(rownum,stop).coordinate if note else ''})
             record.update({'Chọn':True,'Tên mẫu':sample,'Tên chỉ tiêu':name,'Kết quả':value,'Ô nguồn':sheet.title+'!'+cell.coordinate,'Tên chỉ tiêu gốc':bbkt_text(sheet.cell(header,col).value),'Ghi chú nguồn':bbkt_text(sheet.cell(rownum,stop).value) if stop<=sheet.max_column else ''})
             rows.append(record)
@@ -1242,6 +1261,10 @@ def render_bbkt():
         except ValueError as exc:st.info(str(exc))
     if frame is None:return
     frame=bbkt_sort(frame)
+    batch_values=[v for v in frame.get('Mã mẻ nguồn',pd.Series(dtype=str)).map(bbkt_text).unique() if v]
+    batch=st.text_input('Mã mẻ — tên file tải về',value=batch_values[0] if len(batch_values)==1 else '',key='bbkt_batch_'+source_id)
+    if batch_values:st.caption('Lấy từ dòng Số: trong Excel. Word và Excel dùng cùng mã mẻ làm tên file.')
+    else:st.info('Chưa đọc được mã mẻ từ nguồn; nhập mã mẻ để đặt tên file tải về.')
     st.caption('Thứ tự: mã mẫu tăng dần → các chỉ tiêu A–Z và kết quả tương ứng → mã mẫu tiếp theo. Kết quả và ô nguồn luôn đi cùng chỉ tiêu.')
     st.write(f"{frame['Tên mẫu'].nunique()} mẫu · {len(frame)} dòng chỉ tiêu · {int(frame['Kết quả'].eq('').sum())} dòng chưa có kết quả")
     if issues:
@@ -1286,13 +1309,14 @@ def render_bbkt():
     st.caption('Chọn đúng đơn vị của nguồn: đây là điền biểu mẫu, không tự đổi trị số KPH/MDL bằng cách đổi nhãn. Hai tiêu đề µg/Nm³ và mg/Nm³ trong mẫu Word sẽ được thống nhất theo lựa chọn đã xác nhận.')
     capacity=st.number_input('Số dòng tối đa mỗi trang',min_value=5,max_value=21,value=18,key='bbkt_capacity')
     draft=st.checkbox('Xuất bản nháp nếu còn thiếu kết quả/đơn vị',value=True,key='bbkt_draft')
-    reviewed=st.checkbox('Đã đối chiếu mã mẫu, chỉ tiêu, kết quả và đơn vị với nguồn',key='bbkt_review_'+hashlib.sha256((edited.to_json()+result_unit+measured_unit+surr_unit+str(draft)+str(capacity)).encode()).hexdigest()[:16])
+    reviewed=st.checkbox('Đã đối chiếu mã mẫu, chỉ tiêu, kết quả và đơn vị với nguồn',key='bbkt_review_'+hashlib.sha256((edited.to_json()+batch+result_unit+measured_unit+surr_unit+str(draft)+str(capacity)).encode()).hexdigest()[:16])
     if template and reviewed:
         try:
             chosen=edited[edited['Chọn'].map(lambda v:an_bool(v,'Chọn'))]
+            word_name=bbkt_filename(batch,'docx');excel_name=bbkt_filename(batch,'xlsx')
             output=bbkt_build(template.getvalue(),chosen,result_unit,measured_unit,surr_unit,int(capacity),draft)
-            st.download_button('Tải BB-KT đã điền (.docx)',output,'BBKT_'+('BAN_NHAP_' if draft else '')+lab_now().strftime('%Y%m%d')+'.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document',key='bbkt_download')
-            st.download_button('Tải BB-KT Excel (.xlsx)',bbkt_excel(output),'BBKT_'+('BAN_NHAP_' if draft else '')+lab_now().strftime('%Y%m%d')+'.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',key='bbkt_download_excel')
+            st.download_button('Tải BB-KT đã điền (.docx)',output,word_name,'application/vnd.openxmlformats-officedocument.wordprocessingml.document',key='bbkt_download')
+            st.download_button('Tải BB-KT Excel (.xlsx)',bbkt_excel(output),excel_name,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',key='bbkt_download_excel')
         except Exception as exc:st.error('Chưa xuất được: '+str(exc))
     elif not template:st.info('Tải mẫu BB-KT Word để xuất đúng bố cục.')
 
