@@ -438,6 +438,31 @@ def an_classify(value, mdl, loq):
     if loq is not None and value<loq:return 'Dưới LOQ',f'< LOQ ({loq:.8g})',loq
     return ('Chưa có giới hạn' if mdl is None and loq is None else 'Không dưới ngưỡng đã khai báo'),f'{value:.10g}',None
 
+def an_gas_conditions(cfg):
+    """Ideal-gas volume factor; same humidity basis, absolute pressure only."""
+    if not cfg.get('gas_correction'):return 1.0,{}
+    if cfg['kind']!='Khí':raise ValueError('Hiệu chỉnh khí chỉ dùng cho nền Khí.')
+    if cfg.get('normal_gas'):raise ValueError('Đầu vào đã quy chuẩn: không hiệu chỉnh nhiệt độ/áp suất lần nữa.')
+    if not u_text(cfg.get('gas_reference')):raise ValueError('Ghi SOP/nguồn điều kiện quy chiếu khí.')
+    def kelvin(value,label):
+        try:t=float(str(value).strip().replace(',','.'))
+        except (ValueError,TypeError):raise ValueError(label+': cần nhập nhiệt độ °C.')
+        if not math.isfinite(t) or t<=-273.15:raise ValueError(label+': phải lớn hơn −273,15 °C.')
+        return t+273.15
+    def pressure(value,unit,label):
+        units={'Pa':1,'kPa':1000,'hPa':100,'mbar':100,'mmHg':101325/760,'atm':101325}
+        if unit not in units:raise ValueError(label+': chọn đơn vị áp suất tuyệt đối.')
+        return an_ratio([an_number(value,label,positive=True),units[unit]])
+    t=kelvin(cfg.get('gas_temperature'),'Nhiệt độ lấy mẫu')
+    tr=kelvin(cfg.get('gas_reference_temperature'),'Nhiệt độ quy chiếu')
+    p=pressure(cfg.get('gas_pressure'),cfg.get('gas_pressure_unit'),'Áp suất lấy mẫu')
+    pr=pressure(cfg.get('gas_reference_pressure'),cfg.get('gas_reference_pressure_unit'),'Áp suất quy chiếu')
+    k=an_ratio([p,tr],[pr,t])
+    return k,{'Nhiệt độ lấy mẫu (°C)':cfg['gas_temperature'],'Áp suất lấy mẫu (Pa)':p,
+              'Nhiệt độ quy chiếu (°C)':cfg['gas_reference_temperature'],'Áp suất quy chiếu (Pa)':pr,
+              'Nguồn điều kiện quy chiếu':cfg['gas_reference'],'Hệ số V quy chiếu/V thực':k,
+              'Cơ sở độ ẩm':'Giữ nguyên cơ sở khô/ướt của thể tích đầu vào; chưa hiệu chỉnh độ ẩm/O₂'}
+
 def an_calculate(row,cfg):
     cfg=dict(cfg)
     for key in ['source','output','surr_added','surr_measured']:
@@ -472,11 +497,15 @@ def an_calculate(row,cfg):
             qc='Trong khoảng R đã khai báo' if low<=recovery<=high else 'Ngoài khoảng R đã khai báo'
     kind=cfg['kind'];out=cfg['output'];basis=cfg['basis']
     if kind not in ['Nước','Khí']:raise ValueError('Chỉ hỗ trợ nền Nước hoặc Khí.')
+    gas_factor,gas_meta=an_gas_conditions(cfg)
+    gas_target=cfg.get('normal_gas',False) or cfg.get('gas_correction',False)
     volume=extract=None
     if basis=='original':
         permitted=AN_LIQUID if kind=='Nước' else list(U_GROUPS['Nồng độ khí chuẩn' if cfg['normal_gas'] else 'Nồng độ khí thực'])
-        if cfg['source'] not in permitted or out not in permitted:raise ValueError('Đơn vị đầu vào/đầu ra khác cơ sở mẫu.')
-        uncorrected=an_ratio([u_convert(measured,cfg['source'],out),dilution])
+        target_units=list(U_GROUPS['Nồng độ khí chuẩn']) if kind=='Khí' and gas_target else permitted
+        if cfg['source'] not in permitted or out not in target_units:raise ValueError('Đơn vị đầu vào/đầu ra khác cơ sở mẫu.')
+        target_actual=out.replace('/Nm³','/m³') if cfg.get('gas_correction') else out
+        uncorrected=an_ratio([u_convert(measured,cfg['source'],target_actual),dilution],[gas_factor])
         formula='C mẫu = C đầu vào × D; không áp dụng lại tỷ lệ chiết'
     elif basis=='extract':
         concentration=an_convert(measured,cfg['source'],'mg/L')
@@ -484,16 +513,18 @@ def an_calculate(row,cfg):
         volume=an_number(row.get('V mẫu'),'V mẫu',positive=True)
         extract=u_convert(extract,cfg.get('extract_unit','mL'),'mL')
         volume=u_convert(volume,cfg.get('volume_unit','mL' if kind=='Nước' else 'L'),'mL' if kind=='Nước' else 'L')
+        if cfg.get('gas_correction'):volume=an_ratio([volume,gas_factor])
         base_conc=an_ratio([concentration,extract,dilution],[volume])
         if kind=='Nước':uncorrected=an_convert(base_conc,'mg/L',out)
         elif kind=='Khí':
-            base='mg/Nm³' if cfg['normal_gas'] else 'mg/m³'
-            allowed=U_GROUPS['Nồng độ khí chuẩn' if cfg['normal_gas'] else 'Nồng độ khí thực']
+            base='mg/Nm³' if gas_target else 'mg/m³'
+            allowed=U_GROUPS['Nồng độ khí chuẩn' if gas_target else 'Nồng độ khí thực']
             if out not in allowed:raise ValueError('Đơn vị khí không khớp cơ sở thể tích.')
             uncorrected=u_convert(base_conc,base,out)
         else:raise ValueError('Chỉ hỗ trợ nền Nước hoặc Khí.')
         formula='C mẫu = C dịch chiết × V dịch chiết / V mẫu × D (quy đổi cùng đơn vị)'
     else:raise ValueError('Chưa chọn cơ sở C đo.')
+    if cfg.get('gas_correction'):formula+='; Vref = Vthực × P/Pref × (Tref+273.15)/(T+273.15); Cref = Cthực / (Vref/Vthực)'
     computed=an_ratio([uncorrected,factor])
     if not math.isfinite(computed):raise ValueError('Kết quả tính quá lớn.')
     override=an_number(row.get('Kết quả thay thế'),'Kết quả thay thế',optional=True)
@@ -510,7 +541,7 @@ def an_calculate(row,cfg):
         if loq is not None:loq=u_convert(loq,limit_unit,out)
         if any(x is not None and not math.isfinite(x) for x in [mdl,loq]):raise ValueError('Giới hạn sau đổi không hữu hạn.')
     qualifier,report,bound=an_classify(value,mdl,loq)
-    return {'Tên chỉ tiêu':name,'C đo':measured,'Đơn vị C đo':cfg['source'],'C tính chưa hiệu chỉnh':uncorrected,'C tính đầy đủ':computed,'C số cuối':value,'C thực':report,'Đơn vị kết quả':out,'Phân loại':qualifier,'Ngưỡng dùng cộng':bound,'MDL sau đổi':mdl,'LOQ sau đổi':loq,'Giới hạn':f'MDL={mdl}; LOQ={loq} {out}','R(%)':None if recovery is None else f'{recovery:.10g}%','QC recovery':qc,'Nguồn tiêu chí QC':cfg.get('qc_source','') if cfg.get('qc_enabled') else '', 'Chuẩn đồng hành QC':cfg.get('qc_surrogate','') if cfg.get('qc_enabled') else '', 'R tối thiểu QC':cfg.get('qc_min') if cfg.get('qc_enabled') else None, 'R tối đa QC':cfg.get('qc_max') if cfg.get('qc_enabled') else None,'R số (%)':recovery,'V mẫu nhập':row.get('V mẫu'),'Đơn vị V mẫu nhập':cfg.get('volume_unit','mL' if kind=='Nước' else 'L'),'V dịch chiết nhập':row.get('V dịch chiết (mL)'),'Đơn vị dịch chiết nhập':cfg.get('extract_unit','mL'),'C_surr_truoc':before,'C_surr_sau':None if after is None else an_convert(after,cfg['surr_measured'],cfg['surr_added']),'Đơn vị Csurr':cfg['surr_added'],'Hiệu chỉnh recovery':cfg['correct_recovery'],'Hệ số pha loãng':dilution,'V mẫu':volume,'Đơn vị V mẫu':'mL' if kind=='Nước' else 'L','V dịch chiết (mL)':extract,'Cơ sở thể tích khí':'Chuẩn theo SOP' if cfg['normal_gas'] else 'Thực','Công thức':formula+(' ×100/R' if cfg['correct_recovery'] else ''),'Kết quả thay thế':override,'Lý do thay thế':reason,'Cộng Tổng':bool(row.get('Cộng Tổng',False)) if pd.notna(row.get('Cộng Tổng')) else False}
+    return {**gas_meta,'Tên chỉ tiêu':name,'C đo':measured,'Đơn vị C đo':cfg['source'],'C tính chưa hiệu chỉnh':uncorrected,'C tính đầy đủ':computed,'C số cuối':value,'C thực':report,'Đơn vị kết quả':out,'Phân loại':qualifier,'Ngưỡng dùng cộng':bound,'MDL sau đổi':mdl,'LOQ sau đổi':loq,'Giới hạn':f'MDL={mdl}; LOQ={loq} {out}','R(%)':None if recovery is None else f'{recovery:.10g}%','QC recovery':qc,'Nguồn tiêu chí QC':cfg.get('qc_source','') if cfg.get('qc_enabled') else '', 'Chuẩn đồng hành QC':cfg.get('qc_surrogate','') if cfg.get('qc_enabled') else '', 'R tối thiểu QC':cfg.get('qc_min') if cfg.get('qc_enabled') else None, 'R tối đa QC':cfg.get('qc_max') if cfg.get('qc_enabled') else None,'R số (%)':recovery,'V mẫu nhập':row.get('V mẫu'),'Đơn vị V mẫu nhập':cfg.get('volume_unit','mL' if kind=='Nước' else 'L'),'V dịch chiết nhập':row.get('V dịch chiết (mL)'),'Đơn vị dịch chiết nhập':cfg.get('extract_unit','mL'),'C_surr_truoc':before,'C_surr_sau':None if after is None else an_convert(after,cfg['surr_measured'],cfg['surr_added']),'Đơn vị Csurr':cfg['surr_added'],'Hiệu chỉnh recovery':cfg['correct_recovery'],'Hệ số pha loãng':dilution,'V mẫu':volume,'Đơn vị V mẫu':'mL' if kind=='Nước' else 'L','V dịch chiết (mL)':extract,'Cơ sở thể tích khí':'Quy chiếu theo T/P đã khai báo' if cfg.get('gas_correction') else ('Chuẩn theo SOP' if cfg['normal_gas'] else 'Thực'),'Công thức':formula+(' ×100/R' if cfg['correct_recovery'] else ''),'Kết quả thay thế':override,'Lý do thay thế':reason,'Cộng Tổng':bool(row.get('Cộng Tổng',False)) if pd.notna(row.get('Cộng Tổng')) else False}
 
 def an_total(results, policy, name):
     rows=[r for r in results if r['Cộng Tổng']]
@@ -691,7 +722,9 @@ def an_batch_template():
     return {'Chọn':False,'Tên mẫu':'','Chỉ Tiêu':'','C đo':None,'Đơn vị C đo':'','Nền mẫu':'',
             'Cơ sở C đo':'','Đơn vị kết quả':'','Hệ số pha loãng':1.0,
             'V mẫu':None,'Đơn vị V mẫu':'','V dịch chiết (mL)':None,'Đơn vị V dịch chiết':'',
-            'Khí chuẩn':False,'Điều kiện khí chuẩn':'','Hiệu chỉnh recovery':False,
+            'Khí chuẩn':False,'Điều kiện khí chuẩn':'','Hiệu chỉnh T/P':False,
+            'Nhiệt độ lấy mẫu (°C)':None,'Áp suất lấy mẫu':None,'Đơn vị áp suất':'',
+            'Nhiệt độ quy chiếu (°C)':None,'Áp suất quy chiếu':None,'Đơn vị áp suất quy chiếu':'','Hiệu chỉnh recovery':False,
             'Csurr thêm':None,'Csurr đo':None,'Đơn vị Csurr thêm':'','Đơn vị Csurr đo':'',
             'SOP QC':'','Chuẩn đồng hành QC':'','MDL':None,'LOQ':None,'Đơn vị giới hạn':'',
             'Kết quả thay thế':None,'Lý do thay thế':'','Cộng Tổng':False}
@@ -724,6 +757,9 @@ def an_batch(frame):
                      volume_unit=u_text(row.get('Đơn vị V mẫu')),extract_unit=u_text(row.get('Đơn vị V dịch chiết')),
                      qc_enabled=bool(profile),qc_profile=profile,qc_surrogate=u_text(row.get('Chuẩn đồng hành QC')))
             if profile and profile not in SOP_QC:raise ValueError('SOP QC phải là ns, kt hoặc để trống.')
+            cfg.update(gas_correction=an_bool(row.get('Hiệu chỉnh T/P'),'Hiệu chỉnh T/P'),gas_reference=condition,
+                       gas_temperature=row.get('Nhiệt độ lấy mẫu (°C)'),gas_pressure=row.get('Áp suất lấy mẫu'),gas_pressure_unit=u_text(row.get('Đơn vị áp suất')),
+                       gas_reference_temperature=row.get('Nhiệt độ quy chiếu (°C)'),gas_reference_pressure=row.get('Áp suất quy chiếu'),gas_reference_pressure_unit=u_text(row.get('Đơn vị áp suất quy chiếu')))
             calculated=an_calculate(row,cfg)
             calculated.update({'Tên mẫu':name,'Điều kiện khí chuẩn':condition,'Dòng nhập':int(i)+1})
             rows.append(calculated)
@@ -1103,7 +1139,7 @@ def bbkt_build(template,frame,result_unit,measured_unit='',surr_unit='',capacity
         if c not in frame:frame[c]=''
         frame[c]=frame[c].map(bbkt_text)
     if frame.empty:raise ValueError('Chưa chọn dòng để xuất.')
-    frame=bbkt_defaults(frame)
+    frame=bbkt_recovery(bbkt_defaults(frame))
     if frame[['Tên mẫu','Tên chỉ tiêu']].eq('').any().any():raise ValueError('Có dòng thiếu mã mẫu/chỉ tiêu.')
     if frame[['Tên mẫu','Tên chỉ tiêu']].apply(lambda c:c.str.casefold()).duplicated().any():raise ValueError('Trùng mẫu/chỉ tiêu trong bản xuất.')
     if not draft and frame['Kết quả'].eq('').any():raise ValueError('Có kết quả trống; hoàn thiện hoặc chọn xuất bản nháp.')
@@ -1182,6 +1218,35 @@ def bbkt_build(template,frame,result_unit,measured_unit='',surr_unit='',capacity
                                 for run in p.runs:run.font.size=Pt(8)
             start=end
     out=io.BytesIO();doc.save(out);return out.getvalue()
+
+def bbkt_recovery(frame):
+    from decimal import Decimal,InvalidOperation,localcontext,ROUND_HALF_UP
+    result=frame.copy();result['H%']=''
+    for index,row in result.iterrows():
+        before=bbkt_text(row.get('Csurr trước'));after=bbkt_text(row.get('Csurr sau'))
+        if not before and not after:continue
+        label=bbkt_text(row.get('Tên mẫu'))+' / '+bbkt_text(row.get('Tên chỉ tiêu'))
+        if not before or not after:raise ValueError(label+': cần nhập đủ Csurr trước và Csurr sau.')
+        try:a=Decimal(before.replace(',','.'));b=Decimal(after.replace(',','.'))
+        except InvalidOperation:raise ValueError(label+': Csurr phải là số hợp lệ.')
+        if not a.is_finite() or not b.is_finite() or a<=0 or b<0:
+            raise ValueError(label+': Csurr trước phải > 0; Csurr sau phải ≥ 0 và hữu hạn.')
+        try:
+            with localcontext() as ctx:
+                ctx.prec=40
+                recovery=b/a*100
+                result.at[index,'H%']=format(recovery.quantize(Decimal('0.01'),rounding=ROUND_HALF_UP),'f')
+        except (InvalidOperation,OverflowError):raise ValueError(label+': Csurr vượt miền số hỗ trợ.')
+    return result
+
+def bbkt_apply_surrogate(frame,samples):
+    if samples['Tên mẫu'].duplicated().any():raise ValueError('Bảng Csurr có mã mẫu trùng.')
+    values=samples.set_index('Tên mẫu')
+    if not set(frame['Tên mẫu']).issubset(values.index):raise ValueError('Bảng Csurr thiếu mã mẫu.')
+    result=frame.copy()
+    for field in ['Csurr trước','Csurr sau']:
+        result[field]=result['Tên mẫu'].map(values[field]).map(bbkt_text)
+    return result
 
 def bbkt_bulk_cis(frame,value):
     from decimal import Decimal,InvalidOperation
@@ -1284,9 +1349,9 @@ def render_bbkt():
         if apply_start:frame['Ngày PT']=normalized_start
         frame['TG giải hấp']=normalized_start
     idkey=hashlib.sha256((idkey+frame.to_json()).encode()).hexdigest()[:16]
-    primary=['Chọn','Tên mẫu','Tên chỉ tiêu','Kết quả','Ngày PT','TG giải hấp','K','Nhiệt độ','Pa','C đo']
+    primary=['Chọn','Tên mẫu','Tên chỉ tiêu','Kết quả','Ngày PT','TG giải hấp','K','Nhiệt độ','Pa','Csurr trước','Csurr sau','H%','C đo']
     with st.expander('Chỉnh dữ liệu / chọn dòng xuất'):
-        edited=st.data_editor(frame,hide_index=True,use_container_width=True,key='bbkt_edit_'+idkey,column_order=primary+[c for c in frame if c not in primary],column_config={'Chọn':st.column_config.CheckboxColumn(), 'Tên mẫu':st.column_config.TextColumn(width='medium'),'Tên chỉ tiêu':st.column_config.TextColumn(width='medium'),'Kết quả':st.column_config.TextColumn(width='medium')},disabled=[c for c in frame if 'nguồn' in c or c in ('Tên chỉ tiêu gốc','TG giải hấp','KH ống')])
+        edited=st.data_editor(frame,hide_index=True,use_container_width=True,key='bbkt_edit_'+idkey,column_order=primary+[c for c in frame if c not in primary],column_config={'Chọn':st.column_config.CheckboxColumn(), 'Tên mẫu':st.column_config.TextColumn(width='medium'),'Tên chỉ tiêu':st.column_config.TextColumn(width='medium'),'Kết quả':st.column_config.TextColumn(width='medium')},disabled=[c for c in frame if 'nguồn' in c or c in ('Tên chỉ tiêu gốc','TG giải hấp','KH ống','H%')])
     edited=bbkt_defaults(edited)
     with st.expander('Điền CIS cho tất cả mẫu',expanded=True):
         existing=list(dict.fromkeys(v for v in edited['CIS'].map(bbkt_text) if v))
@@ -1298,6 +1363,22 @@ def render_bbkt():
         try:edited=bbkt_bulk_cis(edited,cis_value)
         except ValueError as exc:st.error(str(exc));return
         st.success(f"Đã áp dụng CIS = {edited['CIS'].iloc[0]} cho {edited['Tên mẫu'].nunique()} mẫu.")
+
+    with st.expander('Csurr trước / sau và H% tự động',expanded=True):
+        st.caption('H% = Csurr sau / Csurr trước × 100; hiển thị 2 số lẻ. Nhập cùng đơn vị và cùng cơ sở dung dịch. Không tự hiệu chỉnh kết quả mẫu hoặc kết luận QC đạt từ H%.')
+        surr_mode=st.radio('Cách nhập Csurr',['Theo mã mẫu','Theo từng chỉ tiêu trong bảng chỉnh dữ liệu'],key='bbkt_surr_mode_'+source_id,horizontal=True)
+        if surr_mode=='Theo mã mẫu':
+            source_surr=edited[['Tên mẫu','Csurr trước','Csurr sau']].copy().fillna('')
+            conflicts=source_surr.groupby('Tên mẫu')[['Csurr trước','Csurr sau']].nunique().gt(1).any(axis=1)
+            if conflicts.any():
+                st.error('Một mẫu có nhiều cặp Csurr khác nhau. Chọn nhập theo từng chỉ tiêu hoặc thống nhất cặp Csurr trong bảng chỉnh dữ liệu.');return
+            sample_surr=source_surr.drop_duplicates('Tên mẫu').reset_index(drop=True)
+            surr_key=hashlib.sha256(sample_surr.to_json().encode()).hexdigest()[:16]
+            sample_surr=st.data_editor(sample_surr,hide_index=True,key='bbkt_surr_samples_'+surr_key,disabled=['Tên mẫu'],column_config={'Csurr trước':st.column_config.TextColumn(help='Nhập số, hỗ trợ dấu phẩy thập phân'),'Csurr sau':st.column_config.TextColumn(help='Nhập số đo thực tế; 0 vẫn là giá trị hợp lệ')})
+            edited=bbkt_apply_surrogate(edited,sample_surr)
+        try:edited=bbkt_recovery(edited)
+        except ValueError as exc:st.error(str(exc));return
+        st.dataframe(edited[['Tên mẫu','Tên chỉ tiêu','Csurr trước','Csurr sau','H%']],hide_index=True,use_container_width=True)
 
     st.markdown('**Biên bản theo từng mã mẫu**')
     st.caption('Mã mẫu ở dòng chỉ tiêu đầu tiên; các dòng trống mã bên dưới thuộc cùng mẫu. Mỗi chỉ tiêu và kết quả nằm trên cùng một hàng.')
@@ -1372,8 +1453,24 @@ def render_analysis_utilities(df_current):
                 basis_label=c2.selectbox('C đo đang biểu diễn gì?',['Nồng độ mẫu gốc (máy/phần mềm đã quy về mẫu)','Nồng độ dịch chiết/giải hấp'],key='an_basis')
                 basis='original' if basis_label.startswith('Nồng độ mẫu gốc') else 'extract'
                 normal=st.checkbox('Mẫu khí: V mẫu đã quy về điều kiện chuẩn theo SOP',key='an_normal',disabled=kind!='Khí') if kind=='Khí' else False
-                out_units=AN_LIQUID if kind=='Nước' else list(U_GROUPS['Nồng độ khí chuẩn' if normal else 'Nồng độ khí thực'])
-                src_units=AN_LIQUID if basis=='extract' or kind=='Nước' else out_units
+                gas_cfg={}
+                correction=False
+                if kind=='Khí':
+                    correction=st.checkbox('Quy đổi khí thực theo nhiệt độ và áp suất lấy mẫu',disabled=normal,key='an_gas_correction') if not normal else False
+                    st.caption('Chỉ dùng T/P cùng vị trí và điều kiện đo thể tích. Với khí thải đo ở đồng hồ/bộ lấy mẫu, không tự thay bằng nhiệt độ ngoài trời. Không quy đổi lần nữa nếu bơm/phần mềm đã chuẩn hóa thể tích.')
+                    if correction:
+                        g1,g2=st.columns(2)
+                        temperature=g1.number_input('Nhiệt độ tại điều kiện đo V (°C)',value=None,key='an_gas_t')
+                        pressure=g2.number_input('Áp suất tuyệt đối tại điều kiện đo V',min_value=0.0,value=None,key='an_gas_p')
+                        pressure_unit=g2.selectbox('Đơn vị áp suất tuyệt đối',['hPa','kPa','Pa','mbar','mmHg','atm'],key='an_gas_p_unit')
+                        rt=g1.number_input('Nhiệt độ quy chiếu theo SOP (°C)',value=None,key='an_gas_rt')
+                        rp=g2.number_input('Áp suất quy chiếu theo SOP',min_value=0.0,value=None,key='an_gas_rp')
+                        rpu=g2.selectbox('Đơn vị áp suất quy chiếu',['hPa','kPa','Pa','mbar','mmHg','atm'],key='an_gas_rpu')
+                        reference=st.text_input('SOP/mục quy định điều kiện quy chiếu',key='an_gas_reference')
+                        st.caption('Vref = V × P/Pref × (Tref+273,15)/(T+273,15). Ký hiệu Nm³ dưới đây gắn với Tref/Pref đã nhập, không mặc định 0 °C. Giữ nguyên cơ sở khô/ướt; chưa hiệu chỉnh hơi nước hoặc oxy. MDL/LOQ phải cùng điều kiện quy chiếu.')
+                        gas_cfg=dict(gas_correction=True,gas_temperature=temperature,gas_pressure=pressure,gas_pressure_unit=pressure_unit,gas_reference_temperature=rt,gas_reference_pressure=rp,gas_reference_pressure_unit=rpu,gas_reference=reference)
+                out_units=AN_LIQUID if kind=='Nước' else list(U_GROUPS['Nồng độ khí chuẩn' if normal or correction else 'Nồng độ khí thực'])
+                src_units=AN_LIQUID if basis=='extract' or kind=='Nước' else list(U_GROUPS['Nồng độ khí chuẩn' if normal else 'Nồng độ khí thực'])
                 src=c1.selectbox('Đơn vị C đo',src_units,key='an_src_'+kind+basis+str(normal))
                 output=c2.selectbox('Đơn vị kết quả',out_units,index=out_units.index('µg/L') if kind=='Nước' else 1,key='an_out_'+kind+str(normal))
                 st.info('Nếu C đo đã được phần mềm máy quy về mẫu gốc, không áp dụng lại tỷ lệ thể tích; D=1 nếu phần mềm cũng đã hiệu chỉnh pha loãng. Không tự suy thể tích theo mã mẫu.')
@@ -1432,6 +1529,7 @@ def render_analysis_utilities(df_current):
                 total_name=st.text_input('Tên chỉ tiêu tổng (nếu đã chọn Cộng Tổng)',key='an_total_name')
                 policy=sum_labels[st.selectbox('Quy ước tổng theo SOP',list(sum_labels),key='an_sum_policy')]
                 cfg=dict(kind=kind,basis=basis,source=src,output=output,normal_gas=normal,correct_recovery=correct,surr_added=surr_added,surr_measured=surr_measured,qc_enabled=qc_enabled,qc_min=qmin,qc_max=qmax,qc_profile=qc_profile,qc_surrogate=qc_surrogate,qc_source=qc_source,volume_unit=volume_unit,extract_unit=extract_unit)
+                cfg.update(gas_cfg)
                 fingerprint=hashlib.sha256((edited.to_json()+json.dumps(cfg,sort_keys=True)+total_name+policy+selected).encode()).hexdigest()
                 if st.button('Tính thử & kiểm tra',type='primary',key='an_preview_button'):
                     try:
