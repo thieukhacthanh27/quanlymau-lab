@@ -2082,47 +2082,90 @@ def render_elementa_v2():
 # ELEMENTAL ARCADE — ĐIỀU HƯỚNG HAI MINI GAME
 # ==========================================
 def render_elemental_arcade():
-    """Game hub: lazily renders one standalone browser game at a time."""
+    """Trang chọn 2 mini game: luôn thấy thanh chuyển game ở nội dung chính."""
     import streamlit.components.v1 as components
 
-    # Apply full viewport fitting only to the Arcade view.
+    game_options = {
+        "battle": ("⚔️ ELEMENTAL BATTLE", "elemental_battle.html", "Pixel Action · Phản ứng nguyên tố"),
+        "defender": ("🚀 GALAXY DEFENDER", "galaxy_defender.html", "Space Shooter · 8 loại vũ khí"),
+    }
+
+    # Lưu lựa chọn trong session để không bị mất khi Streamlit rerun.
+    if st.session_state.get("galaxy_arcade_selected") not in game_options:
+        st.session_state["galaxy_arcade_selected"] = "battle"
+
+    # Chỉ tác động tới trang ARCADE. Không ép iframe tràn toàn bộ
+    # chiều cao vì bên trên cần chừa chỗ cho thanh đổi mini game.
     st.markdown("""
-    <style id="galaxy-chem-arcade-fit">
-    header[data-testid="stHeader"], header[data-testid="stAppHeader"],
-    [data-testid="stAppHeader"] {display:none!important;height:0!important;min-height:0!important}
-    [data-testid="stMainBlockContainer"],.stMainBlockContainer,.block-container {
-        padding:0!important;margin:0!important;max-width:100%!important;width:100%!important
-    }
-    [data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"] {gap:0!important}
-    [data-testid="stMainBlockContainer"] iframe[srcdoc],
-    iframe[data-testid="stCustomComponentV1"],
-    [data-testid="stCustomComponentV1"] iframe {
-        width:100%!important;height:calc(100dvh - 2px)!important;max-height:calc(100dvh - 2px)!important;
-        display:block!important;border:0!important;border-radius:0!important
-    }
-    [data-testid="stMainBlockContainer"] [data-testid="stCustomComponentV1"]:not(iframe) {
-        height:calc(100dvh - 2px)!important;max-height:calc(100dvh - 2px)!important
-    }
+    <style id="galaxy-chem-arcade-fix">
+      header[data-testid="stHeader"],header[data-testid="stAppHeader"],
+      [data-testid="stAppHeader"] {display:none!important;height:0!important;min-height:0!important}
+      [data-testid="stMainBlockContainer"],.stMainBlockContainer,.block-container {
+        padding:6px 8px 5px!important;max-width:100%!important;width:100%!important;
+      }
+      [data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"] {gap:5px!important}
+      [data-testid="stMainBlockContainer"] iframe[srcdoc],
+      [data-testid="stMainBlockContainer"] [data-testid="stCustomComponentV1"] iframe {
+        width:100%!important;height:calc(100dvh - 150px)!important;
+        min-height:510px!important;max-height:none!important;
+        display:block!important;border:1px solid #22516c!important;border-radius:13px!important;
+      }
+      [data-testid="stMainBlockContainer"] [data-testid="stCustomComponentV1"]:not(iframe) {
+        height:calc(100dvh - 150px)!important;min-height:510px!important;
+        max-height:none!important;
+      }
+      .gc-arcade-header {background:linear-gradient(125deg,#0a1b2d,#132a43);
+        padding:10px 16px;border:1px solid #235575;border-radius:13px;color:#d6f4ff;
+        display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+      }
+      .gc-arcade-header strong {color:#77e5ff;letter-spacing:1px;font-size:19px}
+      .gc-arcade-header small {color:#99bfd0;font-size:11px}
+      [data-testid="stMainBlockContainer"] .stButton > button {
+        border:1px solid #2b6483;border-radius:12px;min-height:48px;
+        background:#122b42;color:#eafaff;font-weight:800;
+      }
+      [data-testid="stMainBlockContainer"] .stButton > button[kind="primary"] {
+        background:linear-gradient(100deg,#096e8a,#155f86);color:white;
+        border:1px solid #63d5ff;box-shadow:0 0 16px #20a6d344;
+      }
     </style>
+    <div class="gc-arcade-header">
+      <strong>🎮 GALAXY CHEM · ELEMENTAL ARCADE</strong>
+      <small>CHỌN 1 TRONG 2 MINI GAME · BẤM NÚT ĐỂ CHUYỂN TRÒ CHƠI</small>
+    </div>
     """, unsafe_allow_html=True)
 
-    games = {
-        "⚔️ Elemental Battle": "elemental_battle.html",
-        "🚀 Galaxy Defender": "galaxy_defender.html",
-    }
-    # Sidebar game selector does not render the other game, so its game loop is stopped.
-    selected = st.sidebar.radio("🎮 CHỌN MINI GAME", list(games),
-                                key="galaxy_arcade_game", label_visibility="visible")
-    game_file = Path(__file__).resolve().parent / games[selected]
+    # Nút ở vùng chính, không phụ thuộc sidebar hay nội dung game HTML.
+    left, right = st.columns(2, gap="small")
+    current = st.session_state["galaxy_arcade_selected"]
+    with left:
+        if st.button("⚔️ ELEMENTAL BATTLE", key="arcade_choose_battle",
+                     type="primary" if current == "battle" else "secondary",
+                     use_container_width=True):
+            st.session_state["galaxy_arcade_selected"] = "battle"
+    with right:
+        if st.button("🚀 GALAXY DEFENDER", key="arcade_choose_defender",
+                     type="primary" if current == "defender" else "secondary",
+                     use_container_width=True):
+            st.session_state["galaxy_arcade_selected"] = "defender"
+
+    current = st.session_state["galaxy_arcade_selected"]
+    title, filename, subtitle = game_options[current]
+    game_file = Path(__file__).resolve().parent / filename
+
     if not game_file.is_file():
-        st.error(f"Thiếu {game_file.name}: hãy tải lên cùng thư mục với lab.py trên GitHub.")
+        st.error(f"Chưa tìm thấy {filename} trong repository. Hãy tải file lên ngang hàng với lab.py.")
+        st.info("Cần có cả elemental_battle.html và galaxy_defender.html trong nhánh đang triển khai trên Streamlit.")
         return
+
     try:
         game_html = game_file.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as exc:
-        st.error(f"Không đọc được mini game: {exc}")
+        st.error(f"Không đọc được {filename}: {exc}")
         return
-    components.html(game_html, height=900, scrolling=True)
+
+    # Mỗi lần chuyển game chỉ một iframe được tạo. Game cũ dừng hẳn.
+    components.html(game_html, height=850, scrolling=False)
 
 
 # ==========================================
