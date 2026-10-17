@@ -3,162 +3,143 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Galaxy Chem - Elemental Battle V7 • Hades Isometric Edition</title>
+<title>Galaxy Chem - Elemental Battle V7.1 • Hades 3D Edition</title>
 <style>
 :root{
-  --bg:#06070c; --panel:#10121c; --panel2:#181b2a; --line:#3b3146; --accent:#ff6b4a; --accent2:#ffd166; --text:#f4f1ea; --muted:#9e95a8;
-  --fire:#ff5e1f; --poison:#59f57d; --shield:#5ce1ff; --iron:#e0b77d; --energy:#79a8ff;
+  --bg:#06070c; --panel:#120e1c; --line:#463559; --accent:#ff6b4a; --gold:#ffd166; --text:#f5efe6; --muted:#a89bb8;
 }
-*{box-sizing:border-box}
-html,body{margin:0;font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;background:#06070c;color:var(--text);overflow:hidden}
-button{font:inherit;color:var(--text)}
-button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
-#app{height:100dvh;display:grid;grid-template-rows:62px 1fr 30px;padding:0;gap:0}
-.header,.footer,.panel,.modal,.choice{border:2px solid var(--line);background:linear-gradient(180deg,rgba(24,20,34,.96),rgba(10,9,16,.96));box-shadow:0 0 0 2px rgba(5,4,10,.95) inset,0 8px 24px rgba(0,0,0,.6)}
-.header{display:flex;align-items:center;justify-content:space-between;border:0;border-bottom:2px solid #2e2538;border-radius:0;background:linear-gradient(90deg,#0f0c18,#191326,#0f0c18);padding:8px 20px;z-index:2}
-.brand{display:flex;align-items:center;gap:12px}
-.logo{width:38px;height:38px;border-radius:8px;border:2px solid #e0a96d;display:grid;place-items:center;color:#ffd166;font-weight:900;font-size:21px;background:linear-gradient(135deg,#3d1a24,#160d18);box-shadow:0 0 14px rgba(255,107,74,.35)}
-.brand h1{margin:0;font-size:15px;letter-spacing:2px;font-weight:900;color:#f7ede2}
-.brand h1 span{color:#ff7b54!important;text-shadow:0 0 10px rgba(255,123,84,.4)}
-.brand small{display:block;font-size:9px;letter-spacing:2.5px;margin-top:3px;color:#b89f8d;text-transform:uppercase}
-.topstats{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-.pill{font-size:11px;background:transparent;border:0;padding:5px 10px;border-left:1px solid #352b40;border-radius:0;color:#a89bb5;font-weight:700}
-.pill strong{color:#ffd166;margin-left:5px}
+*{box-sizing:border-box;user-select:none}
+html,body{margin:0;width:100%;height:100%;font-family:"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+button,select{font:inherit;color:var(--text)}
+#app{height:100dvh;display:grid;grid-template-rows:58px 1fr 28px}
 
-/* Quick Biome Bar on Header */
-.biome-switcher{display:flex;gap:5px;background:#09070f;padding:4px;border-radius:6px;border:1px solid #382c47;margin-right:8px}
-.b-tab{padding:5px 10px;border-radius:4px;border:1px solid transparent;background:transparent;color:#a99bb8;font-size:11px;font-weight:800;cursor:pointer;transition:.15s}
-.b-tab:hover{color:#fff;background:#1e172b}
-.b-tab.active{background:linear-gradient(135deg,#421e29,#26152b);color:#ffd166;border-color:#d48c56;box-shadow:0 0 12px rgba(255,138,76,.28)}
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:linear-gradient(90deg,#0d0a14,#1a1226,#0d0a14);border-bottom:2px solid #352847;z-index:5}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:36px;height:36px;border-radius:8px;border:2px solid var(--gold);background:linear-gradient(135deg,#4a192c,#170d21);display:grid;place-items:center;color:var(--gold);font-weight:900;font-size:20px;box-shadow:0 0 12px rgba(255,107,74,.4)}
+.brand h1{margin:0;font-size:15px;letter-spacing:1.5px;font-weight:900}
+.brand h1 span{color:#ff7b54;text-shadow:0 0 10px rgba(255,123,84,.45)}
+.brand small{display:block;font-size:9px;letter-spacing:2px;color:#bda897;text-transform:uppercase}
 
-.main{display:block;position:relative;overflow:hidden;background:#05060a;min-height:0}
-#gamePanel{position:absolute;inset:0;border:0;padding:0;border-radius:0;background:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
-#gameFrame{position:relative;width:100%;height:100%;border:0;border-radius:0;display:flex;align-items:center;justify-content:center;background:#07080f;overflow:hidden}
-#game{width:100%;height:100%;object-fit:contain;image-rendering:auto!important;background:#090b14;cursor:crosshair;display:block}
-.sidebar,.rightbar{display:none}
-.footer{border:0;border-top:2px solid #2b2236;border-radius:0;background:#0c0a14;font-size:10px;letter-spacing:.4px;padding:5px 24px;color:#9b8ea8;box-shadow:none;z-index:3;display:flex;justify-content:space-between;align-items:center}
+.topstats{display:flex;align-items:center;gap:6px}
+.biome-bar{display:flex;gap:4px;background:#08060e;padding:4px;border-radius:6px;border:1px solid #3d2e52;margin-right:6px}
+.b-tab{padding:5px 10px;border-radius:4px;border:1px solid transparent;background:transparent;color:#a89bb8;font-size:11px;font-weight:800;cursor:pointer;transition:.15s}
+.b-tab:hover{color:#fff;background:#1f1630}
+.b-tab.active{background:linear-gradient(135deg,#4d1d2b,#281533);color:var(--gold);border-color:#d98a4e;box-shadow:0 0 12px rgba(255,138,76,.3)}
+.pill{font-size:11px;padding:4px 10px;border-left:1px solid #352847;color:#a89bb8;font-weight:700}
+.pill strong{color:var(--gold);margin-left:4px}
 
-.overlayLabel{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:10px;background:#110d1ce6;border:1px solid #574166;border-radius:4px;color:#f5e9dc;padding:6px 16px;white-space:nowrap;letter-spacing:1.2px;z-index:3;pointer-events:none;font-weight:700;box-shadow:0 4px 16px #000a}
-.envBanner{position:absolute;top:44px;left:50%;transform:translateX(-50%);font-size:10px;background:rgba(20,14,30,0.92);border:1px solid #8a5a44;border-radius:99px;color:#ffd166;padding:4px 16px;white-space:nowrap;z-index:3;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.6);font-weight:700}
-.overlayRight{display:none}
+/* ARENA & HUD */
+.main{position:relative;width:100%;height:100%;overflow:hidden;background:#05060a}
+#game{width:100%;height:100%;display:block;object-fit:contain;cursor:crosshair;background:#080912}
+
+.overlayLabel{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:11px;background:rgba(16,12,26,.9);border:1.5px solid #5c4473;border-radius:6px;color:#f7ede2;padding:6px 16px;white-space:nowrap;font-weight:800;letter-spacing:1px;z-index:3;pointer-events:none;box-shadow:0 4px 16px #000a}
+.envBanner{position:absolute;top:44px;left:50%;transform:translateX(-50%);font-size:10.5px;background:rgba(24,15,36,.92);border:1px solid #a36644;border-radius:99px;color:var(--gold);padding:4px 16px;white-space:nowrap;z-index:3;pointer-events:none;font-weight:700;box-shadow:0 4px 14px #000a}
+.bossHUD{position:absolute;top:76px;left:50%;transform:translateX(-50%);width:320px;text-align:center;font-size:11px;font-weight:900;letter-spacing:2.5px;color:#ff9e7d;pointer-events:none;z-index:3}
+.bossHUD .bar{height:7px;margin-top:4px;background:#1a0d18;border:1px solid #753548;border-radius:4px;overflow:hidden}
+.bossHUD .bar span{background:linear-gradient(90deg,#c91e3a,#ff7b54);display:block;height:100%}
 
 .hud{position:absolute;z-index:3;pointer-events:none}
-.hud button,.hud .statcard{pointer-events:auto}
-.vitals{left:20px;top:16px;width:236px}
-.hud .statcard{background:linear-gradient(160deg,#161224f0,#0b0914f0);border:1.5px solid #4a3959;border-radius:8px;padding:12px;box-shadow:0 10px 32px #000a}
-.vitals .sectionLabel{font-size:9px;color:#c7b299;letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;font-weight:700}
-.vitals .bar{height:8px;background:#07050c;border:1px solid #2c2136;border-radius:3px;margin-bottom:7px;overflow:hidden;position:relative}
-.bar > span{display:block;height:100%;transition:width .12s}
-.barLabel{display:flex;justify-content:space-between;font-size:10px;color:#efe6dc;margin:2px 0 3px;font-weight:700}
+.hud button,.hud select,.hud .card{pointer-events:auto}
+.card{background:linear-gradient(160deg,rgba(22,17,36,.94),rgba(10,8,18,.94));border:1.5px solid #4c3961;border-radius:8px;padding:11px;box-shadow:0 10px 28px rgba(0,0,0,.65)}
+.secTitle{font-size:9px;color:var(--gold);letter-spacing:1.8px;text-transform:uppercase;font-weight:800;margin-bottom:6px}
+
+/* Left Vitals */
+.vitals{left:16px;top:14px;width:232px}
+.pilotRow{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:900;letter-spacing:1.5px;margin-bottom:4px}
+.pilotRow small{font-size:9px;color:var(--gold);background:#281936;padding:2px 6px;border-radius:4px;border:1px solid #5e4278}
+.barLabel{display:flex;justify-content:space-between;font-size:10px;color:#efe6dc;margin:3px 0 2px;font-weight:700}
+.bar{height:7px;background:#07050c;border:1px solid #2e223b;border-radius:3px;margin-bottom:6px;overflow:hidden}
+.bar > span{display:block;height:100%;transition:width .1s}
 .hp{background:linear-gradient(90deg,#c91e3a,#ff6b4a,#ffb36b)}
 .en{background:linear-gradient(90deg,#1c7ed6,#4dabf7,#a5d8ff)}
 .sh{background:linear-gradient(90deg,#7048e8,#b197fc)}
 .xp{background:linear-gradient(90deg,#d97706,#ffd166)}
-.pilotName{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:900;letter-spacing:2px;margin-bottom:5px;color:#fff}
-.pilotName small{font-size:9px;color:#ffd166;letter-spacing:1px}
 
-.thermalHUD{position:absolute;left:20px;top:232px;width:236px;pointer-events:none;color:#efe6dc;font-size:10px;z-index:3;background:linear-gradient(160deg,#161224e8,#0b0914e8);border:1.5px solid #4a3959;padding:10px 12px;border-radius:8px;box-shadow:0 8px 24px #0008}
-.thermalHUD b{float:right;letter-spacing:1px}
+/* Thermal Box */
+.thermalBox{left:16px;top:222px;width:232px;font-size:10px}
+.thermalBox b{float:right;letter-spacing:1px}
 .heatSpectrum{display:flex;height:5px;gap:3px;margin:7px 0 5px}
 .heatSpectrum i{flex:1;background:var(--c);opacity:.22;border-radius:2px}
-.heatSpectrum i.on{opacity:1;box-shadow:0 0 10px var(--c)}
-.thermalHUD small{font-size:9px;color:#b8a9c9;display:block;line-height:1.35}
+.heatSpectrum i.on{opacity:1;box-shadow:0 0 8px var(--c)}
+.thermalBox small{font-size:9.5px;color:#c2b2d4;display:block}
 
-.radar{right:20px;top:16px;width:190px}
-.radar #minimap{height:100px;border:1px solid #382b47;border-radius:4px;background:#08060e;display:block;width:100%}
-.radar .sectionLabel{font-size:9px;text-transform:uppercase;color:#ffd166;letter-spacing:1.5px;margin-bottom:6px;font-weight:700}
-.radar .statcard{padding:8px}
+/* Radar */
+.radar{right:16px;top:14px;width:192px}
+#minimap{width:100%;height:98px;background:#07050d;border:1px solid #3c2d4f;border-radius:4px;display:block}
 
-.dock{bottom:14px;left:50%;transform:translateX(-50%);width:548px}
-.dock #skills{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.skill{position:relative;color:#f5ece2;text-align:left;min-height:96px;padding:10px;background:linear-gradient(145deg,#211930f5,#0e0b18f5);border:1.5px solid #49385c;border-radius:8px;overflow:hidden;box-shadow:0 10px 24px #0009;cursor:pointer;transition:border-color .15s,transform .15s}
+/* Bottom Loadout */
+.loadout{left:16px;bottom:14px;width:232px}
+#queueBar{display:flex;gap:6px;align-items:center}
+.queueSlot{min-width:36px;padding:4px 8px;font-size:13px;border-radius:4px;background:#0f0b1a;border:1.5px dashed #61487a;color:#fff;text-align:center;font-weight:900}
+.bankTag{font-size:9px;color:var(--gold);font-weight:800;margin-left:auto}
+#reactionName{font-size:10px;min-height:26px;line-height:1.35;margin:6px 0;color:#ffae70;font-weight:800}
+#elements{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.elBtn{min-height:46px;border-radius:5px;padding:4px;background:#151024;border:1.5px solid #413154;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:.12s}
+.elBtn:hover{transform:translateY(-2px);background:#221938}
+.elBtn strong{font-size:16px}
+.elBtn small{font-size:9px;color:#cbbad9;font-weight:700}
+
+/* Center Skill Dock */
+.dock{bottom:14px;left:50%;transform:translateX(-50%);width:540px}
+#skills{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.skill{position:relative;color:#f5ece2;text-align:left;min-height:92px;padding:10px;background:linear-gradient(145deg,rgba(34,25,50,.96),rgba(14,11,24,.96));border:1.5px solid #4c3961;border-radius:8px;overflow:hidden;box-shadow:0 8px 22px #000a;cursor:pointer;transition:.15s}
 .skill:hover{transform:translateY(-3px)}
-.skill.active{outline:0;border-color:var(--skill);box-shadow:0 0 0 1.5px var(--skill),0 10px 28px #000b}
-.skill .key{position:absolute;font-size:10px;background:#090712;border:1px solid #634d7a;padding:2px 6px;border-radius:4px;top:8px;right:8px;color:#ffd166;font-weight:900}
-.skill h4{margin:6px 0 3px;font-size:10.5px;letter-spacing:.4px;font-weight:800}
-.skill p{display:none}
-.skill .cd{font-size:9px;color:#b5a6c4;margin-top:4px;font-weight:700}
-.skillIcon{height:30px;width:34px;display:block;color:var(--skill);filter:drop-shadow(0 0 6px var(--skill))}
+.skill.active{border-color:var(--skill);box-shadow:0 0 0 1.5px var(--skill),0 10px 26px #000c}
+.skill .key{position:absolute;font-size:10px;background:#090712;border:1px solid #634d7a;padding:2px 6px;border-radius:4px;top:8px;right:8px;color:var(--gold);font-weight:900}
+.skill h4{margin:6px 0 2px;font-size:10.5px;font-weight:800}
+.skill .cd{font-size:9px;color:#b8a8c7;font-weight:700}
+.skillIcon{height:28px;width:32px;display:block;color:var(--skill);filter:drop-shadow(0 0 6px var(--skill))}
 .cooldownTrack{position:absolute;bottom:0;left:0;height:3.5px;width:100%;background:var(--skill);transform-origin:left}
-.tierPips{position:absolute;right:8px;top:38px;display:flex;gap:3px}
+.tierPips{position:absolute;right:8px;top:36px;display:flex;gap:3px}
 .tierPips i{width:3.5px;height:7px;background:#352942}
 .tierPips i.on{background:var(--skill);box-shadow:0 0 6px var(--skill)}
 
-.loadout{bottom:16px;left:20px;width:236px}
-.loadout .sectionLabel{font-size:9px;text-transform:uppercase;color:#ffd166;letter-spacing:1.5px;margin-bottom:6px;font-weight:800}
-.loadout #queueBar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.queueSlot{min-width:36px;padding:4px 8px;font-size:13px;border-radius:4px;background:#100c1c;border:1.5px dashed #59436e;color:#fff;text-align:center;font-weight:900}
-.pixelTag{display:inline-block;font-size:8.5px;padding:4px;border:0;background:none;color:#ffd166;letter-spacing:1px;text-transform:uppercase;font-weight:800}
-.loadout #reactionName{font-size:10px;min-height:26px;line-height:1.35;margin:6px 0;color:#ffae70;font-weight:800}
-.loadout #elements{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
-.elBtn{min-height:48px;border-radius:5px;padding:4px;background:#140f21e8;border:1.5px solid #3c2e4d;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:.12s}
-.elBtn:hover{transform:translateY(-2px);background:#1f1733}
-.elBtn strong{font-size:17px}
-.elBtn small{font-size:9px;color:#c9b8d9;font-weight:700}
-
-.quick{right:20px;bottom:16px;display:flex;gap:6px}
-.btn{padding:9px 13px;border-radius:6px;background:linear-gradient(180deg,#261d38,#140f21);border:1.5px solid #56426e;color:#f7ede2;cursor:pointer;font-size:11px;font-weight:800}
-.btn:hover{filter:brightness(1.14)}
+/* Quick Actions & Settings */
+.quick{right:16px;bottom:14px;display:flex;gap:6px}
+.btn{padding:8px 12px;border-radius:6px;background:linear-gradient(180deg,#281e3b,#140f21);border:1.5px solid #5a4473;color:#f7ede2;cursor:pointer;font-size:11px;font-weight:800}
+.btn:hover{filter:brightness(1.15)}
 .btn.accent{background:linear-gradient(180deg,#8a2be2,#4a157a);border-color:#b779ff}
-.btn.warn{background:linear-gradient(180deg,#9c4221,#5c200e);border-color:#ed8936}
 
-#biomes{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.bio{padding:8px;border-radius:6px;background:#120d1d;border:1px solid #3d2f4f;cursor:pointer;color:#f2e8dc;text-align:left;font-size:11px;font-weight:700}
-.bio.active{outline:2px solid #ffd166;background:#261a38}
-#dropList{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.drop{padding:6px;border-radius:6px;background:#100c1a;border:1px solid #382a4a;text-align:center;font-size:11px}
+#settingsPanel{position:absolute;right:16px;top:138px;z-index:6;width:285px;max-height:calc(100% - 195px);overflow:auto;display:none}
+#settingsPanel.open{display:block}
+#dropList{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px}
+.drop{padding:5px;border-radius:5px;background:#100c1a;border:1px solid #382a4a;text-align:center;font-size:10.5px}
 
-.modalWrap{position:fixed;inset:0;background:#040308cc;backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
+/* Lab Toolbar */
+#labTools{position:absolute;top:76px;left:50%;transform:translateX(-50%);z-index:4;background:rgba(22,16,38,.95);border:1.5px solid #735391;border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;box-shadow:0 8px 24px #000b}
+#labTools[hidden]{display:none}
+#labTools button,#labTools select{background:#241a38;border:1px solid #5e4778;border-radius:5px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer}
+#labTools button.active{border-color:var(--gold);color:var(--gold);background:#42233d}
+
+/* Footer */
+.footer{display:flex;justify-content:space-between;align-items:center;padding:0 20px;background:#0b0912;border-top:2px solid #2b2138;font-size:10px;color:#9b8ea8;z-index:5}
+
+/* Modals */
+.modalWrap{position:fixed;inset:0;background:rgba(4,3,8,.82);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
 .modalWrap.show{display:flex}
-.modal{width:min(100%,1020px);border:2px solid #6b4c3b;background:linear-gradient(145deg,#1d152b,#0b0813);box-shadow:0 30px 100px #000d;border-radius:14px;padding:28px;max-height:90dvh;overflow:auto}
-.modal h2{margin:0 0 10px;font-size:26px;letter-spacing:2px;color:#ffd166}
-.modal p{margin:0 0 14px;font-size:13px;color:#c2b4cf;line-height:1.65}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
-.choice{background:linear-gradient(160deg,#1c152b,#100c1a);border:1.5px solid #4d3963;border-radius:10px;color:#f5ece2;box-shadow:none;padding:18px;cursor:pointer;text-align:left;transition:.15s}
-.choice:hover{outline:2px solid #ffd166;background:#261c38;transform:translateY(-2px)}
-.choice h4{margin:0 0 6px;font-size:17px;color:#ffd166}
+.modal{width:min(100%,980px);border:2px solid #73503d;background:linear-gradient(145deg,#1d152b,#0b0813);box-shadow:0 25px 90px #000e;border-radius:14px;padding:26px;max-height:90dvh;overflow:auto}
+.modal h2{margin:0 0 8px;font-size:25px;letter-spacing:1.5px;color:var(--gold)}
+.modal p{margin:0 0 14px;font-size:13px;color:#c7b9d6;line-height:1.6}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.choice{background:linear-gradient(160deg,#1c152b,#100c1a);border:1.5px solid #4d3963;border-radius:10px;padding:16px;cursor:pointer;text-align:left;transition:.15s}
+.choice:hover{outline:2px solid var(--gold);background:#261c38;transform:translateY(-2px)}
+.choice h4{margin:0 0 6px;font-size:16px;color:var(--gold)}
 .choice p{font-size:12px;line-height:1.45;margin:0;color:#c5b6d4}
-.choice small{display:block;margin-top:10px;color:#ff8a5b;font-weight:700}
-.eyebrow{font-size:10px;letter-spacing:4px;color:#ff8a5b;margin-bottom:10px;font-weight:800}
-.heroTitle{font-size:clamp(28px,4.5vw,52px)!important;line-height:1.05;font-weight:900;letter-spacing:-1px!important;margin-bottom:12px!important;color:#fff}
-.heroTitle span{color:#ff6b4a;text-shadow:0 0 24px rgba(255,107,74,.45)}
-
+.choice small{display:block;margin-top:10px;color:#ff8a5b;font-weight:800}
+.heroTitle{font-size:clamp(26px,4vw,46px)!important;line-height:1.05;font-weight:900;color:#fff;margin-bottom:12px!important}
+.heroTitle span{color:#ff6b4a;text-shadow:0 0 22px rgba(255,107,74,.45)}
 .bankTabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
 .bankCard{padding:12px;border-radius:10px;background:#120d1d;border:1.5px solid #433257;cursor:pointer;text-align:left}
-.bankCard.active{outline:2px solid #ffd166}
-.bankCard .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.chip{padding:4px 7px;border-radius:6px;background:#1c142b;border:1px solid #523d6b;font-size:11px;font-weight:700}
-
-#settingsPanel{position:absolute;right:20px;top:132px;z-index:6;width:295px;max-height:calc(100% - 195px);overflow:auto;background:#130e21f8;border:1.5px solid #5c4575;padding:14px;border-radius:8px;display:none}
-#settingsPanel.open{display:block}
-#settingsPanel .sectionLabel{margin-top:10px;font-size:10px;text-transform:uppercase;color:#ffd166;letter-spacing:1.5px;margin-bottom:6px;font-weight:800}
-#settingsPanel .btn{font-size:11px;padding:8px;margin-right:6px;margin-top:6px}
-#settingsPanel .queueHint{line-height:1.65;font-size:11px;color:#c2b2d1}
-#settingsPanel select{background:#1f1733;color:#f5ece2;border:1px solid #5a4573;padding:6px;width:100%;margin:4px 0 8px;border-radius:4px}
-
-#labTools{position:absolute;top:78px;left:50%;transform:translateX(-50%);z-index:4;background:#161026f2;border:1.5px solid #6b4e85;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:6px;max-width:calc(100% - 440px);flex-wrap:wrap;justify-content:center;box-shadow:0 8px 28px #000b}
-#labTools[hidden]{display:none}
-#labTools button,#labTools select{color:#f5ece2;background:#241a38;border:1px solid #5e4778;border-radius:5px;padding:5px 10px;font:700 11px Segoe UI;cursor:pointer}
-#labTools button.active{border-color:#ffd166;color:#ffd166;background:#3d243b}
-#labTools span{font-size:9px;color:#ffd166;letter-spacing:1px;font-weight:800}
-.evolutionTag{display:inline-block;font-size:9px;margin-bottom:6px;color:#ffd166;letter-spacing:1px;font-weight:800}
-
-.toast{position:fixed;left:50%;bottom:125px;transform:translateX(-50%) translateY(20px);padding:9px 16px;border-radius:6px;background:#160f24f8;border:1.5px solid #d48c56;color:#ffd166;font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:.25s;z-index:30;box-shadow:0 8px 24px #000b}
+.bankCard.active{outline:2px solid var(--gold)}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.chip{padding:3px 7px;border-radius:5px;background:#1c142b;border:1px solid #523d6b;font-size:11px;font-weight:700}
+.toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%) translateY(20px);padding:8px 16px;border-radius:6px;background:#160f24f8;border:1.5px solid #d48c56;color:var(--gold);font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:.25s;z-index:30;box-shadow:0 8px 24px #000b}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.bossHUD{position:absolute;top:78px;left:50%;transform:translateX(-50%);width:320px;text-align:center;font-size:10.5px;font-weight:900;letter-spacing:3px;color:#ff9e7d;pointer-events:none;z-index:3}
-.bossHUD .bar{height:6px;margin-top:5px;background:#1a0d18;border:1px solid #6e3546}
-.bossHUD .bar span{background:linear-gradient(90deg,#c91e3a,#ff7b54);display:block;height:100%}
 
-@media(max-width:1100px){
-  .dock{width:440px;bottom:10px}
-  .loadout{width:196px;left:12px;bottom:12px}
-  .quick{right:12px;bottom:12px}
-  .vitals{left:12px;top:14px;width:198px}
-  .thermalHUD{left:12px;top:224px;width:198px}
-  .radar{right:12px;width:154px;top:14px}
-}
-@media(max-width:820px){
-  .biome-switcher{display:none}
+@media(max-width:950px){
+  .biome-bar{display:none}
+  .dock{width:420px}
   .grid3{grid-template-columns:1fr}
   .bankTabs{grid-template-columns:repeat(2,1fr)}
 }
@@ -166,16 +147,17 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
 </head>
 <body>
 <div id="app">
+  <!-- HEADER -->
   <div class="header">
     <div class="brand">
       <div class="logo">G</div>
       <div>
         <h1>GALAXY CHEM <span>HADES 3D ARENA</span></h1>
-        <small>Fixed-Angle 3D • Heavy Ink & Bloom • V7</small>
+        <small>Fixed-Angle 3D • Heavy Ink & Cataclysm • V7.1</small>
       </div>
     </div>
     <div class="topstats">
-      <div class="biome-switcher" id="headerBiomes" title="Đổi nhanh địa hình 3D góc cố định">
+      <div class="biome-bar">
         <button class="b-tab active" data-biome="city">🌆 Thành phố (Tòa nhà chắn đường)</button>
         <button class="b-tab" data-biome="desert">☀ Sa mạc (+50% Giáp)</button>
         <button class="b-tab" data-biome="coast">🌊 Biển (-50% Lửa / +Điện,Băng)</button>
@@ -187,99 +169,151 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
     </div>
   </div>
 
+  <!-- MAIN ARENA -->
   <div class="main">
-    <div class="panel sidebar">
-      <div class="statcard">
-        <div class="actions">
-          <button class="btn accent" id="startTraining">Màn 1</button>
-          <button class="btn warn" id="startEndless">Màn 2</button>
-        </div>
+    <canvas id="game" width="960" height="540" tabindex="0"></canvas>
+    <div class="overlayLabel" id="missionLabel">Huấn luyện • Hạ 8 quái và lên cấp 1 lần</div>
+    <div class="envBanner" id="envPassiveBanner">🌆 Thành Phố: Các tòa nhà 3D là VẬT CẢN CỨNG chặn đường đi & đạn bắn • Chỉ số cân bằng</div>
+    <div class="bossHUD" id="bossHUD"></div>
+
+    <!-- Lab Mode Toolbar -->
+    <div id="labTools" hidden>
+      <span style="font-size:10px;color:#ffd166;font-weight:800">BẬC CHIÊU:</span>
+      <button data-tier="1">I</button>
+      <button data-tier="2">II</button>
+      <button data-tier="3">III</button>
+      <button data-tier="4" class="active">IV</button>
+      <select id="labPreset">
+        <option value="cataclysm">💥 SIÊU CHIÊU F • Thiên Thạch Hủy Diệt (F + O + Na)</option>
+        <option value="flame">🔥 Đại Đao Lửa Hades (Q + O)</option>
+        <option value="electric">⚡ Pháo Điện Từ Zeus (E + Cu)</option>
+        <option value="shield">🛡 Khiên Thánh Aegis 3D (R + C)</option>
+        <option value="wall">🧱 Pháo Đài Đá 3D (R + Si)</option>
+      </select>
+      <button id="labCast" class="btn accent" style="padding:5px 10px">Thi triển ngay</button>
+    </div>
+
+    <!-- Left Vitals HUD -->
+    <div class="hud vitals">
+      <div class="card">
+        <div class="pilotRow">NOVA <small id="envArmorBadge">VẬT CẢN TÒA NHÀ</small></div>
+        <div class="secTitle" id="pilotStatus">LV 1 / LƯỚT SẴN SÀNG</div>
+        <div class="barLabel"><span>HP</span><span id="hpText">180 / 180</span></div>
+        <div class="bar"><span class="hp" id="hpBar" style="width:100%"></span></div>
+        <div class="barLabel"><span>Năng lượng</span><span id="enText">100 / 100</span></div>
+        <div class="bar"><span class="en" id="enBar" style="width:100%"></span></div>
+        <div class="barLabel"><span>Khiên</span><span id="shText">0 / 100</span></div>
+        <div class="bar"><span class="sh" id="shBar" style="width:0%"></span></div>
+        <div class="barLabel"><span>EXP</span><span id="xpText">0 / 40</span></div>
+        <div class="bar"><span class="xp" id="xpBar" style="width:0%"></span></div>
       </div>
-      <div class="statcard">
-        <div id="biomes">
-          <button class="bio active" data-biome="city">🌆 Thành phố (Vật Cản Tòa Nhà)</button>
-          <button class="bio" data-biome="desert">☀ Sa mạc (Tăng Giáp)</button>
-          <button class="bio" data-biome="coast">🌊 Biển (Giảm Lửa / Tăng Điện)</button>
-          <button class="bio" data-biome="forest">🌲 Rừng (Cháy Lan & Bãi Lửa)</button>
+    </div>
+
+    <!-- Left Thermal HUD -->
+    <div class="hud thermalBox">
+      <div class="card">
+        <span>NHIỆT SẮC & ĐỊA HÌNH</span><b id="heatName">I · HỎA NGỤC</b>
+        <div class="heatSpectrum" id="heatSpec">
+          <i style="--c:#ff3b2f" class="on"></i>
+          <i style="--c:#ff8c24"></i>
+          <i style="--c:#3be8ff"></i>
+          <i style="--c:#6c5ce7"></i>
         </div>
+        <small id="heatDesc">Tòa nhà chắn đường / Cân bằng</small>
       </div>
-      <div class="statcard">
+    </div>
+
+    <!-- Right Radar HUD -->
+    <div class="hud radar">
+      <div class="card" style="padding:8px">
+        <div class="secTitle">RADAR 3D / <span id="threatCount">0</span> MỤC TIÊU</div>
+        <canvas id="minimap" width="220" height="110"></canvas>
+      </div>
+    </div>
+
+    <!-- Bottom Left Loadout HUD -->
+    <div class="hud loadout">
+      <div class="card">
+        <div class="secTitle">BUỒNG NẠP NGUYÊN TỐ (TAB)</div>
         <div id="queueBar">
           <div class="queueSlot" id="q1">—</div>
           <div class="queueSlot" id="q2">—</div>
-          <span class="pixelTag" id="bankTag">Bank I</span>
+          <span class="bankTag" id="bankTag">Bank I</span>
         </div>
-        <div id="reactionName">Chưa nạp nguyên tố</div>
-      </div>
-      <div class="statcard"><div id="elements"></div></div>
-      <div class="statcard"><canvas id="minimap" width="240" height="130"></canvas></div>
-    </div>
-
-    <div class="panel" id="gamePanel">
-      <div id="gameFrame">
-        <canvas id="game" width="960" height="540" tabindex="0"></canvas>
-        <div class="overlayLabel" id="missionLabel">Huấn luyện • Hạ 8 quái và lên cấp 1 lần</div>
-        <div class="envBanner" id="envPassiveBanner">🌆 Thành Phố: Các tòa nhà 3D là vật cản cứng chặn đường di chuyển & đạn bắn • Chỉ số cân bằng</div>
+        <div id="reactionName">Phím 1–4 nạp • Phím F Siêu Chiêu Cuối</div>
+        <div id="elements"></div>
       </div>
     </div>
 
-    <div class="panel rightbar">
-      <div class="statcard">
-        <div>
-          <h3 id="playerInfo">Lv.1</h3>
-          <div class="pixelTag" id="bestScoreTag">Best 0</div>
-          <span id="biomeName" style="display:none">Thành phố</span>
-        </div>
+    <!-- Bottom Center Skills Dock -->
+    <div class="hud dock">
+      <div id="skills"></div>
+    </div>
+
+    <!-- Bottom Right Quick Buttons -->
+    <div class="hud quick">
+      <button class="btn" id="configBtn">☷ Địa hình & Kho</button>
+      <button class="btn" id="pauseBtn">Tạm dừng</button>
+    </div>
+
+    <!-- Settings / Biome Popup -->
+    <div class="card" id="settingsPanel">
+      <div class="secTitle">ĐỔI ĐỊA HÌNH 3D</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px">
+        <button class="b-tab active" data-biome="city">🌆 Thành phố</button>
+        <button class="b-tab" data-biome="desert">☀ Sa mạc</button>
+        <button class="b-tab" data-biome="coast">🌊 Biển</button>
+        <button class="b-tab" data-biome="forest">🌲 Rừng</button>
       </div>
-      <div class="statcard">
-        <div class="barLabel"><span>HP</span><span id="hpText">180 / 180</span></div><div class="bar"><span class="hp" id="hpBar" style="width:100%"></span></div>
-        <div class="barLabel"><span>Năng lượng</span><span id="enText">100 / 100</span></div><div class="bar"><span class="en" id="enBar" style="width:100%"></span></div>
-        <div class="barLabel"><span>Khiên</span><span id="shText">0 / 100</span></div><div class="bar"><span class="sh" id="shBar" style="width:0%"></span></div>
-        <div class="barLabel"><span>EXP</span><span id="xpText">0 / 40</span></div><div class="bar"><span class="xp" id="xpBar" style="width:0%"></span></div>
+      <div class="secTitle">CHẤT LƯỢNG ĐỒ HỌA</div>
+      <select id="qualitySelect" style="width:100%;padding:5px;background:#1c142b;border:1px solid #523d6b;border-radius:4px;margin-bottom:8px">
+        <option value="high">Hades 3D Cực Cao (Bloom & Ink)</option>
+        <option value="low">Tiết kiệm hiệu năng</option>
+      </select>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn" id="audioBtn">Âm thanh: tắt</button>
+        <button class="btn" id="resetBtn">Chơi lại</button>
       </div>
-      <div class="statcard"><div id="skills"></div></div>
-      <div class="statcard"><div id="dropList"></div></div>
-      <div class="statcard">
-        <div class="actions">
-          <button class="btn" id="pauseBtn">Tạm dừng</button>
-          <button class="btn" id="shotBtn">Chụp PNG</button>
-          <button class="btn" id="resetBtn">Chơi lại</button>
-        </div>
-      </div>
+      <div class="secTitle">KHO NGUYÊN TỐ (KỶ LỤC: <span id="bestScoreTag">0</span>)</div>
+      <div id="dropList"></div>
     </div>
   </div>
 
+  <!-- FOOTER -->
   <div class="footer">
-    <div>WASD · Di chuyển &nbsp;|&nbsp; SHIFT · Lướt Bóng Ma &nbsp;|&nbsp; CHUỘT TRÁI/PHẢI · Chém / Chiêu thức &nbsp;|&nbsp; PHÍM F · Siêu Nổ Thiên Thạch (Cataclysm)</div>
+    <div>WASD · Di chuyển &nbsp;|&nbsp; SHIFT · Lướt Bóng Ma &nbsp;|&nbsp; CHUỘT TRÁI/PHẢI · Chém / Kỹ năng &nbsp;|&nbsp; PHÍM F · Siêu Nổ Thiên Thạch (Cataclysm)</div>
     <div>TAB · Đổi Bảng Nguyên Tố (I–IV) &nbsp;|&nbsp; 1–4 · Nạp Nguyên Tố &nbsp;|&nbsp; P / ESC · Tạm dừng</div>
   </div>
 </div>
 
+<!-- START MODAL -->
 <div class="modalWrap show" id="startModal">
   <div class="modal">
-    <div class="eyebrow">GALAXY CHEM / HADES-STYLE ISOMETRIC 3D</div>
-    <h2 class="heroTitle">ELEMENTAL<br><span>CATACLYSM 3D.</span></h2>
-    <p>Đấu trường 3D góc nhìn cố định (Isometric Painterly 3D) phong cách <strong>Hades</strong> với viền mực đen sắc nét, hiệu ứng ánh sáng rực rỡ và kỹ năng hầm hố:<br>
-    • <strong>💥 Chiêu F (Core Cataclysm):</strong> Triệu hồi Trận Pháp Cổ Ngữ và giáng <strong>Cột Trụ Năng Lượng Khổng Lồ</strong> từ bầu trời, làm rạn nứt mặt đất, văng mảnh vỡ 3D và tạo sóng xung kích đa tầng.<br>
-    • <strong>🌆 Thành phố (Vật cản tòa nhà):</strong> Các tòa nhà cao tầng 3D đóng vai trò là <strong>vật cản vật lý thực sự</strong> — chặn đường đi của nhân vật, quái vật và che chắn đạn (Line-of-Sight), giữ chỉ số cân bằng.<br>
-    • <strong>🌊 Biển / ☀ Sa mạc / 🌲 Rừng:</strong> Nước biển giảm 50% Lửa nhưng khuếch đại Điện/Băng/Na; Sa mạc tăng 50% Giáp; Rừng kích hoạt Cháy Lan & Bãi Lửa.</p>
+    <div class="secTitle">GALAXY CHEM / HADES-STYLE ISOMETRIC 3D</div>
+    <h2 class="heroTitle">ELEMENTAL <span>CATACLYSM 3D.</span></h2>
+    <p>Đấu trường 3D góc nhìn cố định phong cách <strong>Hades</strong> với viền mực đen dày, hiệu ứng ánh sáng rực rỡ và tương tác vật lý:<br>
+    • <strong>💥 Chiêu F (Core Cataclysm):</strong> Triệu hồi Trận Pháp Cổ Ngữ và giáng <strong>Cột Trụ Thiên Thạch Khổng Lồ</strong> từ bầu trời, làm nứt toác mặt đất, văng đá 3D và tạo sóng xung kích đa tầng.<br>
+    • <strong>🌆 Thành phố (Tòa nhà chắn đường):</strong> Các tòa nhà 3D là <strong>vật cản cứng</strong> — chặn đường đi của cả nhân vật, quái vật lẫn đạn bắn, giữ chỉ số cân bằng.<br>
+    • <strong>🌊 Biển / ☀ Sa mạc / 🌲 Rừng:</strong> Mặt biển giảm 50% Lửa nhưng tăng 45% Điện/Băng/Na; Sa mạc tăng 50% Giáp; Rừng kích hoạt Cháy Lan & Bãi Lửa.</p>
     <div class="grid3">
       <div class="choice" data-start="training"><h4>⚔ Màn 1: Đấu Trường 3D</h4><p>Trải nghiệm đồ họa 3D phong cách Hades, tận dụng các tòa nhà Thành phố để che chắn và tung chiêu cuối F hủy diệt.</p><small>Hạ 8 quái & lên cấp 1 lần</small></div>
       <div class="choice" data-start="endless"><h4>🔥 Màn 2: Vực Thẳm Vô Cực</h4><p>Quái vật đông và hung hãn hơn qua từng đợt. Phối hợp địa hình và nâng cấp Bậc IV để đối đầu Boss Titan.</p><small>Chế độ sinh tồn đỉnh cao</small></div>
-      <div class="choice" id="howTo"><h4>◈ Phòng Thử Chiêu Hầm Hố</h4><p>Bất tử năng lượng, mở sẵn chọn Bậc I–IV để bạn ngắm nhìn chiêu F giáng thiên thạch, Q chém lưỡi lửa và E pháo điện.</p><small>Thử ngay chiêu F Bậc IV!</small></div>
+      <div class="choice" id="howTo"><h4>◈ Phòng Thử Chiêu Hầm Hố</h4><p>Bất tử năng lượng, mở sẵn Bậc IV để bạn thử ngay Siêu Chiêu Cuối F giáng thiên thạch, Q chém đại đao lửa và E pháo điện.</p><small>Bấm vào đây để thử ngay chiêu F!</small></div>
     </div>
   </div>
 </div>
 
+<!-- BANK MODAL -->
 <div class="modalWrap" id="bankModal">
   <div class="modal">
     <h2>CHỌN BẢNG NGUYÊN TỐ (ĐA DẠNG HỆ)</h2>
-    <p>Mỗi bảng gán 4 nguyên tố vào phím <strong>1–4</strong>. Phối hợp 2 nguyên tố trước khi bấm <strong>Q / E / R / F</strong> để tạo biến thể hủy diệt.</p>
+    <p>Mỗi bảng gán 4 nguyên tố vào phím <strong>1–4</strong>. Phối hợp 2 nguyên tố trước khi bấm <strong>Q / E / R / F</strong> để biến đổi hình thái kỹ năng.</p>
     <div class="bankTabs" id="bankTabs"></div>
-    <div class="actions" style="margin-top:14px"><button class="btn" id="closeBank">Đóng</button></div>
+    <div style="margin-top:14px"><button class="btn" id="closeBank">Đóng</button></div>
   </div>
 </div>
 
+<!-- UPGRADE MODAL -->
 <div class="modalWrap" id="upgradeModal">
   <div class="modal">
     <h2>BAN PHƯỚC NGUYÊN TỐ (BOONS)</h2>
@@ -288,11 +322,12 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
   </div>
 </div>
 
+<!-- PAUSE MODAL -->
 <div class="modalWrap" id="pauseModal">
   <div class="modal">
     <h2 id="pauseTitle">TẠM DỪNG</h2>
     <p id="pauseText">Trận đấu đã tạm dừng.</p>
-    <div class="actions"><button class="btn accent" id="resumeBtn">Tiếp tục</button><button class="btn" id="backMenuBtn">Về menu chính</button></div>
+    <div style="display:flex;gap:8px"><button class="btn accent" id="resumeBtn">Tiếp tục</button><button class="btn" id="backMenuBtn">Về menu chính</button></div>
   </div>
 </div>
 
@@ -303,49 +338,57 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
 'use strict';
 const canvas=document.getElementById('game'), ctx=canvas.getContext('2d');
 const mini=document.getElementById('minimap'), mx=mini.getContext('2d');
-const W=960,H=540, TAU=Math.PI*2;
+const W=960, H=540, TAU=Math.PI*2;
 
 const rand=(a,b)=>a+Math.random()*(b-a), clamp=(n,a,b)=>Math.max(a,Math.min(b,n)), lerp=(a,b,t)=>a+(b-a)*t;
 const colors={H:'#83e6ff',O:'#ffb070',Fe:'#e0b77d',C:'#9bdfff',Na:'#ffb84d',Cl:'#65f788',N:'#93aaff',S:'#f2e266',Mg:'#d4cbc2',Cu:'#4df0ff',Si:'#edb879',Ar:'#9ce6ff'};
 const banks=[
- {name:'I • Nhiệt & Giáp',els:['H','O','Fe','C']},
- {name:'II • Nổ & Ăn mòn',els:['Na','Cl','N','S']},
- {name:'III • Điện, Băng, Cát',els:['Cu','Ar','Si','Mg']},
- {name:'IV • Đa Hệ Khắc Chế',els:['Cu','Ar','Cl','C']}
+  {name:'I • Nhiệt & Giáp',els:['H','O','Fe','C']},
+  {name:'II • Nổ & Ăn mòn',els:['Na','Cl','N','S']},
+  {name:'III • Điện, Băng, Cát',els:['Cu','Ar','Si','Mg']},
+  {name:'IV • Đa Hệ Khắc Chế',els:['Cu','Ar','Cl','C']}
 ];
 const biomes={
- city:{
-   title:'Thành phố',
-   passive:'🌆 Thành Phố: Các tòa nhà 3D là VẬT CẢN CỨNG chặn đường đi & đạn bắn • Chỉ số sát thương tiêu chuẩn',
-   modDesc:'Tòa nhà chắn đường / Cân bằng'
- },
- desert:{
-   title:'Sa mạc',
-   passive:'☀ Địa hình Sa Mạc: +25% Giáp cơ bản • Khiên (R, C, Fe) & Cát (Si) +50% hiệu quả • Bão cát bào mòn giáp địch',
-   modDesc:'Giáp +50% / Cát +25% ST'
- },
- coast:{
-   title:'Biển',
-   passive:'🌊 Mặt Biển: Đứng trên nước khiến Lửa (Q, O) giảm 50% • Hệ Điện (Cu), Băng (Ar), Kiềm (Na) & Độc (Cl) +45% sức mạnh',
-   modDesc:'Lửa -50% / Điện,Băng,Na +45%'
- },
- forest:{
-   title:'Rừng',
-   passive:'🌲 Rừng Rậm: Nhiều cây cối khiến Lửa (Q, O) tăng 25% ST, tự động Cháy Lan sang quái gần và tạo Bãi Lửa trên mặt đất',
-   modDesc:'Cháy lan & Tạo bãi lửa'
- }
+  city:{
+    title:'Thành phố',
+    passive:'🌆 Thành Phố: Các tòa nhà 3D là VẬT CẢN CỨNG chặn đường đi & đạn bắn • Chỉ số sát thương tiêu chuẩn',
+    modDesc:'Tòa nhà chắn đường / Cân bằng'
+  },
+  desert:{
+    title:'Sa mạc',
+    passive:'☀ Địa hình Sa Mạc: +25% Giáp cơ bản • Khiên (R, C, Fe) & Cát (Si) +50% hiệu quả • Bão cát bào mòn giáp địch',
+    modDesc:'Giáp +50% / Cát +25% ST'
+  },
+  coast:{
+    title:'Biển',
+    passive:'🌊 Mặt Biển: Đứng trên nước khiến Lửa (Q, O) giảm 50% • Hệ Điện (Cu), Băng (Ar), Kiềm (Na) & Độc (Cl) +45% sức mạnh',
+    modDesc:'Lửa -50% / Điện,Băng,Na +45%'
+  },
+  forest:{
+    title:'Rừng',
+    passive:'🌲 Rừng Rậm: Nhiều cây cối khiến Lửa (Q, O) tăng 25% ST, tự động Cháy Lan sang quái gần và tạo Bãi Lửa trên mặt đất',
+    modDesc:'Cháy lan & Tạo bãi lửa'
+  }
 };
 
 const skillDefs={
-  q:{name:'Q • Hellfire Cleave',desc:'Đại đao quét vòng cung rực lửa kiểu Hades, chém rách không gian.',baseCd:0.40,color:'#ff6b3d'},
-  e:{name:'E • Railgun Lance',desc:'Pháo năng lượng xuyên phá kèm vòng xoáy điện từ và tia sét.',baseCd:0.72,color:'#5ce1ff'},
-  r:{name:'R • Aegis Bastion',desc:'Triệu hồi khiên thánh lục giác 3D xoay quanh người hoặc dựng pháo đài.',baseCd:2.1,color:'#ffd166'},
-  f:{name:'F • Core Cataclysm',desc:'SIÊU CHIÊU CUỐI: Giáng Cột Trụ Thiên Thạch Hủy Diệt làm nứt toác mặt đất.',baseCd:2.9,color:'#d96bff'}
+  q:{name:'Q • Hellfire Cleave',desc:'Đại đao quét vòng cung rực lửa kiểu Hades.',baseCd:0.40,color:'#ff6b3d'},
+  e:{name:'E • Railgun Lance',desc:'Pháo năng lượng xuyên phá kèm vòng xoáy điện từ.',baseCd:0.72,color:'#5ce1ff'},
+  r:{name:'R • Aegis Bastion',desc:'Khiên thánh lục giác 3D xoay quanh người hoặc dựng pháo đài.',baseCd:2.1,color:'#ffd166'},
+  f:{name:'F • Core Cataclysm',desc:'SIÊU CHIÊU CUỐI: Giáng Cột Trụ Thiên Thạch Hủy Diệt.',baseCd:2.8,color:'#d96bff'}
 };
+
+const iconPaths={
+  q:'M7 30C-1 20 20 20 12 3c14 7 22 21 10 29 5-9-3-12-3-12 1 8-10 6-7 13Z',
+  e:'m4 26 21-20 7 6-21 20Z M3 14l7-7 M24 31l7-7',
+  r:'M18 2 32 8v13L18 34 4 21V8Z M18 8l9 5v8l-9 7-9-7v-8Z',
+  f:'m18 1 4 10 10-4-4 11 7 5-12 2-5 11-4-11-12-2 7-5-4-11 10 4Z'
+};
+function icon(k){return '<svg class="skillIcon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.8"><path d="'+iconPaths[k]+'"/></svg>';}
 
 const upgrades=[
   ...['q','e','r','f'].map(k=>({name:skillDefs[k].name+' ↑',desc:({
-    q:'Mở rộng lưỡi đao 3 tầng sắc độ, vệt chém rực sáng và văng tàn lửa.',
+    q:'Mở rộng lưỡi đao 4 tầng sắc độ, vệt chém rực sáng và văng tàn lửa.',
     e:'Tăng kích cỡ mũi thương năng lượng, bắn đạn kép từ bậc III kèm hồ quang điện.',
     r:'Tăng số lượng khiên bay hộ thể 3D và dựng pháo đài nguyên khối cao hơn.',
     f:'Cột trụ Thiên Thạch to gấp bội, nhiều vòng ma pháp, vết nứt dung nham và mảnh vỡ 3D.'
@@ -357,27 +400,24 @@ const upgrades=[
   {name:'Lửa Địa Ngục (O)',desc:'Hiệu ứng O mạnh hơn, cháy rừng dữ dội hơn.',apply:p=>p.modPower.O=(p.modPower.O||0)+1},
   {name:'Lõi Titan (C)',desc:'R bền hơn và tăng mạnh khiên.',apply:p=>p.modPower.C=(p.modPower.C||0)+1},
   {name:'Thủy Lôi Poseidon (Na)',desc:'Nổ dây chuyền cực mạnh, kích nổ lớn trên Biển.',apply:p=>p.modPower.Na=(p.modPower.Na||0)+1},
-  {name:'Độc Chết Chóc (Cl)',desc:'Độc ăn mòn mạnh và lâu hơn.',apply:p=>p.modPower.Cl=(p.modPower.Cl||0)+1},
-  {name:'Bước Chân Hermes',desc:'+16% tốc độ chạy và hồi lướt nhanh hơn.',apply:p=>{p.speed*=1.16;p.dashRecover*=0.86}},
-  {name:'Giáp Hắc Ám',desc:'+10% giảm sát thương cơ bản.',apply:p=>p.armor=clamp(p.armor+.1,0,.55)}
+  {name:'Bước Chân Hermes',desc:'+16% tốc độ chạy và hồi lướt nhanh hơn.',apply:p=>{p.speed*=1.16;p.dashRecover*=0.86}}
 ];
 
 let state, keys={}, mouse={x:W/2,y:H/2,left:false,right:false}, last=0;
-let quality='high',hudTick=0,shake=0,screenFlash=0,screenFlashCol='#ffffff',audioOn=false,audioCtx=null,renderScale=2;
-let floorCache=null,floorCacheKey='';
+let quality='high', hudTick=0, shake=0, screenFlash=0, screenFlashCol='#ffffff', audioOn=false, audioCtx=null, renderScale=2;
+let floorCache=null, floorCacheKey='';
 
 function readBest(){try{return Number(localStorage.getItem('gc_pixel_best')||0)||0;}catch{return 0;}}
 
-// Khởi tạo vật thể 3D trên bản đồ. Ở Thành phố (city), các tòa nhà có solid=true làm vật cản đường thực sự!
 function generateMapProps(biome){
   const props=[];
   if(biome==='city'){
     const spots=[
-      [-210,-120,34,82], [210,-120,34,88],
-      [-210,120,34,78],  [210,120,34,86],
-      [0,-175,36,96],    [0,175,36,92],
-      [-330,0,38,104],   [330,0,38,100],
-      [-105,-45,26,64],  [105,45,26,68]
+      [-190,-115,32,84], [190,-115,32,88],
+      [-190,115,32,80],  [190,115,32,86],
+      [0,-170,35,96],    [0,170,35,92],
+      [-320,0,36,102],   [320,0,36,100],
+      [-95,-45,25,64],   [95,45,25,68]
     ];
     spots.forEach(([x,y,r,h],i)=>props.push({type:'building',x,y,r,h,solid:true,hitGlow:0,seed:i}));
   } else if(biome==='forest'){
@@ -393,7 +433,6 @@ function generateMapProps(biome){
   return props;
 }
 
-// Giải quyết va chạm vật lý tròn - tròn giữa thực thể (nhân vật/quái) và các tòa nhà/vật cản
 function resolveObstacleCollisions(ent, radius){
   if(!state || !state.mapProps) return;
   for(const prop of state.mapProps){
@@ -414,10 +453,10 @@ function makeState(keepBiome){
   const b = keepBiome || (state ? state.biome : 'city');
   return {
     running:false, paused:true, mode:'training', biome:b, time:0, score:0, wave:1, waveTimer:0, kills:0, roomKills:0, best:readBest(),
-    cam:{x:0,y:0}, bank:0, queue:[], selectedSkill:'q', toast:'', toastT:0,
-    player:{x:0,y:0,vx:0,vy:0,hp:180,maxHp:180,energy:100,maxEnergy:100,shield:0,maxShield:100,armor:0,damage:22,speed:172,xp:0,xpNeed:40,level:1,dashCd:0,dashRecover:1,inv:0,attackCd:0,cd:{q:0,e:0,r:0,f:0},skillTier:{q:1,e:1,r:1,f:1},shieldTier:1,modPower:{},inventory:{},facing:0},
+    bank:0, queue:[], selectedSkill:'q', toast:'', toastT:0,
+    player:{x:0,y:0,vx:0,vy:0,hp:180,maxHp:180,energy:100,maxEnergy:100,shield:0,maxShield:100,armor:0,damage:24,speed:175,xp:0,xpNeed:40,level:1,dashCd:0,dashRecover:1,inv:0,attackCd:0,cd:{q:0,e:0,r:0,f:0},skillTier:{q:1,e:1,r:1,f:1},shieldTier:1,modPower:{},inventory:{},facing:0},
     enemies:[], projectiles:[], effects:[], particles:[], drops:[], mapProps:generateMapProps(b),
-    upgradePending:false, trainingGoal:{kills:8,levelups:1}, levelups:0
+    trainingGoal:{kills:8,levelups:1}, levelups:0
   };
 }
 
@@ -442,16 +481,16 @@ function setBiome(b){
 function reset(mode){
   const curBiome = state ? state.biome : 'city';
   keys={}; mouse.left=false;
-  document.getElementById('settingsPanel')?.classList.remove('open');
+  document.getElementById('settingsPanel').classList.remove('open');
   state=makeState(curBiome);
   state.mode=mode; state.running=true; state.paused=false;
   state.player.inventory={}; initInv();
   if(state.biome==='desert') state.player.shield = 35;
   spawnWave(true);
   if(mode==='lab') initLab();
-  document.getElementById('labTools').hidden=mode!=='lab';
+  document.getElementById('labTools').hidden = (mode!=='lab');
   updatePanels(); hideAllModals();
-  toast(mode==='lab'?'Phòng thử Hades 3D • Hãy chọn Bậc IV và bấm F để xem Siêu Chiêu Cuối!':mode==='training'?'Bắt đầu chiến đấu! Tận dụng tòa nhà để chắn đạn & bấm F hủy diệt!':'Vực thẳm vô cực khởi động!');
+  toast(mode==='lab'?'Phòng thử Hades 3D • Nhấn phím F hoặc nút "Thi triển ngay" để giáng Thiên Thạch!':mode==='training'?'Bắt đầu chiến đấu! Tòa nhà chắn đạn & bấm F để tung Siêu Chiêu Cuối!':'Vực thẳm vô cực khởi động!');
   canvas.focus();
 }
 
@@ -461,7 +500,7 @@ function spawnWave(initial=false){
 }
 
 function spawnEnemy(kind){
-  const a=rand(0,TAU),r=rand(240,340);
+  const a=rand(0,TAU),r=rand(230,330);
   const px=clamp(state.player.x+Math.cos(a)*r,-420,420), py=clamp(state.player.y+Math.sin(a)*r,-300,300);
   const type=kind||(['slime','drone','golem','wisp'][Math.floor(rand(0,4))]);
   const dropsByBiome={
@@ -543,7 +582,7 @@ function getReaction(skill,els){
   const set=new Set(els), p=state.player, power=p.modPower;
   const reaction={
     skill,els,name:reactionName(skill,els),
-    damage:p.damage*(skill==='f'?1.65:1),range:1,dot:0,armorBreak:0,blast:0,shield:0,slow:0,
+    damage:p.damage*(skill==='f'?1.75:1),range:1,dot:0,armorBreak:0,blast:0,shield:0,slow:0,
     projectiles:1,beam:false,ice:false,sand:false,firePatch:false,
     color:skillDefs[skill].color, envTag:''
   };
@@ -633,10 +672,10 @@ function skillCast(skill){
 
   if(skill==='q'){
     r.dot=Math.max(r.dot, state.biome==='coast'?2.5:6.5);
-    pushEffect({type:'flameArc',x:p.x,y:p.y,dir:a,t:0,life:.46,r:86*r.range,color:r.color,reaction:r});
-    hitCone(p.x,p.y,a,86*r.range,1.4,r);
+    pushEffect({type:'flameArc',x:p.x,y:p.y,dir:a,t:0,life:.46,r:88*r.range,color:r.color,reaction:r});
+    hitCone(p.x,p.y,a,88*r.range,1.4,r);
     emit(p.x+dir.x*46,p.y+dir.y*46,r.color,28,95);
-    shake=Math.max(shake,2.6);
+    shake=Math.max(shake,2.8);
 
     if(state.biome==='coast'){
       for(let i=0;i<16;i++) pushParticle({x:p.x+dir.x*48+rand(-22,22),y:p.y+dir.y*48+rand(-22,22),z:10,vx:rand(-24,24),vy:rand(-24,24),vz:rand(50,100),life:.65,max:.65,size:3.5,color:'#d8f6ff'});
@@ -675,10 +714,9 @@ function skillCast(skill){
     }
   }
   if(skill==='f'){
-    // SIÊU CHIÊU CUỐI F: Trận pháp khóa mục tiêu + Thiên thạch / Cột trụ năng lượng giáng xuống
     const range=Math.min(dir.d,260);
     const tx=clamp(p.x+dir.x*range,-430,430), ty=clamp(p.y+dir.y*range,-300,300);
-    pushEffect({type:'telegraph',x:tx,y:ty,t:0,life:.36,r:68+24*r.range,color:r.color,reaction:r});
+    pushEffect({type:'telegraph',x:tx,y:ty,t:0,life:.34,r:72+24*r.range,color:r.color,reaction:r});
     shake=Math.max(shake,2.5);
   }
   updatePanels();
@@ -726,7 +764,6 @@ function dash(){
   const dx=(keys['d']?1:0)-(keys['a']?1:0), dy=(keys['s']?1:0)-(keys['w']?1:0);
   let n=dx||dy?norm(dx,dy):norm(Math.cos(p.facing),Math.sin(p.facing));
   const startX=p.x, startY=p.y;
-  // Lướt theo từng bước nhỏ để không xuyên qua các tòa nhà ở Thành phố
   for(let step=0;step<6;step++){
     p.x=clamp(p.x+n.x*9,-445,445);
     p.y=clamp(p.y+n.y*9,-320,320);
@@ -815,7 +852,7 @@ function chooseUpgrade(reason){
   const box=document.getElementById('upgradeChoices'); box.innerHTML='';
   list.forEach(u=>{
     const div=document.createElement('button'); div.className='choice';
-    div.innerHTML=(u.skill?'<span class="evolutionTag">BẬC '+state.player.skillTier[u.skill]+' → '+(state.player.skillTier[u.skill]+1)+'</span>':'')+'<h4>'+u.name+'</h4><p>'+u.desc+'</p><small>Nhận Ban Phước này</small>';
+    div.innerHTML=(u.skill?'<small>BẬC '+state.player.skillTier[u.skill]+' → '+(state.player.skillTier[u.skill]+1)+'</small>':'')+'<h4>'+u.name+'</h4><p>'+u.desc+'</p><small>Nhận Ban Phước này</small>';
     div.onclick=()=>{
       u.apply(state.player);
       pushEffect({type:'evolve',x:state.player.x,y:state.player.y,t:0,life:1.2,color:'#ffd166',r:58});
@@ -849,7 +886,6 @@ function update(dt){
     p.shield = Math.min(p.maxShield, p.shield + 4.5*dt);
   }
 
-  // Di chuyển nhân vật & xử lý va chạm với tòa nhà / vật cản
   let ax=(keys['d']?1:0)-(keys['a']?1:0), ay=(keys['s']?1:0)-(keys['w']?1:0);
   let n=norm(ax,ay), sp=p.speed*(keys['shift']&&p.dashCd===0?1.05:1);
   p.vx=n.x*sp; p.vy=n.y*sp;
@@ -869,7 +905,6 @@ function update(dt){
   }
   if(mouse.left) baseAttack();
 
-  // Cây cháy trong Rừng
   if(s.biome==='forest'){
     for(const prop of s.mapProps){
       if(prop.burning && prop.burning>0){
@@ -891,7 +926,6 @@ function update(dt){
     }
   }
 
-  // Quái vật di chuyển & bị chặn bởi tòa nhà ở Thành phố
   for(let i=s.enemies.length-1;i>=0;i--){
     const e=s.enemies[i]; if(!e||e.dead)continue;
     const dx=p.x-e.x, dy=p.y-e.y, d=Math.hypot(dx,dy)||1;
@@ -961,14 +995,12 @@ function update(dt){
     if(e.hp<=0) killEnemy(e);
   }
 
-  // Đạn bắn (Projectiles) & Va chạm với Tòa nhà Thành phố
   for(let i=s.projectiles.length-1;i>=0;i--){
     const pr=s.projectiles[i]; pr.x+=pr.vx*dt; pr.y+=pr.vy*dt; pr.life-=dt;
     pr.trail=pr.trail||[]; pr.trail.push({x:pr.x,y:pr.y});
     if(pr.trail.length>12+pr.reaction.tier*4) pr.trail.shift();
     let hit=false;
 
-    // Kiểm tra đạn đập vào các tòa nhà ở Thành phố
     if(s.biome==='city'){
       for(const prop of s.mapProps){
         if(prop.solid && Math.hypot(prop.x-pr.x, prop.y-pr.y) < prop.r + pr.r*0.6){
@@ -997,7 +1029,6 @@ function update(dt){
     if(pr.life<=0||hit) s.projectiles.splice(i,1);
   }
 
-  // Hiệu ứng kỹ năng & kích nổ Chiêu cuối F (Cataclysm)
   for(let i=s.effects.length-1;i>=0;i--){
     const e=s.effects[i]; e.t+=dt;
     if(e.type==='cloud' || e.type==='firePatch'){
@@ -1027,19 +1058,15 @@ function update(dt){
         const isPoison = r.els.includes('Cl');
         const isForestFire = state.biome==='forest' && (r.els.includes('O') || !r.els.length);
 
-        // LUÔN KÍCH HOẠT SIÊU VỤ NỔ CỘT TRỤ 3D (CATACLYSM) CHO CHIÊU F
         const cracks=[];
         const numCracks = 8 + r.tier*2;
         for(let c=0;c<numCracks;c++){
           const baseA = (c/numCracks)*TAU + rand(-0.15,0.15);
           const segs=[];
-          let cx=0, cy=0;
           for(let sIdx=1;sIdx<=4;sIdx++){
             const len = (e.r*1.18)*(sIdx/4);
             const jitter = rand(-0.22,0.22);
-            cx = Math.cos(baseA+jitter)*len;
-            cy = Math.sin(baseA+jitter)*len;
-            segs.push([cx,cy]);
+            segs.push([Math.cos(baseA+jitter)*len, Math.sin(baseA+jitter)*len]);
           }
           cracks.push(segs);
         }
@@ -1096,7 +1123,6 @@ function iso(x,y){
   return {x:sx,y:sy};
 }
 
-// Các hàm vẽ Hades-style với viền mực đen đậm (Heavy Ink Outlines) và góc vát sắc sảo
 function drawDiamond(x,y,w,h,fill,stroke,lineWidth=1.5){
   ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x+w,y); ctx.lineTo(x,y+h); ctx.lineTo(x-w,y); ctx.closePath();
   if(fill){ctx.fillStyle=fill; ctx.fill();}
@@ -1127,7 +1153,6 @@ function hex(x,y,r,color,alpha=1,fill=null){
   ctx.restore();
 }
 
-// Bảng màu Hades-style giàu độ tương phản (Sâu thẳm + Viền vàng đồng/neon rực rỡ)
 const palettes={
   city:['#070812','#1c1f33','#232740','#0d0f1c','#5ce1ff'],
   desert:['#120b07','#593a24','#69462b','#2e1c10','#ffd166'],
@@ -1135,16 +1160,11 @@ const palettes={
   forest:['#06120e','#183326','#1f4030','#0c1c14','#72f58d']
 };
 
-// Vẽ Khối 3D phong cách Hades (Viền mực đen dày + Cạnh bắt sáng Rim-light)
 function drawIsoBlock(x,y,w,d,h,topCol,leftCol,rightCol,rimCol='#ffffff44'){
   const ink='#07060c';
-  // Mặt bên trái
   poly([[x-w,y],[x,y+d],[x,y+d-h],[x-w,y-h]],leftCol,ink,2);
-  // Mặt bên phải
   poly([[x,y+d],[x+w,y],[x+w,y-h],[x,y+d-h]],rightCol,ink,2);
-  // Mặt đỉnh trên cùng
   drawDiamond(x,y-h,w,d,topCol,ink,2);
-  // Đường viền bắt sáng (Rim Highlight) ở sống giữa và mép trên kiểu Hades
   ctx.strokeStyle=rimCol; ctx.lineWidth=1.4;
   ctx.beginPath();
   ctx.moveTo(x-w,y-h); ctx.lineTo(x,y+d-h); ctx.lineTo(x+w,y-h);
@@ -1157,23 +1177,16 @@ function drawProp25D(prop){
   if(p.x<-110||p.x>W+110||p.y<-160||p.y>H+160) return;
   const x=Math.round(p.x), y=Math.round(p.y);
 
-  // Đổ bóng 3D đậm dưới chân vật thể
   ctx.fillStyle='rgba(2, 3, 8, 0.65)';
   ctx.beginPath(); ctx.ellipse(x+10,y+6,prop.r*1.25,prop.r*0.58,0,0,TAU); ctx.fill();
 
   if(prop.type==='building'){
     const h=prop.h||80, w=prop.r*1.12, d=prop.r*0.56;
-    // Vòng đế cảnh báo vật cản cứng dưới chân tòa nhà
     ring(x,y+2,prop.r*0.88,prop.hitGlow>0?'#ff6b4a':'#5ce1ff',prop.hitGlow>0?0.75:0.25,prop.hitGlow>0?2.5:1.4);
-
-    // Khối đế bậc thềm 3D
     drawIsoBlock(x,y,w*1.08,d*1.08,10,'#2b324d','#1e2338','#131726','#72b6ff66');
-    // Thân tòa nhà chính
     drawIsoBlock(x,y-10,w,d,h,'#343f5e','#232b42','#161b2b','#67dfff88');
-    // Tầng mái thu gọn + Lõi Neon đỉnh tháp
     drawIsoBlock(x,y-10-h,w*0.65,d*0.65,12,'#495880','#2e3854','#1d2438','#a3ebff99');
 
-    // Dải đèn Neon chạy dọc sườn tòa nhà & ô cửa sổ phát sáng
     ctx.fillStyle='#5ce1ff';
     ctx.fillRect(x-w*0.72, y-h+4, 2.5, h-12);
     ctx.fillRect(x+w*0.65, y-h+4, 2.5, h-12);
@@ -1185,13 +1198,10 @@ function drawProp25D(prop){
       ctx.fillRect(x+w*0.14,wy+4,5,6);
       ctx.fillRect(x+w*0.38,wy,5,6);
     }
-    // Trụ ăng-ten / Hải đăng năng lượng trên đỉnh
-    const pulse = 0.6+Math.sin(state.time*4+prop.seed)*0.4;
+    const pulse = 0.6+Math.sin(state.time*4+(prop.seed||0))*0.4;
     drawDiamond(x,y-h-28,7,4,'#ff6b4a','#07060c',1.5);
     glow(x,y-h-28,28,'#ff6b4a',0.35*pulse);
-    if(prop.hitGlow>0){
-      glow(x,y-h*0.4,55,'#5ce1ff',prop.hitGlow);
-    }
+    if(prop.hitGlow>0) glow(x,y-h*0.4,55,'#5ce1ff',prop.hitGlow);
   }
   else if(prop.type==='tree'){
     const s=prop.scale||1;
@@ -1245,7 +1255,6 @@ function drawFloorTiles(){
         const x=1000+(gx-gy)*32*1.1, y=550+(gx+gy)*32*.55;
         const edge=Math.abs(gx)===15||Math.abs(gy)===11;
 
-        // Thành vách đá ngầm 3D sâu dưới rìa đấu trường kiểu Hades
         if(gy===11 || gx===15){
           g.fillStyle='#05060b';
           g.beginPath();
@@ -1255,7 +1264,6 @@ function drawFloorTiles(){
           g.strokeStyle='#1c1629'; g.lineWidth=1.5; g.stroke();
         }
 
-        // Gạch Isometric với viền đen đậm và vát cạnh trong
         g.beginPath();
         g.moveTo(x,y-17.6); g.lineTo(x+35.2,y); g.lineTo(x,y+17.6); g.lineTo(x-35.2,y);
         g.closePath();
@@ -1263,7 +1271,6 @@ function drawFloorTiles(){
         g.fill();
         g.strokeStyle='#08070f'; g.lineWidth=1.6; g.stroke();
 
-        // Viền khắc chìm vàng đồng / neon bên trong ô gạch
         if(!edge && (gx+gy)%2===0){
           g.strokeStyle=b[4]+'18'; g.lineWidth=1;
           g.beginPath();
@@ -1348,14 +1355,12 @@ function drawPlayer(){
   const x=Math.round(pos.x),y=Math.round(pos.y);
   ctx.save(); ctx.translate(x,y);
 
-  // Vòng hào quang chân kiểu Hades
   ctx.fillStyle='#020308cc'; ctx.beginPath(); ctx.ellipse(0,3,22,9,0,0,TAU); ctx.fill();
   const auraCol = state.biome==='coast'?'#4df0ff':state.biome==='desert'?'#ffd166':'#ff6b4a';
   ring(0,3,15+Math.sin(t*6)*1.5,auraCol,.55,2);
   glow(0,0,34,auraCol,.18);
 
   if(p.inv>0)ctx.globalAlpha=.65+Math.sin(t*70)*.3;
-  // Áo choàng chiến thần viền đen sắc nét
   poly([[-11,-44],[-19,-25],[-22+walk*2,-2],[-10,1],[-3,-12],[10,0],[19+walk*2,-3],[15,-25],[9,-44]],'#141124','#05040a',2.2);
   poly([[-11,-40],[-15,-20],[-17+walk*2,-3],[-10,-1],[-5,-16],[-5,-38]],'#e8e2d5','#05040a',1.5);
   poly([[5,-39],[12,-39],[15,-18],[17+walk*2,-4],[10,-2],[5,-16]],'#b5ab9e','#05040a',1.5);
@@ -1364,7 +1369,6 @@ function drawPlayer(){
   ctx.fillStyle='#ffd166';ctx.fillRect(-8,-14+step,4,5);ctx.fillRect(4,-14-step,4,5);
   ctx.fillStyle='#0a0814';ctx.fillRect(-11,step,10,5);ctx.fillRect(3,-step,11,5);
 
-  // Giáp ngực chiến thần Hades
   poly([[-10,-44],[9,-44],[12,-23],[6,-17],[-7,-17],[-12,-28]],'#2b223d','#05040a',2);
   ctx.fillStyle='#d9cfc3';ctx.fillRect(-8,-40,5,13);ctx.fillStyle='#8c8299';ctx.fillRect(3,-40,6,13);
   ctx.fillStyle='#ffd166';ctx.fillRect(-9,-24,18,2.5);ctx.fillStyle='#140f21';ctx.fillRect(-9,-19,18,4);
@@ -1380,7 +1384,6 @@ function drawPlayer(){
     ctx.fillStyle='#ffd166';ctx.fillRect(ax-4,-43,8,2.5);
   }
 
-  // Đầu, Tóc gai & Kính Visor phát sáng
   ctx.fillStyle='#07050f';ctx.fillRect(-8,-63,16,18);ctx.fillRect(-10,-58,20,8);
   poly([[-8,-62],[-3,-68],[2,-63],[8,-67],[9,-58],[-8,-58]],'#f2ece1','#05040a',1.5);
   ctx.fillStyle=back?'#3d3352':'#d49b82';ctx.fillRect(-5,-55,11,9);
@@ -1388,11 +1391,9 @@ function drawPlayer(){
   ctx.fillStyle='#ff6b4a';ctx.fillRect(side<0?-7:-3,-54,10,2.5);
   ctx.fillStyle='#fff7d6';ctx.fillRect(side<0?-7:4,-54,3,1.5);
 
-  // Khăn choàng đỏ rực bay trong gió
   poly([[-8,-46],[8,-46],[8,-42],[-5,-41],[-10,-43]],'#d92b3a','#05040a',1.6);
   poly([[-7,-44],[-20,-41],[-32,-34+walk*3],[-22,-32+walk*3],[-10,-38]],'#ff3b4e','#05040a',1.6);
 
-  // Đại đao Infernal Blade kiểu Hades
   const swing=p.cast>0&&['q','slash'].includes(p.castSkill)?Math.sin((1-p.cast/.35)*Math.PI)*1.1-.55:0;
   const angle=Math.atan2(aim.y,aim.x)+swing;
   ctx.save(); ctx.translate(aim.x*12,-28+aim.y*5); ctx.rotate(angle);
@@ -1462,15 +1463,10 @@ function drawEnemy(e){
     flame(x+9,y-4,6,18,t*13,false,e.heatTier||1);
     if(state.biome==='forest') ring(x,y,e.r+8,'#ff6a22',.6);
   }
-  if(e.poison>0){
-    ring(x,y,14,'#65f788',.75);
-  }
-  if(e.slow>0.25){
-    drawDiamond(x,y-14,e.r+3,e.r,'rgba(140,235,255,0.32)','#b8f6ff',1.6);
-  }
+  if(e.poison>0) ring(x,y,14,'#65f788',.75);
+  if(e.slow>0.25) drawDiamond(x,y-14,e.r+3,e.r,'rgba(140,235,255,0.32)','#b8f6ff',1.6);
 }
 
-// CHIÊU R: Khiên Thánh Lục Giác 3D xoay quanh người kiểu Aegis Shield
 function drawShield(x,y,r,t,power,tier=1){
   const isDesert = state.biome==='desert';
   const c = isDesert ? '#ffd166' : ['#ffd166','#5ce1ff','#b197fc','#ff7eb6'][tier-1];
@@ -1479,7 +1475,6 @@ function drawShield(x,y,r,t,power,tier=1){
   ctx.strokeStyle=c; ctx.lineWidth=2; ctx.globalAlpha=.45+power*.35;
   ctx.beginPath(); ctx.ellipse(x,y,r,r*1.02,0,0,TAU); ctx.stroke();
 
-  // Các tấm khiên 3D bay quỹ đạo xung quanh nhân vật
   const panels = 3 + tier;
   for(let i=0;i<panels;i++){
     const a = t*2.2 + i*(TAU/panels);
@@ -1491,7 +1486,6 @@ function drawShield(x,y,r,t,power,tier=1){
   ring(x,y+34,r*.82,c,.45,2);
 }
 
-// CHIÊU E: Mũi Thương Pháo Điện Từ (Railgun Lance) kèm tia sét xoắn ốc
 function drawProjectiles(){
   for(const pr of state.projectiles){
     const p=iso(pr.x,pr.y),tier=pr.reaction.tier||1;
@@ -1554,7 +1548,6 @@ function drawFirePatchField(e,p,t){
   ctx.restore();
 }
 
-// CHIÊU Q: Vòng Cung Đại Đao Rực Lửa (Hellfire Cleave) kiểu Hades với răng cưa năng lượng & viền mực
 function drawThermalArc(e){
   const progress=e.t/e.life,fade=1-progress,heat=e.reaction?.heat||1,tier=e.reaction?.tier||1,poison=e.reaction?.els.includes('Cl');
   const c=poison?['#1a5c38','#52d669','#b8ff7d','#f2ffd9']:thermalColors[heat-1];
@@ -1581,12 +1574,9 @@ function drawThermalArc(e){
   ctx.restore();
 }
 
-// SIÊU CHIÊU CUỐI F: Trận pháp cổ ngữ + Cột Trụ Thiên Thạch Giáng Thế (Core Cataclysm)
 function drawCataclysm(e,p,t){
   const fade=Math.max(0,1-t), tier=e.reaction?.tier||1, col=e.color;
   ctx.save();
-
-  // 1. Hố đen & Vết nứt dung nham phát sáng tỏa ra trên mặt đất
   ctx.globalAlpha=fade;
   ctx.fillStyle='#07050dcc';
   ctx.beginPath(); ctx.ellipse(p.x,p.y,e.r*1.45,e.r*0.72,0,0,TAU); ctx.fill();
@@ -1610,7 +1600,6 @@ function drawCataclysm(e,p,t){
     }
   }
 
-  // 2. Sóng xung kích đa tầng giãn nở cực mạnh
   for(let w=0;w<2+tier;w++){
     const wt=clamp((t-w*0.07)/(1-w*0.07),0,1);
     if(wt>0){
@@ -1619,10 +1608,9 @@ function drawCataclysm(e,p,t){
     }
   }
 
-  // 3. Cột trụ năng lượng (Sky-to-Ground Orbital Beam) xuyên thẳng từ đỉnh màn hình xuống tâm nổ
   if(t < 0.75){
     const beamFade = (0.75 - t)/0.75;
-    const bw = (36 + tier*12) * (0.4 + 0.6*beamFade);
+    const bw = (38 + tier*12) * (0.4 + 0.6*beamFade);
     glow(p.x,p.y-60,e.r*2.6,col,beamFade*0.75);
 
     ctx.save();
@@ -1637,12 +1625,10 @@ function drawCataclysm(e,p,t){
     ctx.fillStyle=grad;
     ctx.fillRect(p.x-bw, p.y-460, bw*2, 460);
 
-    // Lõi trắng chói lòa ở giữa cột trụ
     ctx.fillStyle='#ffffff';
     ctx.fillRect(p.x-bw*0.28, p.y-460, bw*0.56, 460);
     ctx.restore();
 
-    // Các tia sét & vòng xoáy năng lượng quấn quanh cột trụ
     ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.globalAlpha=beamFade;
     for(let s=0;s<3+tier;s++){
       ctx.beginPath();
@@ -1655,7 +1641,6 @@ function drawCataclysm(e,p,t){
     }
   }
 
-  // 4. Ngọn lửa xung kích & Mảnh vỡ đá 3D văng lên không trung
   for(let i=0;i<10+tier*2;i++){
     const a=i*TAU/(10+tier*2)+t*2, rr=e.r*0.55*(0.4+t*0.8);
     const q=iso(e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr);
@@ -1684,13 +1669,11 @@ function drawEffects(){
     if(e.type==='cataclysm') drawCataclysm(e,p,t);
 
     if(e.type==='telegraph'){
-      // Trận pháp cổ ngữ xoay tròn + Thiên thạch lao từ bầu trời xuống tâm F
       const tier=e.reaction?.tier||1;
       glow(p.x,p.y,e.r*1.6,e.color,0.35*t);
       ring(p.x,p.y,e.r,e.color,.85,2.4);
       ring(p.x,p.y,e.r*(1-t*0.65),'#ffffff',.9,2);
 
-      // Ngôi sao lục giác cổ ngữ xoay trong tâm ngắm
       ctx.save();
       ctx.translate(p.x,p.y); ctx.scale(1.55,0.78); ctx.rotate(state.time*4);
       ctx.strokeStyle=e.color; ctx.lineWidth=1.8;
@@ -1705,7 +1688,6 @@ function drawEffects(){
       }
       ctx.restore();
 
-      // Quả cầu Thiên Thạch / Lõi Năng Lượng lao thẳng từ trên trời xuống tâm trận pháp
       const dropY = p.y - (1-t)*340;
       glow(p.x,dropY,48+tier*8,e.color,0.85);
       ctx.strokeStyle='#ffffff'; ctx.lineWidth=3;
@@ -1798,19 +1780,18 @@ function drawParticles(){
 }
 
 function renderMini(){
-  mx.clearRect(0,0,240,130);
-  mx.fillStyle='#08060f'; mx.fillRect(0,0,240,130);
-  mx.strokeStyle='#4a3861'; mx.strokeRect(2,2,236,126);
-  const px=120,py=65;
+  mx.clearRect(0,0,220,110);
+  mx.fillStyle='#08060f'; mx.fillRect(0,0,220,110);
+  const px=110,py=55;
   for(const prop of state.mapProps){
     mx.fillStyle=prop.burning>0?'#ff6a22':prop.type==='building'?'#5ce1ff':'#48385e';
     const sz = prop.type==='building' ? 6 : 4;
-    mx.fillRect(px+(prop.x-state.player.x)*0.12-sz/2, py+(prop.y-state.player.y)*0.12-sz/2, sz, sz);
+    mx.fillRect(px+(prop.x-state.player.x)*0.11-sz/2, py+(prop.y-state.player.y)*0.11-sz/2, sz, sz);
   }
   mx.fillStyle='#ffd166'; mx.fillRect(px-3,py-3,6,6);
   for(const e of state.enemies){
     mx.fillStyle=e.type==='boss'?'#ff9e44':'#ff2e4c';
-    mx.fillRect(px+(e.x-state.player.x)*0.12, py+(e.y-state.player.y)*0.12, 4,4);
+    mx.fillRect(px+(e.x-state.player.x)*0.11, py+(e.y-state.player.y)*0.11, 4,4);
   }
 }
 
@@ -1842,7 +1823,6 @@ function render(){
   drawEffects();
   drawParticles();
 
-  // Hiệu ứng chớp sáng màn hình (Impact Frame) khi chiêu F giáng xuống + Viền tối Vignette kiểu Hades
   if(screenFlash>0.01){
     ctx.save();
     ctx.globalCompositeOperation='lighter';
@@ -1868,14 +1848,6 @@ function render(){
   renderMini();
 }
 
-const iconPaths={
-  q:'M7 30C-1 20 20 20 12 3c14 7 22 21 10 29 5-9-3-12-3-12 1 8-10 6-7 13Z',
-  e:'m4 26 21-20 7 6-21 20Z M3 14l7-7 M24 31l7-7',
-  r:'M18 2 32 8v13L18 34 4 21V8Z M18 8l9 5v8l-9 7-9-7v-8Z',
-  f:'m18 1 4 10 10-4-4 11 7 5-12 2-5 11-4-11-12-2 7-5-4-11 10 4Z'
-};
-function icon(k){return '<svg class="skillIcon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.8"><path d="'+iconPaths[k]+'"/></svg>';}
-
 function sound(kind){
   if(!audioOn)return;
   try{
@@ -1900,14 +1872,14 @@ function emit(x,y,color,count,speed){
 function fitResolution(){
   const rect=canvas.getBoundingClientRect();
   const dpr=window.devicePixelRatio||1;
-  renderScale=quality==='low'?1:Math.min(3,Math.max(2,Math.ceil(Math.min(rect.width/W,rect.height/H)*dpr)));
+  renderScale=quality==='low'?1:Math.min(3,Math.max(2,Math.ceil(Math.min((rect.width||W)/W,(rect.height||H)/H)*dpr)));
   canvas.width=W*renderScale; canvas.height=H*renderScale;
   ctx.imageSmoothingEnabled=false;
 }
 
 function initLab(){
   state.enemies=[];
-  for(const k in state.player.skillTier) state.player.skillTier[k]=4; // Mặc định bật sẵn Bậc IV trong Phòng thử để chiêm ngưỡng
+  for(const k in state.player.skillTier) state.player.skillTier[k]=4;
   document.querySelectorAll('[data-tier]').forEach(b=>b.classList.toggle('active',b.dataset.tier==='4'));
   state.player.inventory=Object.fromEntries(Object.keys(colors).map(k=>[k,99]));
   const spots=[[-115,-105],[-35,-125],[135,-85],[165,75],[-85,120]];
@@ -1923,86 +1895,14 @@ function initLab(){
   });
 }
 
-function setupHUD(){
-  const main=document.querySelector('.main');
-  const vit=document.createElement('div'); vit.className='hud vitals';
-  vit.innerHTML='<div class="statcard"><div class="pilotName">NOVA <small id="envArmorBadge">HADES / 3D</small></div><div id="pilotStatus" class="sectionLabel"></div></div>';
-  vit.firstChild.appendChild(document.querySelector('.rightbar > .statcard:nth-child(2)'));
-  main.appendChild(vit);
-  vit.querySelector('.statcard .statcard').style.cssText='padding:0;border:0;background:none;box-shadow:none';
-
-  const dock=document.createElement('div'); dock.className='hud dock';
-  dock.appendChild(document.getElementById('skills')); main.appendChild(dock);
-
-  const load=document.createElement('div'); load.className='hud loadout';
-  load.innerHTML='<div class="sectionLabel">CHAMBER / NẠP NGUYÊN TỐ (TAB ĐỔI HỆ)</div>';
-  load.appendChild(document.getElementById('queueBar'));
-  load.appendChild(document.getElementById('reactionName'));
-  load.appendChild(document.getElementById('elements'));
-  main.appendChild(load);
-
-  const radar=document.createElement('div'); radar.className='hud radar';
-  radar.innerHTML='<div class="statcard"><div class="sectionLabel">RADAR 3D / <span id="threatCount">0</span> MỤC TIÊU</div></div>';
-  radar.firstChild.appendChild(mini); main.appendChild(radar);
-
-  const quick=document.createElement('div'); quick.className='hud quick';
-  quick.innerHTML='<button class="btn" id="configBtn" title="Cài đặt và đổi địa hình">☷ Địa hình & Cài đặt</button>';
-  quick.appendChild(document.getElementById('pauseBtn')); main.appendChild(quick);
-
-  const settings=document.createElement('div'); settings.id='settingsPanel';
-  settings.innerHTML='<div class="sectionLabel">ĐỔI ĐỊA HÌNH 3D</div>';
-  settings.appendChild(document.getElementById('biomes'));
-  settings.insertAdjacentHTML('beforeend','<div class="sectionLabel">CHẤT LƯỢNG ĐỒ HỌA</div><select id="qualitySelect"><option value="high">Hades 3D Cực Cao (Bloom & Ink)</option><option value="low">Tiết kiệm hiệu năng</option></select><button id="audioBtn" class="btn">Âm thanh: tắt</button><div class="sectionLabel">KHO NGUYÊN TỐ</div>');
-  settings.appendChild(document.getElementById('dropList'));
-  settings.insertAdjacentHTML('beforeend','<div class="sectionLabel">ĐẶC TÍNH ĐỊA HÌNH</div><div class="queueHint">• <strong>Thành phố:</strong> Các tòa nhà 3D là vật cản cứng chặn đường đi & đạn bắn.<br>• <strong>Sa mạc:</strong> +25% Giáp, Khiên R & nguyên tố C/Fe/Si +50% bền.<br>• <strong>Biển:</strong> Lửa giảm 50%. Điện (Cu), Băng (Ar), Kiềm (Na) +45% ST.<br>• <strong>Rừng:</strong> Lửa (Q, O) tự động cháy lan giữa quái & tạo bãi lửa.</div><div class="sectionLabel">PHIÊN CHƠI</div>');
-  settings.appendChild(document.getElementById('resetBtn'));
-  settings.appendChild(document.getElementById('shotBtn'));
-  main.appendChild(settings);
-
-  document.getElementById('configBtn').onclick=()=>{
-    if(!state.running)return;
-    settings.classList.toggle('open');
-    if(settings.classList.contains('open')){state.paused=true;keys={};mouse.left=false;}
-    else if(!document.querySelector('.modalWrap.show'))state.paused=false;
-  };
-  document.getElementById('qualitySelect').onchange=e=>{quality=e.target.value;fitResolution();};
-  document.getElementById('audioBtn').onclick=e=>{audioOn=!audioOn;e.target.textContent='Âm thanh: '+(audioOn?'bật':'tắt');if(audioOn)sound('e');};
-
-  const boss=document.createElement('div'); boss.className='bossHUD'; boss.id='bossHUD'; main.appendChild(boss);
-
-  const heat=document.createElement('div'); heat.className='thermalHUD';
-  heat.innerHTML='<span>ĐỊA HÌNH & NHIỆT SẮC</span><b id="heatName"></b><div class="heatSpectrum">'+thermalColors.map(c=>'<i style="--c:'+c[1]+'"></i>').join('')+'</div><small id="heatDesc"></small>';
-  main.appendChild(heat);
-
-  const lab=document.createElement('div'); lab.id='labTools'; lab.hidden=true;
-  lab.innerHTML='<span>BẬC CHIÊU</span>'+[1,2,3,4].map((n,i)=>'<button data-tier="'+n+'" class="'+(n===4?'active':'')+'">'+['I','II','III','IV'][i]+'</button>').join('')+'<select id="labPreset"><option value="cataclysm">💥 SIÊU CHIÊU F • Thiên Thạch Hủy Diệt (F + O + Na)</option><option value="flame">🔥 Đại Đao Lửa Hades (Q + O)</option><option value="electric">⚡ Pháo Điện Từ Zeus (E + Cu)</option><option value="shield">🛡 Khiên Thánh Aegis 3D (R + C)</option><option value="wall">🧱 Pháo Đài Đá 3D (R + Si)</option></select><button id="labCast">Thi triển ngay</button>';
-  main.appendChild(lab);
-
-  lab.querySelectorAll('[data-tier]').forEach(b=>b.onclick=()=>{
-    for(const k in state.player.skillTier)state.player.skillTier[k]=+b.dataset.tier;
-    state.player.shield=0; state.effects=[]; state.projectiles=[];
-    for(const k in state.player.cd)state.player.cd[k]=0;
-    lab.querySelectorAll('[data-tier]').forEach(el=>el.classList.toggle('active',el===b));
-    updatePanels(); canvas.focus();
-  });
-  document.getElementById('labCast').onclick=()=>{
-    const presets={cataclysm:['f',['O','Na']],flame:['q',['O']],electric:['e',['Cu']],shield:['r',['C']],wall:['r',['Si']]};
-    const [k,els]=presets[document.getElementById('labPreset').value];
-    state.queue=els.slice(); state.player.cd[k]=0; state.selectedSkill=k; state.player.energy=state.player.maxEnergy;
-    skillCast(k); canvas.focus();
-  };
-  window.addEventListener('resize',fitResolution); fitResolution();
-}
-
 function updatePanels(){
   const p=state.player;
-  document.getElementById('biomeName').textContent=biomes[state.biome].title;
   document.getElementById('envPassiveBanner').textContent=biomes[state.biome].passive;
   document.getElementById('envArmorBadge').textContent=state.biome==='city'?'VẬT CẢN TÒA NHÀ':state.biome==='desert'?'GIÁP SA MẠC +25%':state.biome==='coast'?'MẶT BIỂN (-50% LỬA)':'RỪNG (CHÁY LAN)';
   document.getElementById('modeName').textContent=state.mode==='lab'?'Phòng thử 3D':state.mode==='training'?'Huấn luyện':'Vô cực';
   document.getElementById('waveTag').textContent=state.wave;
   document.getElementById('scoreTag').textContent=state.score;
-  document.getElementById('bestScoreTag').textContent='Best '+state.best;
+  document.getElementById('bestScoreTag').textContent=state.best;
 
   document.getElementById('hpBar').style.width=clamp(p.hp/p.maxHp*100,0,100)+'%';
   document.getElementById('enBar').style.width=clamp(p.energy/p.maxEnergy*100,0,100)+'%';
@@ -2035,7 +1935,7 @@ function updatePanels(){
   document.getElementById('heatName').textContent=heatLabels[heat-1];
   document.getElementById('heatName').style.color=thermalColors[heat-1][1];
   document.getElementById('heatDesc').textContent=biomes[state.biome].modDesc;
-  document.querySelectorAll('.heatSpectrum i').forEach((n,i)=>n.classList.toggle('on',i<heat));
+  document.querySelectorAll('#heatSpec i').forEach((n,i)=>n.classList.toggle('on',i<heat));
 
   [...sk.children].forEach(el=>{
     const k=el.dataset.skill, tier=p.skillTier[k];
@@ -2069,7 +1969,7 @@ function updatePanels(){
     drops.appendChild(d);
   });
 
-  document.querySelectorAll('.bio, .b-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.biome===state.biome));
+  document.querySelectorAll('.b-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.biome===state.biome));
   const boss=state.enemies.find(e=>e.type==='boss');
   document.getElementById('bossHUD').innerHTML=boss&&state.mode!=='lab'?'LÕI TITAN / '+Math.ceil(boss.hp)+' HP<div class="bar"><span style="width:'+clamp(boss.hp/boss.maxHp*100,0,100)+'%"></span></div>':'';
 }
@@ -2080,8 +1980,7 @@ function loop(ts){
   render(); requestAnimationFrame(loop);
 }
 
-document.getElementById('startTraining').onclick=()=>reset('training');
-document.getElementById('startEndless').onclick=()=>reset('endless');
+// Gắn sự kiện UI
 document.querySelectorAll('[data-start]').forEach(n=>n.onclick=()=>reset(n.dataset.start));
 document.getElementById('howTo').onclick=()=>reset('lab');
 document.getElementById('pauseBtn').onclick=()=>togglePause();
@@ -2089,15 +1988,39 @@ document.getElementById('resumeBtn').onclick=()=>togglePause();
 document.getElementById('backMenuBtn').onclick=()=>{state.running=false;openModal('startModal');};
 document.getElementById('resetBtn').onclick=()=>reset(state.mode||'training');
 document.getElementById('closeBank').onclick=()=>{hideAllModals(); state.paused=false; canvas.focus();};
-document.getElementById('shotBtn').onclick=()=>{const a=document.createElement('a'); a.download='elemental_battle_hades3d.png'; a.href=canvas.toDataURL(); a.click();};
 
-document.querySelectorAll('.bio, .b-tab').forEach(btn=>btn.onclick=()=>{
+document.getElementById('configBtn').onclick=()=>{
+  if(!state.running)return;
+  const sp=document.getElementById('settingsPanel');
+  sp.classList.toggle('open');
+  if(sp.classList.contains('open')){state.paused=true;keys={};mouse.left=false;}
+  else if(!document.querySelector('.modalWrap.show'))state.paused=false;
+};
+document.getElementById('qualitySelect').onchange=e=>{quality=e.target.value;fitResolution();};
+document.getElementById('audioBtn').onclick=e=>{audioOn=!audioOn;e.target.textContent='Âm thanh: '+(audioOn?'bật':'tắt');if(audioOn)sound('e');};
+
+document.querySelectorAll('[data-tier]').forEach(b=>b.onclick=()=>{
+  for(const k in state.player.skillTier)state.player.skillTier[k]=+b.dataset.tier;
+  state.player.shield=0; state.effects=[]; state.projectiles=[];
+  for(const k in state.player.cd)state.player.cd[k]=0;
+  document.querySelectorAll('[data-tier]').forEach(el=>el.classList.toggle('active',el===b));
+  updatePanels(); canvas.focus();
+});
+
+document.getElementById('labCast').onclick=()=>{
+  const presets={cataclysm:['f',['O','Na']],flame:['q',['O']],electric:['e',['Cu']],shield:['r',['C']],wall:['r',['Si']]};
+  const [k,els]=presets[document.getElementById('labPreset').value];
+  state.queue=els.slice(); state.player.cd[k]=0; state.selectedSkill=k; state.player.energy=state.player.maxEnergy;
+  skillCast(k); canvas.focus();
+};
+
+document.querySelectorAll('.b-tab').forEach(btn=>btn.onclick=()=>{
   setBiome(btn.dataset.biome);
   canvas.focus();
 });
 
 function togglePause(){
-  document.getElementById('settingsPanel')?.classList.remove('open');
+  document.getElementById('settingsPanel').classList.remove('open');
   if(!state.running||document.getElementById('upgradeModal').classList.contains('show'))return;
   if(document.getElementById('bankModal').classList.contains('show')){hideAllModals();state.paused=false;return;}
   state.paused=!state.paused;
@@ -2146,9 +2069,14 @@ canvas.addEventListener('mousedown',e=>{
 });
 window.addEventListener('mouseup',()=>{mouse.left=false;mouse.right=false;});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
+window.addEventListener('resize',fitResolution);
 
-setupHUD();
-state=makeState('city'); initInv(); updatePanels(); openModal('startModal'); canvas.focus(); requestAnimationFrame(loop);
+state=makeState('city');
+initInv();
+fitResolution();
+updatePanels();
+openModal('startModal');
+requestAnimationFrame(loop);
 })();
 </script>
 </body>
