@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Galaxy Chem - Elemental Battle V8.0 • Mythic Space Odyssey</title>
+<title>Galaxy Chem - Elemental Battle V9.0 • Mythic Pantheon Edition</title>
 <style>
 :root{
   --bg:#05060b; --panel:#120e1c; --line:#463559; --accent:#ff6b4a; --gold:#ffd166; --text:#f5efe6; --muted:#a89bb8;
@@ -33,13 +33,22 @@ button,select{font:inherit;color:var(--text)}
 .main{position:relative;width:100%;height:100%;overflow:hidden;background:#05060a}
 #game{width:100%;height:100%;display:block;object-fit:contain;cursor:crosshair;background:#070811}
 
-.overlayLabel{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:11px;background:rgba(16,12,26,.92);border:1.5px solid #5c4473;border-radius:6px;color:#f7ede2;padding:5px 15px;white-space:nowrap;font-weight:800;letter-spacing:.8px;z-index:3;pointer-events:none;box-shadow:0 4px 16px #000a}
-.envBanner{position:absolute;top:40px;left:50%;transform:translateX(-50%);font-size:10px;background:rgba(24,15,36,.92);border:1px solid #a36644;border-radius:99px;color:var(--gold);padding:4px 15px;white-space:nowrap;z-index:3;pointer-events:none;font-weight:700;box-shadow:0 4px 14px #000a}
-.bossHUD{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:420px;text-align:center;font-size:11px;font-weight:900;letter-spacing:1.5px;color:#ff9e7d;pointer-events:none;z-index:3;background:rgba(12,8,20,.85);padding:6px 12px;border-radius:8px;border:1.5px solid #753548;box-shadow:0 8px 24px #000c}
+.overlayLabel{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:10.5px;background:rgba(16,12,26,.92);border:1.5px solid #5c4473;border-radius:6px;color:#f7ede2;padding:4px 14px;white-space:nowrap;font-weight:800;letter-spacing:.8px;z-index:3;pointer-events:none;box-shadow:0 4px 16px #000a}
+.envBanner{position:absolute;top:35px;left:50%;transform:translateX(-50%);font-size:9.5px;background:rgba(24,15,36,.92);border:1px solid #a36644;border-radius:99px;color:var(--gold);padding:3px 14px;white-space:nowrap;z-index:3;pointer-events:none;font-weight:700;box-shadow:0 4px 14px #000a}
+
+/* REDESIGNED MYTHIC PANTHEON BOSS HUD */
+.bossHUD{position:absolute;top:62px;left:50%;transform:translateX(-50%);width:510px;pointer-events:none;z-index:3;background:linear-gradient(180deg,rgba(26,14,36,.96),rgba(10,6,18,.96));padding:8px 14px;border-radius:10px;border:2px solid #c9974c;box-shadow:0 0 0 2px #1a0f26 inset,0 12px 32px rgba(0,0,0,.85)}
 .bossHUD:empty{display:none}
-.bossHUD .sub{font-size:9px;color:#ffd166;letter-spacing:1px;margin-top:2px;font-weight:700}
-.bossHUD .bar{height:8px;margin-top:5px;background:#1a0d18;border:1px solid #943b54;border-radius:4px;overflow:hidden}
-.bossHUD .bar span{background:linear-gradient(90deg,#9e112b,#ff4d4d,#ffd166);display:block;height:100%;transition:width .1s}
+.bossHeader{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.bossEmblem{width:38px;height:38px;border-radius:8px;background:radial-gradient(circle,#3b1d4a,#12081c);border:1.5px solid var(--gold);display:grid;place-items:center;font-size:20px;box-shadow:0 0 14px var(--boss-col,#ff4d6d);flex-shrink:0}
+.bossMeta{flex:1;text-align:left}
+.bossTitleRow{display:flex;justify-content:space-between;align-items:baseline}
+.bossName{font-size:13px;font-weight:900;letter-spacing:1.5px;color:#fff;text-shadow:0 0 10px var(--boss-col,#ff4d6d)}
+.bossPhase{font-size:9.5px;font-weight:900;padding:2px 6px;border-radius:4px;background:#3a1426;border:1px solid #ff5d8f;color:#ffb3c6;letter-spacing:1px}
+.bossSub{font-size:9.5px;color:var(--gold);letter-spacing:.8px;margin-top:1px;font-weight:700}
+.bossBarWrap{height:10px;background:#120816;border:1.5px solid #8c584c;border-radius:5px;overflow:hidden;position:relative}
+.bossBarFill{height:100%;background:linear-gradient(90deg,#800f2f,#e01e37,#ff758f,#ffd166);transition:width .1s}
+.bossBarTicks{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent 19.6%,rgba(0,0,0,.55) 19.6%,rgba(0,0,0,.55) 20%)}
 
 .hud{position:absolute;z-index:3;pointer-events:none}
 .hud button,.hud select,.hud .card{pointer-events:auto}
@@ -109,9 +118,9 @@ button,select{font:inherit;color:var(--text)}
 .drop{padding:5px;border-radius:5px;background:#100c1a;border:1px solid #382a4a;text-align:center;font-size:10.5px}
 
 /* Lab Toolbar */
-#labTools{position:absolute;top:115px;left:50%;transform:translateX(-50%);z-index:4;background:rgba(22,16,38,.95);border:1.5px solid #735391;border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;box-shadow:0 8px 24px #000b}
+#labTools{position:absolute;top:134px;left:50%;transform:translateX(-50%);z-index:4;background:rgba(22,16,38,.96);border:1.5px solid #8a63ad;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;box-shadow:0 8px 24px #000c;max-width:680px}
 #labTools[hidden]{display:none}
-#labTools button,#labTools select{background:#241a38;border:1px solid #5e4778;border-radius:5px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer}
+#labTools button,#labTools select{background:#241a38;border:1px solid #5e4778;border-radius:5px;padding:4px 8px;font-size:10.5px;font-weight:700;cursor:pointer}
 #labTools button.active{border-color:var(--gold);color:var(--gold);background:#42233d}
 
 /* Footer */
@@ -142,6 +151,7 @@ button,select{font:inherit;color:var(--text)}
 @media(max-width:1050px){
   .biome-bar{display:none}
   .dock{width:420px}
+  .bossHUD{width:360px}
   .grid3{grid-template-columns:1fr}
   .bankTabs{grid-template-columns:repeat(2,1fr)}
 }
@@ -154,8 +164,8 @@ button,select{font:inherit;color:var(--text)}
     <div class="brand">
       <div class="logo">G</div>
       <div>
-        <h1>GALAXY CHEM <span>MYTHIC ODYSSEY</span></h1>
-        <small>Hades 3D • 21 Mythic Bosses • Space Finale • V8.0</small>
+        <h1>GALAXY CHEM <span>MYTHIC PANTHEON</span></h1>
+        <small>Bespoke 3D Boss Art • 21 Deities • V9.0</small>
       </div>
     </div>
     <div class="topstats">
@@ -180,22 +190,22 @@ button,select{font:inherit;color:var(--text)}
     <div class="envBanner" id="envPassiveBanner">🌆 Thành Phố: Các tòa nhà 3D là VẬT CẢN CỨNG chặn đường đi & đạn bắn • Chỉ số cân bằng</div>
     <div class="bossHUD" id="bossHUD"></div>
 
-    <!-- Lab Mode Toolbar -->
+    <!-- Lab Mode Toolbar (Có danh sách chọn trực tiếp từng vị Thần để ngắm ngoại hình!) -->
     <div id="labTools" hidden>
-      <span style="font-size:10px;color:#ffd166;font-weight:800">BẬC:</span>
+      <span style="font-size:9.5px;color:#ffd166;font-weight:800">BẬC:</span>
       <button data-tier="1">I</button>
       <button data-tier="2">II</button>
       <button data-tier="3">III</button>
       <button data-tier="4" class="active">IV</button>
-      <select id="labPreset">
-        <option value="cataclysm">💥 SIÊU CHIÊU F • Thiên Thạch (F + O + Na)</option>
-        <option value="flame">🔥 Đại Đao Lửa Hades (Q + O)</option>
-        <option value="electric">⚡ Pháo Điện Từ Zeus (E + Cu)</option>
-        <option value="shield">🛡 Khiên Thánh Aegis 3D (R + C)</option>
+      <select id="labPreset" title="Chọn chiêu thử nghiệm">
+        <option value="cataclysm">💥 Chiêu F • Thiên Thạch (F+O+Na)</option>
+        <option value="flame">🔥 Chiêu Q • Đại Đao Lửa (Q+O)</option>
+        <option value="electric">⚡ Chiêu E • Pháo Điện (E+Cu)</option>
+        <option value="shield">🛡 Chiêu R • Khiên Aegis (R+C)</option>
       </select>
-      <button id="labCast" class="btn accent" style="padding:5px 9px">Thi triển</button>
-      <button id="labSpawnBoss" class="btn" style="padding:5px 9px;border-color:#ff9e7d;color:#ff9e7d">Gọi Boss Map Này</button>
-      <button id="labSpawnDragon" class="btn" style="padding:5px 9px;border-color:#ffd166;color:#ffd166">🐉 Gọi Rồng Chung Cực</button>
+      <button id="labCast" class="btn accent" style="padding:4px 8px">Tung Chiêu</button>
+      <select id="labBossPicker" title="Chọn đích danh Boss Thần Thoại để xem ngoại hình riêng"></select>
+      <button id="labSpawnSelectedBoss" class="btn" style="padding:4px 8px;border-color:#ffd166;color:#ffd166">⚡ Triệu hồi Boss này</button>
     </div>
 
     <!-- Left Vitals HUD -->
@@ -203,7 +213,7 @@ button,select{font:inherit;color:var(--text)}
       <div class="card">
         <div class="pilotRow">NOVA <small id="envArmorBadge">VẬT CẢN TÒA NHÀ</small></div>
         <div class="secTitle" id="pilotStatus">LV 1 / LƯỚT SẴN SÀNG</div>
-        <div class="barLabel"><span>HP</span><span id="hpText">180 / 180</span></div>
+        <div class="barLabel"><span>HP</span><span id="hpText">200 / 200</span></div>
         <div class="bar"><span class="hp" id="hpBar" style="width:100%"></span></div>
         <div class="barLabel"><span>Năng lượng</span><span id="enText">100 / 100</span></div>
         <div class="bar"><span class="en" id="enBar" style="width:100%"></span></div>
@@ -288,23 +298,24 @@ button,select{font:inherit;color:var(--text)}
   <!-- FOOTER -->
   <div class="footer">
     <div>WASD · Di chuyển &nbsp;|&nbsp; SHIFT · Lướt Bóng Ma &nbsp;|&nbsp; CHUỘT TRÁI/PHẢI · Chém / Kỹ năng &nbsp;|&nbsp; PHÍM F · Siêu Nổ Thiên Thạch (Cataclysm)</div>
-    <div>VÔ CỰC: Mỗi màn 60s gọi Boss Thần Thoại • Hạ Boss tự động đổi Map ngẫu nhiên & nhân sức mạnh quái • Màn T5 tiến vào Vũ Trụ đấu Rồng Chung Cực!</div>
+    <div>V9.0: Mỗi Boss sở hữu ngoại hình 3D, vũ khí & pháp bảo riêng biệt đúng tên gọi (Kim Cô Bổng, Đinh Ba, Cửu Vĩ, Hỗn Thiên Lăng, Búa Mjolnir...)</div>
   </div>
 </div>
 
 <!-- START MODAL -->
 <div class="modalWrap show" id="startModal">
   <div class="modal">
-    <div class="secTitle">GALAXY CHEM / MYTHIC SPACE ODYSSEY V8.0</div>
-    <h2 class="heroTitle">MYTHIC BOSSES & <span>COSMIC DRAGON.</span></h2>
-    <p>Hệ thống <strong>Vô Cực Chuyển Màn (Stage Progression)</strong> kết hợp <strong>21 Boss Thần Thoại Âu - Á</strong>:<br>
-    • <strong>⏱ Chu kỳ 60 giây & Đổi Map Ngẫu Nhiên:</strong> Trong chế độ Vô Cực, sức mạnh quái không tăng lẻ tẻ theo giây mà giữ ổn định trong màn. Đúng <strong>60s</strong>, 1 trong 5 <strong>Boss Thần Thoại</strong> của Map đó sẽ giáng lâm. Hạ Boss sẽ <strong>tự động dịch chuyển sang Map mới ngẫu nhiên</strong> và nhân sức mạnh theo <strong>cấp số nhân ($1.45^{T-1}$)</strong>.<br>
-    • <strong>⛩ 20 Boss Thần Thoại (5 Boss/Map):</strong> Sa mạc (<em>Anubis, Ra, Tôn Ngộ Không, Sphinx, Cự Linh Thần</em>), Biển (<em>Poseidon, Kraken, Long Vương敖廣, Leviathan, Thủy Tinh</em>), Rừng (<em>Fenrir, Cửu Vĩ Hồ, Medusa, Bạch Hổ, Cernunnos</em>), Thành phố (<em>Zeus, Thor, Na Tra, Ares, Lôi Công</em>) — số lượng kỹ năng của Boss tăng dần theo màn!<br>
-    • <strong>🌌 Màn T5 • Vũ Trụ & Rồng Chung Cực:</strong> Khi đạt đến <strong>Màn T5</strong> (với hệ số sức mạnh $1.45^4 \approx 4.4\times$), bạn sẽ tiến vào <strong>Đấu Trường Tinh Vân Vũ Trụ</strong> (trọng lực nhẹ +12% tốc chạy, hồi năng lượng +35%, thiên thạch trôi nổi) để quyết chiến với <strong>Boss Chung Cực: Hắc Long Vũ Trụ Nidhogg-Long Vương</strong>!</p>
+    <div class="secTitle">GALAXY CHEM / MYTHIC PANTHEON V9.0</div>
+    <h2 class="heroTitle">BESPOKE DEITIES & <span>COSMIC DRAGON.</span></h2>
+    <p>Toàn bộ <strong>21 Boss Thần Thoại Âu - Á</strong> nay đã được thiết kế <strong>ngoại hình 3D, vũ khí, pháp bảo và bộ đạn đặc trưng riêng biệt</strong> đúng với danh hiệu của từng vị thần:<br>
+    • <strong>☀ Sa mạc:</strong> <em>Anubis</em> (Đầu Chó Rừng Đen & Quyền Trượng Ankh), <em>Thần Ra</em> (Đầu Chim Ưng, Đĩa Mặt Trời & Đôi Cánh Lửa), <em>Tôn Ngộ Không</em> (Mão Phượng Hoàng, Lông Vũ Đỏ & <strong>Như Ý Kim Cô Bổng</strong> xoay), <em>Sphinx</em> (Nhân Sư Có Cánh & Mão Pharaoh), <em>Cự Linh Thần</em> (Song Tuyên Khai Sơn Đại Chùy).<br>
+    • <strong>🌊 Biển:</strong> <em>Poseidon</em> (Hoàng Bào Biển & <strong>Đinh Ba Hoàng Kim</strong>), <em>Kraken</em> (Đại Bạch Tuộc & 8 Xúc Tu quẫy sóng), <em>Đông Hải Long Vương</em> (Thân Rồng Xanh uốn lượn & Ngọc Định Hải), <em>Leviathan</em> (Hải Xà Vây Gai Phát Sáng), <em>Thủy Tinh</em> (Pháp Sư Cưỡi Thủy Lốc).<br>
+    • <strong>🌲 Rừng:</strong> <em>Fenrir</em> (Ma Sói Khổng Lồ nanh trắng & Xích Thần Gleipnir đứt gãy), <em>Cửu Vĩ Thiên Hồ</em> (<strong>9 Đuôi Hồ Ly</strong> xòe quạt & Hồ Hỏa), <em>Medusa</em> (Thân Rắn, Tóc Xà & Đôi Mắt Hóa Đá), <em>Bạch Hổ</em> (Chúa Sơn Lâm Vằn Đen & Cánh Gió), <em>Cernunnos</em> (Lộc Thần Gạc Hươu Cổ Thụ).<br>
+    • <strong>🌆 Thành phố & 🌌 Vũ trụ:</strong> <em>Zeus</em> (Tia Chớp Sấm Sét), <em>Thor</em> (Áo Choàng Đỏ & <strong>Búa Mjolnir</strong>), <em>Na Tra</em> (<strong>Phong Hỏa Luân</strong> dưới chân, <strong>Hỗn Thiên Lăng</strong> đỏ bay lượn & Hỏa Tiêm Thương), <em>Ares</em> (Mũ Chiến Binh Sparta & Khiên Đỏ), <em>Lôi Công</em> (Đôi Cánh Sấm & Chùy Đục Sét), cùng <em>Hắc Long Vũ Trụ Nidhogg-Long Vương</em>!</p>
     <div class="grid3">
-      <div class="choice" data-start="endless"><h4>🔥 Chế độ Vô Cực (Chuyển Map & Boss 60s)</h4><p>Trải nghiệm trọn vẹn hành trình T1 → T5: mỗi 60s đấu Boss Thần Thoại, hạ Boss tự động đổi Map ngẫu nhiên, tăng cấp số nhân và chạm trán Rồng Vũ Trụ ở T5!</p><small>Chế độ chính được thiết kế mới</small></div>
-      <div class="choice" data-start="training"><h4>⚔ Màn Huấn Luyện Nhanh</h4><p>Làm quen với cơ chế điều khiển, thử nghiệm vật cản tòa nhà ở Thành phố và phản ứng nguyên tố cơ bản.</p><small>Hạ 8 quái & lên cấp 1 lần</small></div>
-      <div class="choice" id="howTo"><h4>🐉 Phòng Thử Boss & Rồng Vũ Trụ</h4><p>Bất tử năng lượng, cho phép bấm nút gọi ngay bất kỳ Boss Thần Thoại nào hoặc triệu hồi trực tiếp Hắc Long Vũ Trụ để chiêm ngưỡng bộ kỹ năng!</p><small>Thử ngay Rồng Chung Cực!</small></div>
+      <div class="choice" data-start="endless"><h4>🔥 Chế độ Vô Cực (Chuyển Map & Boss 60s)</h4><p>Chiến đấu 60s mỗi màn để chạm trán ngẫu nhiên các vị Thần với tạo hình mới. Hạ Boss tự động đổi Map ngẫu nhiên, tăng cấp số nhân và gặp Rồng Vũ Trụ ở T5!</p><small>Chế độ trải nghiệm chính</small></div>
+      <div class="choice" data-start="training"><h4>⚔ Màn Huấn Luyện Nhanh</h4><p>Làm quen với cơ chế điều khiển, tận dụng các tòa nhà Thành phố để che chắn đạn và thử phản ứng nguyên tố.</p><small>Hạ 8 quái & lên cấp 1 lần</small></div>
+      <div class="choice" id="howTo"><h4>🐉 Phòng Ngắm & Thử 21 Boss Thần Thoại</h4><p>Tích hợp menu thả xuống cho phép bạn <strong>chọn đích danh bất kỳ vị Thần nào trong 21 Boss</strong> (Ngộ Không, Na Tra, Cửu Vĩ, Anubis, Rồng Vũ Trụ...) để triệu hồi ngay lập tức!</p><small>Bấm vào đây để xem tận mắt 21 Boss!</small></div>
     </div>
   </div>
 </div>
@@ -355,7 +366,6 @@ const banks=[
   {name:'IV • Đa Hệ Khắc Chế',els:['Cu','Ar','Cl','C']}
 ];
 
-// 5 BẢN ĐỒ (Thêm Map Vũ Trụ 'space' cân bằng hợp lý)
 const biomes={
   city:{
     title:'Thành phố',
@@ -389,38 +399,38 @@ const biomes={
   }
 };
 
-// DANH SÁCH 20 BOSS THẦN THOẠI ÂU - Á (Mỗi Map 5 Boss) + 1 RỒNG CHUNG CỰC VŨ TRỤ
+// DANH SÁCH 21 BOSS THẦN THOẠI KÈM BIỂU TƯỢNG, VŨ KHÍ & ĐẠN ĐẶC TRƯNG
 const mythicBossPools={
   desert:[
-    {id:'anubis', name:'ANUBIS • Tử Thần Sa Mạc', origin:'Ai Cập', color:'#c77dff', accent:'#ffd166', style:'jackal'},
-    {id:'ra', name:'THẦN RA • Thái Dương Chân Hỏa', origin:'Ai Cập', color:'#ff9e00', accent:'#fff3b0', style:'sun'},
-    {id:'wukong', name:'TÔN NGỘ KHÔNG • Tề Thiên Đại Thánh', origin:'Á Đông', color:'#ff4d4d', accent:'#ffd166', style:'monkey'},
-    {id:'sphinx', name:'SPHINX • Nhân Sư Hoàng Kim', origin:'Ai Cập / Hy Lạp', color:'#eab308', accent:'#fef08a', style:'guardian'},
-    {id:'culinh', name:'CỰ LINH THẦN • Đại Lực Thiên Tướng', origin:'Á Đông', color:'#d97706', accent:'#fde68a', style:'titan'}
+    {id:'anubis', icon:'🐺', name:'ANUBIS • Tử Thần Sa Mạc', origin:'Ai Cập', weapon:'Quyền Trượng Ankh & Lửa Âm Giới', projShape:'ankh', color:'#b5179e', accent:'#ffd166'},
+    {id:'ra', icon:'☀️', name:'THẦN RA • Thái Dương Chân Hỏa', origin:'Ai Cập', weapon:'Nhật Luân Hoàng Kim & Cánh Chim Ưng', projShape:'sun', color:'#ff9e00', accent:'#fff3b0'},
+    {id:'wukong', icon:'🐒', name:'TÔN NGỘ KHÔNG • Tề Thiên Đại Thánh', origin:'Á Đông', weapon:'Như Ý Kim Cô Bổng & Cân Đẩu Vân', projShape:'staff', color:'#ef233c', accent:'#ffd166'},
+    {id:'sphinx', icon:'🦁', name:'SPHINX • Nhân Sư Hoàng Kim', origin:'Ai Cập / Hy Lạp', weapon:'Đôi Cánh Sa Bão & Vương Miện Nemes', projShape:'pyramid', color:'#eab308', accent:'#fef08a'},
+    {id:'culinh', icon:'🪓', name:'CỰ LINH THẦN • Đại Lực Thiên Tướng', origin:'Á Đông', weapon:'Song Tuyên Khai Sơn Đại Chùy', projShape:'hammer', color:'#f97316', accent:'#fde68a'}
   ],
   coast:[
-    {id:'poseidon', name:'POSEIDON • Hải Vương Đinh Ba', origin:'Hy Lạp', color:'#00bbf9', accent:'#caf0f8', style:'trident'},
-    {id:'kraken', name:'KRAKEN • Thủy Quái Vực Thẳm', origin:'Bắc Âu', color:'#38b000', accent:'#9ef01a', style:'tentacle'},
-    {id:'longvuong', name:'ĐÔNG HẢI LONG VƯƠNG • Ngao Quảng', origin:'Á Đông', color:'#4cc9f0', accent:'#ffd166', style:'seadragon'},
-    {id:'leviathan', name:'LEVIATHAN • Xà Thần Đại Dương', origin:'Cổ Đại', color:'#4361ee', accent:'#4cc9f0', style:'serpent'},
-    {id:'thuytinh', name:'THỦY TINH • Vũ Đế Sóng Thần', origin:'Việt Nam', color:'#00f5d4', accent:'#ffffff', style:'storm'}
+    {id:'poseidon', icon:'🔱', name:'POSEIDON • Hải Vương Đinh Ba', origin:'Hy Lạp', weapon:'Đinh Ba Hải Thần & Sóng Thần Đại Dương', projShape:'trident', color:'#00bbf9', accent:'#caf0f8'},
+    {id:'kraken', icon:'🐙', name:'KRAKEN • Thủy Quái Vực Thẳm', origin:'Bắc Âu', weapon:'8 Xúc Tu Khổng Lồ & Mực Độc Biển Sâu', projShape:'tentacle', color:'#38b000', accent:'#9ef01a'},
+    {id:'longvuong', icon:'🐉', name:'ĐÔNG HẢI LONG VƯƠNG • Ngao Quảng', origin:'Á Đông', weapon:'Chân Thân Thanh Long & Ngọc Định Hải', projShape:'pearl', color:'#4cc9f0', accent:'#ffd166'},
+    {id:'leviathan', icon:'🐍', name:'LEVIATHAN • Xà Thần Đại Dương', origin:'Cổ Đại', weapon:'Vây Gai Áp Suất & Xoáy Nước Cực Hàn', projShape:'fang', color:'#4361ee', accent:'#4cc9f0'},
+    {id:'thuytinh', icon:'🌊', name:'THỦY TINH • Vũ Đế Sóng Thần', origin:'Việt Nam', weapon:'Thủy Lốc Cuồng Phong & Pháp Trượng', projShape:'wave', color:'#00f5d4', accent:'#ffffff'}
   ],
   forest:[
-    {id:'fenrir', name:'FENRIR • Ma Sói Tận Thế', origin:'Bắc Âu', color:'#9d4edd', accent:'#e0aaff', style:'wolf'},
-    {id:'cuuvi', name:'CỬU VĨ THIÊN HỒ • Hồ Yêu Ngàn Năm', origin:'Á Đông', color:'#ff5d8f', accent:'#ffc2d1', style:'fox'},
-    {id:'medusa', name:'MEDUSA • Xà Nữ Hóa Đá', origin:'Hy Lạp', color:'#52b788', accent:'#d8f3dc', style:'gorgon'},
-    {id:'bachho', name:'BẠCH HỔ • Tây Phương Thánh Thú', origin:'Á Đông', color:'#e2e8f0', accent:'#38bdf8', style:'tiger'},
-    {id:'cernunnos', name:'CERNUNNOS • Lộc Thần Rừng Già', origin:'Celtic', color:'#70e000', accent:'#ccff33', style:'stag'}
+    {id:'fenrir', icon:'🐾', name:'FENRIR • Ma Sói Tận Thế', origin:'Bắc Âu', weapon:'Nanh Sói Ragnarok & Xích Đứt Gleipnir', projShape:'claw', color:'#9d4edd', accent:'#e0aaff'},
+    {id:'cuuvi', icon:'🦊', name:'CỬU VĨ THIÊN HỒ • Hồ Yêu Ngàn Năm', origin:'Á Đông', weapon:'9 Đuôi Bạch Hồ & Hồ Hỏa Mê Hồn', projShape:'foxfire', color:'#ff4d8d', accent:'#ffc2d1'},
+    {id:'medusa', icon:'🐍', name:'MEDUSA • Xà Nữ Hóa Đá', origin:'Hy Lạp', weapon:'Tóc Rắn Độc & Ánh Nhìn Hóa Đá', projShape:'serpent', color:'#52b788', accent:'#d8f3dc'},
+    {id:'bachho', icon:'🐯', name:'BẠCH HỔ • Tây Phương Thánh Thú', origin:'Á Đông', weapon:'Canh Kim Phong Dực & Hổ Trảo', projShape:'claw', color:'#e2e8f0', accent:'#38bdf8'},
+    {id:'cernunnos', icon:'🦌', name:'CERNUNNOS • Lộc Thần Rừng Già', origin:'Celtic', weapon:'Gạc Hươu Cổ Thụ & Sinh Mệnh Giới', projShape:'leaf', color:'#70e000', accent:'#ccff33'}
   ],
   city:[
-    {id:'zeus', name:'ZEUS • Chúa Tể Sấm Sét Olympus', origin:'Hy Lạp', color:'#38bdf8', accent:'#fef08a', style:'thunder'},
-    {id:'thor', name:'THOR • Lôi Thần Búa Mjolnir', origin:'Bắc Âu', color:'#60a5fa', accent:'#e0f2fe', style:'hammer'},
-    {id:'natra', name:'NA TRA • Tam Thái Tử Hỏa Tiêm Thương', origin:'Á Đông', color:'#fb7185', accent:'#fcd34d', style:'lotus'},
-    {id:'ares', name:'ARES • Chiến Thần Hủy Diệt', origin:'Hy Lạp', color:'#ef4444', accent:'#fca5a5', style:'war'},
-    {id:'loicong', name:'LÔI CÔNG • Thiên Đình Chưởng Lôi', origin:'Á Đông', color:'#a855f7', accent:'#f3e8ff', style:'thunder'}
+    {id:'zeus', icon:'⚡', name:'ZEUS • Chúa Tể Sấm Sét Olympus', origin:'Hy Lạp', weapon:'Lưỡi Sét Thượng Đế & Áo Choàng Mây', projShape:'bolt', color:'#38bdf8', accent:'#fef08a'},
+    {id:'thor', icon:'🔨', name:'THOR • Lôi Thần Búa Mjolnir', origin:'Bắc Âu', weapon:'Thần Chùy Mjolnir & Giáp Asgard', projShape:'hammer', color:'#60a5fa', accent:'#e0f2fe'},
+    {id:'natra', icon:'🔥', name:'NA TRA • Tam Thái Tử Hỏa Tiêm Thương', origin:'Á Đông', weapon:'Phong Hỏa Luân, Hỗn Thiên Lăng & Càn Khôn Quyền', projShape:'ring', color:'#fb7185', accent:'#fcd34d'},
+    {id:'ares', icon:'⚔️', name:'ARES • Chiến Thần Hủy Diệt', origin:'Hy Lạp', weapon:'Mũ Chiến Sparta, Đại Kiếm & Khiên Máu', projShape:'spear', color:'#ef4444', accent:'#fca5a5'},
+    {id:'loicong', icon:'🌩️', name:'LÔI CÔNG • Thiên Đình Chưởng Lôi', origin:'Á Đông', weapon:'Đôi Cánh Phong Lôi & Chùy Đục Sấm Sét', projShape:'bolt', color:'#a855f7', accent:'#f3e8ff'}
   ],
   space:[
-    {id:'cosmic_dragon', name:'NIDHOGG-LONG VƯƠNG • Hắc Long Vũ Trụ', origin:'Chung Cực Âu - Á', color:'#f72585', accent:'#4cc9f0', style:'cosmic_dragon', ultimate:true}
+    {id:'cosmic_dragon', icon:'🐉', name:'NIDHOGG-LONG VƯƠNG • Hắc Long Vũ Trụ', origin:'Chung Cực Âu - Á', weapon:'Long Dực Tinh Vân, Sừng Hoàng Kim & Hơi Thở Hố Đen', projShape:'star', color:'#f72585', accent:'#4cc9f0', ultimate:true}
   ]
 };
 
@@ -461,11 +471,7 @@ let quality='high', hudTick=0, shake=0, screenFlash=0, screenFlashCol='#ffffff',
 let floorCache=null, floorCacheKey='';
 
 function readBest(){try{return Number(localStorage.getItem('gc_pixel_best')||0)||0;}catch{return 0;}}
-
-// Hệ số nhân sức mạnh theo màn (Cấp số nhân: mỗi lần qua màn nhân 1.45x; tại T5 đạt ~4.42x)
-function getStageMultiplier(stage){
-  return Math.pow(1.45, Math.max(0, (stage||1) - 1));
-}
+function getStageMultiplier(stage){return Math.pow(1.45, Math.max(0, (stage||1) - 1));}
 
 function generateMapProps(biome){
   const props=[];
@@ -488,7 +494,6 @@ function generateMapProps(biome){
     const spots=[[-230,-140],[230,-140],[-240,140],[240,140],[-95,-175],[110,175],[-305,-20],[305,20]];
     spots.forEach(([x,y],i)=>props.push({type:'coral',x,y,r:18,scale:0.95+(i%3)*0.15,solid:true}));
   } else if(biome==='space'){
-    // Vũ trụ: Các khối thiên thạch tinh thể & cột năng lượng cổ đại lơ lửng
     const spots=[[-240,-140],[240,-140],[-240,140],[240,140],[0,-195],[0,195],[-330,0],[330,0],[-125,95],[125,-95]];
     spots.forEach(([x,y],i)=>props.push({type:'asteroid',x,y,r:20,scale:1+(i%3)*0.15,solid:true,seed:i}));
   }
@@ -556,14 +561,13 @@ function reset(mode){
   document.getElementById('labTools').hidden = (mode!=='lab');
   updatePanels(); hideAllModals();
   toast(
-    mode==='lab' ? 'Phòng thử Boss & Rồng Vũ Trụ • Bấm nút "Gọi Rồng Chung Cực" trên thanh công cụ!' :
+    mode==='lab' ? 'Phòng Thử 21 Boss Thần Thoại • Chọn bất kỳ vị Thần nào trên thanh công cụ rồi bấm "Triệu hồi Boss này"!' :
     mode==='training' ? 'Huấn luyện • Hạ 8 quái và lên cấp 1 lần!' :
     'Màn T1 ('+biomes[state.biome].title+') • Chiến đấu 60s để triệu hồi Boss Thần Thoại!'
   );
   canvas.focus();
 }
 
-// Khởi tạo đợt quái thường: Sức mạnh KHÔNG tăng theo thời gian trôi, chỉ tăng theo cấp số nhân mỗi lần chuyển Map (Stage)
 function spawnWave(initial=false){
   const count = initial ? 4 : Math.min(8, 3 + state.stage);
   for(let i=0;i<count;i++) spawnEnemy();
@@ -604,32 +608,50 @@ function spawnEnemy(){
   state.enemies.push(en);
 }
 
-// TRIỆU HỒI BOSS THẦN THOẠI THEO MAP (5 Boss/Map) HOẶC RỒNG CHUNG CỰC Ở VŨ TRỤ
-function spawnMythicBoss(forceDragon=false){
-  if(forceDragon && state.biome!=='space'){
+// Tìm thông tin Boss theo ID hoặc lấy ngẫu nhiên trong Map hiện tại
+function findBossTemplate(specificId, forceDragon){
+  if(specificId){
+    for(const [bKey, list] of Object.entries(mythicBossPools)){
+      const found = list.find(item=>item.id===specificId);
+      if(found) return {template:found, biomeKey:bKey};
+    }
+  }
+  if(forceDragon) return {template:mythicBossPools.space[0], biomeKey:'space'};
+  const pool = mythicBossPools[state.biome] || mythicBossPools.city;
+  return {template:pool[Math.floor(Math.random()*pool.length)], biomeKey:state.biome};
+}
+
+function spawnMythicBoss(forceDragon=false, specificId=null){
+  // Trong Phòng thử (lab), xóa các Boss cũ trước khi gọi Boss mới để dễ quan sát ngoại hình
+  if(state.mode==='lab'){
+    state.enemies = state.enemies.filter(e=>e.type!=='boss');
+  }
+  const {template, biomeKey} = findBossTemplate(specificId, forceDragon);
+  if(specificId && state.biome !== biomeKey){
+    setBiome(biomeKey, true);
+  } else if(forceDragon && state.biome !== 'space'){
     setBiome('space', true);
   }
-  const pool = forceDragon ? mythicBossPools.space : (mythicBossPools[state.biome] || mythicBossPools.city);
-  const template = pool[Math.floor(Math.random()*pool.length)];
-  const mult = getStageMultiplier(state.stage);
-  const isDragon = !!template.ultimate || forceDragon;
 
-  // Số kỹ năng của Boss mở khóa theo độ khó của Màn (Stage)
+  const mult = getStageMultiplier(state.stage);
+  const isDragon = !!template.ultimate;
   const unlockedSkills = isDragon ? 5 : clamp(1 + state.stage, 2, 5);
-  const baseHp = isDragon ? 480 : 210;
+  const baseHp = isDragon ? 480 : 220;
   const bossHp = Math.round(baseHp * mult);
   const bossDmg = Math.round((isDragon ? 26 : 18) * Math.pow(mult, 0.85));
 
-  const a=rand(0,TAU), dist=240;
-  const px=clamp(state.player.x+Math.cos(a)*dist,-380,380);
-  const py=clamp(state.player.y+Math.sin(a)*dist,-250,250);
+  const a=rand(0,TAU), dist=state.mode==='lab'?135:230;
+  const px=clamp(state.player.x+Math.cos(a)*dist,-360,360);
+  const py=clamp(state.player.y+Math.sin(a)*dist,-240,240);
 
   const boss = {
     type:'boss',
     bossId:template.id,
+    bossIcon:template.icon||'👑',
     bossName:template.name,
     origin:template.origin,
-    style:template.style,
+    weapon:template.weapon||'Thần Khí Cổ Đại',
+    projShape:template.projShape||'orb',
     ultimate:isDragon,
     unlockedSkills,
     x:px, y:py,
@@ -641,7 +663,7 @@ function spawnMythicBoss(forceDragon=false){
     drop:'O',
     armor:isDragon?0.28:0.20,
     burn:0,poison:0,slow:0,shock:0,hitFlash:0,
-    skillCd:2.2,
+    skillCd:2.0,
     dashVelX:0, dashVelY:0, dashTime:0
   };
   resolveObstacleCollisions(boss, boss.r);
@@ -649,37 +671,33 @@ function spawnMythicBoss(forceDragon=false){
   state.bossActive = true;
 
   shake = Math.max(shake, isDragon ? 14 : 8);
-  screenFlash = 0.45; screenFlashCol = template.color;
+  screenFlash = 0.42; screenFlashCol = template.color;
   sound('impact');
   pushEffect({type:'cataclysm',x:boss.x,y:boss.y,t:0,life:0.85,r:isDragon?110:80,color:template.color,reaction:{tier:isDragon?4:2,heat:3,els:['O']}});
-  toast((isDragon?'🐉 BOSS CHUNG CỰC GIÁNG LÂM: ':'⚡ BOSS THẦN THOẠI XUẤT HIỆN: ') + template.name + ' (' + unlockedSkills + ' Kỹ năng)!');
+  toast(template.icon + ' ' + template.name + ' • Vũ khí: ' + template.weapon);
   updatePanels();
 }
 
-// HỆ THỐNG KỸ NĂNG BOSS THẦN THOẠI (Mở rộng theo độ khó Stage)
 function executeBossSkill(b){
   const p=state.player;
   const dir=norm(p.x-b.x, p.y-b.y);
   const baseAngle=Math.atan2(dir.y, dir.x);
-  // Chọn kỹ năng dựa trên số lượng kỹ năng đã mở khóa ở màn hiện tại
   const skillIdx = Math.floor(Math.random() * b.unlockedSkills);
 
-  // Kỹ năng 1: Phóng chùm Đạn Thần Lực hình nón (Mọi Màn)
   if(skillIdx===0){
     const count = b.ultimate ? 9 : (3 + Math.min(4, state.stage));
     for(let i=0;i<count;i++){
       const ang = baseAngle + (i-(count-1)/2)*0.18;
       state.projectiles.push({
-        owner:'enemy', kind:'bossOrb',
+        owner:'enemy', kind:'bossOrb', shape:b.projShape,
         x:b.x, y:b.y,
-        vx:Math.cos(ang)*275, vy:Math.sin(ang)*275,
-        life:2.2, r:b.ultimate?8:6,
+        vx:Math.cos(ang)*280, vy:Math.sin(ang)*280,
+        life:2.2, r:b.ultimate?8:6.5,
         dmg:b.dmg*0.8, color:b.color, accent:b.accent
       });
     }
     pushEffect({type:'muzzle',x:b.x,y:b.y,dir:baseAngle,t:0,life:.28,color:b.color});
   }
-  // Kỹ năng 2: Thiên Phạt Giáng Thế - Vòng nổ khóa vị trí người chơi (Màn T1+)
   else if(skillIdx===1){
     const strikes = b.ultimate ? 4 : Math.min(3, 1 + Math.floor(state.stage/2));
     for(let i=0;i<strikes;i++){
@@ -688,35 +706,32 @@ function executeBossSkill(b){
       pushEffect({
         type:'bossTelegraph',
         x:clamp(p.x+ox,-430,430), y:clamp(p.y+oy,-300,300),
-        t:0, life:0.75, r:b.ultimate?68:52,
+        t:0, life:0.75, r:b.ultimate?68:54,
         dmg:b.dmg*1.15, color:b.color, accent:b.accent
       });
     }
   }
-  // Kỹ năng 3: Thần Tốc Đột Kích - Lướt vồ tới người chơi kèm sóng chấn động (Màn T2+)
   else if(skillIdx===2){
-    b.dashVelX = dir.x * 360;
-    b.dashVelY = dir.y * 360;
+    b.dashVelX = dir.x * 365;
+    b.dashVelY = dir.y * 365;
     b.dashTime = 0.38;
     pushEffect({type:'burst',x:b.x,y:b.y,t:0,life:.35,r:48,color:b.accent});
   }
-  // Kỹ năng 4: Vòng Xoáy Bát Quái Toàn Phương Radial Nova (Màn T3+)
   else if(skillIdx===3){
     const bolts = b.ultimate ? 16 : (8 + state.stage*2);
     for(let i=0;i<bolts;i++){
       const ang = (i/bolts)*TAU + state.time;
       state.projectiles.push({
-        owner:'enemy', kind:'bossOrb',
+        owner:'enemy', kind:'bossOrb', shape:b.projShape,
         x:b.x, y:b.y,
-        vx:Math.cos(ang)*230, vy:Math.sin(ang)*230,
-        life:2.5, r:6,
+        vx:Math.cos(ang)*235, vy:Math.sin(ang)*235,
+        life:2.5, r:6.5,
         dmg:b.dmg*0.75, color:b.accent, accent:b.color
       });
     }
     pushEffect({type:'burst',x:b.x,y:b.y,t:0,life:.45,r:65,color:b.color});
     shake = Math.max(shake, 4);
   }
-  // Kỹ năng 5 (T4+ & Rồng Chung Cực): Hơi Thở Hủy Diệt Liên Hoàn & Mưa Thiên Thạch Vũ Trụ
   else {
     for(let w=0;w<3;w++){
       const tx = clamp(p.x + rand(-130,130), -420, 420);
@@ -724,33 +739,31 @@ function executeBossSkill(b){
       pushEffect({
         type:'bossTelegraph',
         x:tx, y:ty, t:0, life:0.65+w*0.15, r:72,
-        dmg:b.dmg*1.3, color:'#f72585', accent:'#4cc9f0'
+        dmg:b.dmg*1.3, color:b.color, accent:b.accent
       });
     }
     for(let i=-3;i<=3;i++){
       const ang = baseAngle + i*0.12;
       state.projectiles.push({
-        owner:'enemy', kind:'bossOrb',
+        owner:'enemy', kind:'bossOrb', shape:b.projShape,
         x:b.x, y:b.y,
-        vx:Math.cos(ang)*320, vy:Math.sin(ang)*320,
+        vx:Math.cos(ang)*325, vy:Math.sin(ang)*325,
         life:2.2, r:8,
-        dmg:b.dmg, color:'#f72585', accent:'#ffd166'
+        dmg:b.dmg, color:b.color, accent:b.accent
       });
     }
     shake = Math.max(shake, 6);
   }
 }
 
-// CHUYỂN MÀN & ĐỔI MAP NGẪU NHIÊN SAU KHI HẠ BOSS
 function advanceEndlessStage(killedBoss){
   state.bossActive = false;
-  state.enemies = []; // Dọn sạch quái còn sót để chuyển sang Map mới
+  state.enemies = [];
   state.projectiles = [];
 
   state.stage++;
   state.stageTimer = 0;
 
-  // Chọn Map tiếp theo: Nếu đến Màn T5 thì chắc chắn vào Map Vũ Trụ (Space) để gặp Rồng Chung Cực!
   let nextBiome;
   if(state.stage === 5){
     nextBiome = 'space';
@@ -760,7 +773,6 @@ function advanceEndlessStage(killedBoss){
   }
 
   setBiome(nextBiome, true);
-  // Hồi phục một phần máu và năng lượng khi qua màn
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + 50);
   state.player.energy = state.player.maxEnergy;
 
@@ -898,7 +910,6 @@ function getReaction(skill,els){
     }
   }
   else if(state.biome === 'space'){
-    // Map Vũ Trụ cân bằng hợp lý: không khắc hệ nào, cộng đồng đều +15% hiệu suất phản ứng & +12% tầm
     reaction.damage *= 1.15;
     reaction.range *= 1.12;
     reaction.shield *= 1.15;
@@ -1112,7 +1123,6 @@ function killEnemy(e){
     return;
   }
 
-  // Nếu vừa tiêu diệt Boss trong chế độ Vô cực -> Đổi Map ngẫu nhiên & Tăng Stage!
   if(isBoss && state.mode==='endless'){
     advanceEndlessStage(e);
   } else if(isBoss && state.mode==='lab'){
@@ -1182,7 +1192,6 @@ function update(dt){
   p.attackCd=Math.max(0,p.attackCd-dt); p.dashCd=Math.max(0,p.dashCd-dt);
   for(const k in p.cd) p.cd[k]=Math.max(0,p.cd[k]-dt);
 
-  // Vũ trụ: Hồi năng lượng nhanh hơn +35%
   const enRegenMul = s.biome==='space' ? 1.35 : 1.0;
   p.energy=Math.min(p.maxEnergy,p.energy+(9*enRegenMul)*dt+((p.modPower.Mg||0)*2));
 
@@ -1190,17 +1199,14 @@ function update(dt){
     p.shield = Math.min(p.maxShield, p.shield + 4.5*dt);
   }
 
-  // TIẾN TRÌNH 60 GIÂY TRONG CHẾ ĐỘ VÔ CỰC
   if(s.mode==='endless'){
     if(!s.bossActive){
       s.stageTimer += dt;
       s.spawnAccum += dt;
-      // Duy trì nhịp ra quái trong 60s nhưng không tăng chỉ số ngầm
       if(s.enemies.length < 4 + Math.min(5, s.stage) && s.spawnAccum >= 2.6){
         s.spawnAccum = 0;
         spawnEnemy();
       }
-      // Đúng 60s -> Triệu hồi Boss Thần Thoại của Map hiện tại (Màn T5 gọi Rồng Chung Cực!)
       if(s.stageTimer >= s.stageDuration){
         s.stageTimer = s.stageDuration;
         spawnMythicBoss(s.stage === 5 && s.biome === 'space');
@@ -1211,7 +1217,6 @@ function update(dt){
     spawnWave();
   }
 
-  // Di chuyển nhân vật (Map Vũ Trụ trọng lực nhẹ tăng +12% tốc chạy)
   let ax=(keys['d']?1:0)-(keys['a']?1:0), ay=(keys['s']?1:0)-(keys['w']?1:0);
   let n=norm(ax,ay);
   const spaceSpeedMul = s.biome==='space' ? 1.12 : 1.0;
@@ -1256,7 +1261,6 @@ function update(dt){
     }
   }
 
-  // Cập nhật Quái vật & Boss Thần Thoại
   for(let i=s.enemies.length-1;i>=0;i--){
     const e=s.enemies[i]; if(!e||e.dead)continue;
     const dx=p.x-e.x, dy=p.y-e.y, d=Math.hypot(dx,dy)||1;
@@ -1283,7 +1287,6 @@ function update(dt){
       continue;
     }
 
-    // Xử lý kỹ năng và cú lướt của Boss Thần Thoại
     if(e.type==='boss'){
       if(e.dashTime > 0){
         e.dashTime -= dt;
@@ -1296,7 +1299,6 @@ function update(dt){
       e.skillCd -= dt * slow;
       if(e.skillCd <= 0){
         executeBossSkill(e);
-        // Boss càng ở màn cao và khi máu dưới 50% sẽ tung chiêu dồn dập hơn
         const enrage = e.hp < e.maxHp*0.5 ? 0.72 : 1.0;
         e.skillCd = Math.max(1.25, (3.2 - state.stage*0.25) * enrage);
       }
@@ -1340,7 +1342,6 @@ function update(dt){
     if(e.hp<=0) killEnemy(e);
   }
 
-  // Đạn bắn của cả Người chơi và Boss
   for(let i=s.projectiles.length-1;i>=0;i--){
     const pr=s.projectiles[i]; pr.x+=pr.vx*dt; pr.y+=pr.vy*dt; pr.life-=dt;
     pr.trail=pr.trail||[]; pr.trail.push({x:pr.x,y:pr.y});
@@ -1348,7 +1349,6 @@ function update(dt){
     if(pr.trail.length>maxTrail) pr.trail.shift();
     let hit=false;
 
-    // Tòa nhà ở Thành phố chặn cả đạn của người chơi lẫn đạn của Boss!
     if(s.biome==='city'){
       for(const prop of s.mapProps){
         if(prop.solid && Math.hypot(prop.x-pr.x, prop.y-pr.y) < prop.r + pr.r*0.6){
@@ -1384,7 +1384,6 @@ function update(dt){
     if(pr.life<=0||hit) s.projectiles.splice(i,1);
   }
 
-  // Hiệu ứng kỹ năng & kích nổ vùng sát thương của Boss
   for(let i=s.effects.length-1;i>=0;i--){
     const e=s.effects[i]; e.t+=dt;
     if(e.type==='cloud' || e.type==='firePatch'){
@@ -1564,7 +1563,6 @@ function drawProp25D(prop){
     if(prop.hitGlow>0) glow(x,y-h*0.4,55,'#5ce1ff',prop.hitGlow);
   }
   else if(prop.type==='asteroid'){
-    // Tinh thể thiên thạch Vũ trụ lơ lửng 3D
     const floatY = y - 10 + Math.sin(state.time*2.5 + (prop.seed||0))*6;
     ring(x,y+2,16,'#f72585',0.35,1.5);
     drawIsoBlock(x,floatY,18,10,28,'#3b1d5e','#24103d','#150826','#f7258588');
@@ -1691,7 +1689,6 @@ function drawBg(){
   const b=palettes[state.biome];
   ctx.fillStyle=b[0]; ctx.fillRect(0,0,W,H);
 
-  // Nếu ở Map Vũ Trụ: Vẽ bầu trời Tinh Vân (Nebula) & Sao băng lấp lánh bên dưới sàn đấu
   if(state.biome==='space'){
     ctx.save();
     glow(W*0.25, H*0.3, 260, '#7209b7', 0.35);
@@ -1804,19 +1801,468 @@ function drawPlayer(){
   if(p.shield>0) drawShield(x,y-30,40,t,p.shield/p.maxShield,p.shieldTier);
 }
 
-// VẼ QUÁI THƯỜNG, 20 BOSS THẦN THOẠI VÀ RỒNG CHUNG CỰC VŨ TRỤ
+// ============================================================================
+// HỆ THỐNG VẼ NGOẠI HÌNH ĐẶC TRƯNG RIÊNG CHO TỪNG VỊ THẦN (21 BESPOKE BOSSES)
+// ============================================================================
+function drawBespokeMythicBoss(e, x, y, t, step, col){
+  const id = e.bossId;
+  const acc = e.accent || '#ffd166';
+  const ink = '#05040a';
+  const enraged = e.hp < e.maxHp * 0.5;
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Vòng Trận Pháp Thần Vị dưới chân Boss (Xoay liên tục, rực sáng khi Cuồng Nộ Phase 2)
+  const auraR = e.ultimate ? 44 : 30;
+  glow(0, -24, e.ultimate ? 95 : 58, col, enraged ? 0.55 : 0.35);
+  ring(0, 2, auraR, acc, enraged ? 0.85 : 0.5, 2.2);
+  ctx.save();
+  ctx.scale(1.55, 0.78);
+  ctx.rotate(t * (enraged ? 2.6 : 1.4));
+  ctx.strokeStyle = col; ctx.lineWidth = 1.6;
+  const pts = e.origin?.includes('Á') || e.origin?.includes('Việt') ? 8 : 6;
+  ctx.beginPath();
+  for(let i=0;i<=pts;i++){
+    const a = (i/pts)*TAU;
+    i===0 ? ctx.moveTo(Math.cos(a)*auraR*0.82, Math.sin(a)*auraR*0.82) : ctx.lineTo(Math.cos(a)*auraR*0.82, Math.sin(a)*auraR*0.82);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // 1. NHÓM SA MẠC (ANUBIS, RA, TÔN NGỘ KHÔNG, SPHINX, CỰ LINH THẦN)
+  if(id === 'anubis'){
+    // Anubis: Thân đen viền vàng Ai Cập, hai tai Chó Rừng nhọn cao, Mão Nemes & Quyền Trượng Ankh
+    poly([[-18,-42],[18,-42],[24,-6],[-24,-6]],'#151126',ink,2.2);
+    poly([[-14,-42],[14,-42],[8,-14],[-8,-14]],'#ffd166',ink,1.6); // Cổ áo vàng Ai Cập
+    poly([[-11,-42],[11,-42],[14,-10],[-14,-10]],'#1a162b',ink,2);
+    // Đầu chó rừng đen & 2 tai nhọn dài dựng đứng
+    poly([[-11,-58],[11,-58],[14,-40],[-14,-40]],'#0f0c1b',ink,2);
+    poly([[-11,-56],[-15,-84],[-4,-58]],'#141024',ink,2); // Tai trái
+    poly([[11,-56],[15,-84],[4,-58]],'#141024',ink,2);   // Tai phải
+    poly([[-9,-58],[-12,-78],[-6,-58]],acc);
+    poly([[9,-58],[12,-78],[6,-58]],acc);
+    poly([[-6,-50],[16,-47],[6,-42],[-6,-42]],'#1c1730',ink,1.8); // Mõm chó rừng
+    ctx.fillStyle='#ff2e4c'; ctx.fillRect(-5,-54,4,3); ctx.fillRect(3,-54,4,3);
+    // Quyền trượng Ankh phát sáng bên tay phải
+    ctx.strokeStyle=acc; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(24,-4); ctx.lineTo(24,-54); ctx.stroke();
+    ctx.beginPath(); ctx.arc(24,-62,8,0,TAU); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(15,-52); ctx.lineTo(33,-52); ctx.stroke();
+    glow(24,-62,24,col,0.6);
+  }
+  else if(id === 'ra'){
+    // Thần Ra: Đôi cánh lửa mặt trời sải rộng, Đầu Chim Ưng, Đĩa Mặt Trời khổng lồ trên đỉnh đầu
+    const flap = Math.sin(t*7)*8;
+    poly([[-12,-38],[-56,-62+flap],[-64,-28+flap],[-20,-18]],'#ff6b00',ink,2.2);
+    poly([[12,-38],[56,-62+flap],[64,-28+flap],[20,-18]],'#ff6b00',ink,2.2);
+    poly([[-12,-34],[-44,-48+flap],[-48,-26+flap],[-16,-22]],'#ffd166');
+    poly([[12,-34],[44,-48+flap],[48,-26+flap],[16,-22]],'#ffd166');
+    // Thân giáp vàng rực
+    poly([[-14,-44],[14,-44],[18,-8],[-18,-8]],'#d97706',ink,2);
+    poly([[-10,-44],[10,-44],[6,-12],[-6,-12]],'#fef08a',ink,1.5);
+    // Đĩa Mặt Trời đỏ rực trên đầu
+    glow(0,-72,44,'#ff9e00',0.75);
+    ctx.fillStyle='#ff5400'; ctx.beginPath(); ctx.arc(0,-70,15,0,TAU); ctx.fill();
+    ctx.strokeStyle='#fff3b0'; ctx.lineWidth=2.2; ctx.stroke();
+    // Đầu Chim Ưng & Mỏ vàng
+    poly([[-10,-56],[10,-56],[12,-42],[-12,-42]],'#fef08a',ink,2);
+    poly([[0,-51],[17,-46],[0,-43]],'#ff9e00',ink,1.8); // Mỏ chim ưng
+    ctx.fillStyle='#ffffff'; ctx.fillRect(-5,-53,5,3);
+  }
+  else if(id === 'wukong'){
+    // Tôn Ngộ Không: Cân Đẩu Vân dưới chân, Giáp Hoàng Kim, Vòng Kim Cô, 2 Lông Vũ Đỏ dài & Như Ý Kim Cô Bổng xoay!
+    // Cân Đẩu Vân (Đám mây vàng bay lượn dưới chân)
+    for(let c=-2;c<=2;c++){
+      ctx.fillStyle = c%2===0 ? '#fff3b0' : '#ffd166';
+      ctx.beginPath(); ctx.arc(c*11, -3+Math.sin(t*8+c)*2, 9, 0, TAU); ctx.fill();
+      ctx.strokeStyle=ink; ctx.lineWidth=1.5; ctx.stroke();
+    }
+    // Áo choàng đỏ & Thân giáp Đại Thánh
+    poly([[-16,-42],[16,-42],[24,-8],[-24,-8]],'#b91c1c',ink,2);
+    poly([[-13,-44],[13,-44],[15,-12],[-15,-12]],'#eab308',ink,2);
+    poly([[-8,-42],[8,-42],[5,-16],[-5,-16]],'#dc2626',ink,1.5);
+    // Đầu Khỉ, Hỏa Nhãn Kim Tinh & Vòng Kim Cô
+    poly([[-10,-58],[10,-58],[11,-42],[-11,-42]],'#d97706',ink,2);
+    ctx.fillStyle='#fde68a'; ctx.fillRect(-7,-54,14,9);
+    ctx.fillStyle='#ff2e4c'; ctx.fillRect(-5,-52,4,3); ctx.fillRect(2,-52,4,3); // Hỏa nhãn kim tinh
+    ctx.strokeStyle='#ffd166'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(-11,-57); ctx.lineTo(11,-57); ctx.stroke(); // Vòng Kim Cô
+    // 2 Lông Vũ Phượng Hoàng đỏ uốn cong dài trên mũ
+    ctx.strokeStyle='#ef233c'; ctx.lineWidth=2.6;
+    ctx.beginPath(); ctx.moveTo(-4,-58); ctx.quadraticCurveTo(-24,-86+step,-38,-72-step); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(4,-58); ctx.quadraticCurveTo(24,-86-step,38,-72+step); ctx.stroke();
+    // NHƯ Ý KIM CÔ BỔNG (Gậy 2 đầu vàng thân đỏ xoay quanh người)
+    ctx.save();
+    ctx.translate(0,-32); ctx.rotate(t*7);
+    poly([[-46,-3.5],[46,-3.5],[46,3.5],[-46,3.5]],'#ef233c',ink,1.8);
+    poly([[-46,-4.5],[-28,-4.5],[-28,4.5],[-46,4.5]],'#ffd166',ink,1.8);
+    poly([[28,-4.5],[46,-4.5],[46,4.5],[28,4.5]],'#ffd166',ink,1.8);
+    glow(-36,0,18,'#ffd166',0.4); glow(36,0,18,'#ffd166',0.4);
+    ctx.restore();
+  }
+  else if(id === 'sphinx'){
+    // Nhân Sư Sphinx: Thân Sư Tử nằm phục 3D, Đôi Cánh Vàng & Đầu Pharaoh Nemes
+    poly([[-28,-6],[-22,-28],[24,-28],[30,-6]],'#ca8a04',ink,2.2); // Thân sư tử
+    poly([[-34,-2],[-18,-10],[-12,-2]],'#eab308',ink,1.8); // Chân trước
+    poly([[14,-2],[20,-10],[34,-2]],'#eab308',ink,1.8);
+    // Cánh Nhân Sư
+    poly([[-14,-26],[-44,-54+step],[-36,-22]],'#fef08a',ink,2);
+    poly([[14,-26],[44,-54+step],[36,-22]],'#fef08a',ink,2);
+    // Mão sọc xanh-vàng Nemes của Pharaoh
+    poly([[-18,-56],[0,-66],[18,-56],[22,-32],[-22,-32]],'#1d4ed8',ink,2.2);
+    poly([[-12,-56],[12,-56],[14,-34],[-14,-34]],'#eab308',ink,1.8);
+    ctx.fillStyle='#fde047'; ctx.fillRect(-7,-52,14,12); // Khuôn mặt vàng
+    ctx.fillStyle='#38bdf8'; ctx.fillRect(-5,-49,4,3); ctx.fillRect(2,-49,4,3);
+    ctx.fillStyle='#1d4ed8'; ctx.fillRect(-2,-40,4,10); // Chòm râu Pharaoh
+  }
+  else if(id === 'culinh'){
+    // Cự Linh Thần: Thân hình hộ pháp khổng lồ, giáp đồng vai rộng & Cặp Búa Khai Sơn Đại Chùy
+    ctx.save(); ctx.scale(1.22,1.18);
+    poly([[-22,-46],[22,-46],[26,-8],[-26,-8]],'#7c2d12',ink,2.4);
+    poly([[-28,-48],[-14,-54],[-12,-34],[-26,-32]],'#f97316',ink,2); // Giáp vai trái khổng lồ
+    poly([[28,-48],[14,-54],[12,-34],[26,-32]],'#f97316',ink,2);   // Giáp vai phải
+    drawDiamond(0,-28,11,11,'#ffd166',ink,2); // Hộ tâm kính
+    poly([[-10,-60],[10,-60],[12,-44],[-12,-44]],'#dc2626',ink,2);
+    ctx.fillStyle='#ffd166'; ctx.fillRect(-7,-54,5,3); ctx.fillRect(2,-54,5,3);
+    // Song Tuyên Đại Chùy (2 búa tạ ở 2 tay)
+    for(const s of [-1,1]){
+      ctx.save(); ctx.translate(s*28,-24+s*step*2);
+      ctx.fillStyle='#fde68a'; ctx.fillRect(-2,-18,4,28);
+      drawIsoBlock(0,-20,12,7,14,'#eab308','#b45309','#78350f','#fef08a');
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  // 2. NHÓM BIỂN CẢ (POSEIDON, KRAKEN, LONG VƯƠNG, LEVIATHAN, THỦY TINH)
+  else if(id === 'poseidon'){
+    // Poseidon: Thân giáp Hải Vương, Râu Bạc dài, Vương Miện Hải Thần & Đinh Ba Hoàng Kim 3 mũi nhọn
+    ring(0,0,26,'#00bbf9',0.6,2.5);
+    poly([[-16,-44],[16,-44],[22,-6],[-22,-6]],'#0369a1',ink,2.2);
+    poly([[-12,-44],[12,-44],[14,-12],[-14,-12]],'#00bbf9',ink,1.8);
+    // Đầu, Râu bạc dài & Vương miện 3 chấu
+    poly([[-10,-58],[10,-58],[10,-42],[-10,-42]],'#bae6fd',ink,2);
+    poly([[-11,-46],[11,-46],[0,-28]],'#e2e8f0',ink,1.6); // Bộ râu thần biển
+    poly([[-10,-58],[-12,-70],[-4,-60],[0,-74],[4,-60],[12,-70],[10,-58]],'#ffd166',ink,1.8); // Vương miện
+    // ĐINH BA POSEIDON (Trident)
+    ctx.save(); ctx.translate(24,-10+step);
+    ctx.strokeStyle='#ffd166'; ctx.lineWidth=3.2;
+    ctx.beginPath(); ctx.moveTo(0,12); ctx.lineTo(0,-52); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-11,-40); ctx.lineTo(-11,-58); ctx.moveTo(11,-40); ctx.lineTo(11,-58);
+    ctx.moveTo(-11,-40); ctx.lineTo(11,-40); ctx.stroke();
+    drawDiamond(0,-62,4,7,'#caf0f8',ink,1.4);
+    drawDiamond(-11,-60,3.5,6,'#caf0f8',ink,1.4);
+    drawDiamond(11,-60,3.5,6,'#caf0f8',ink,1.4);
+    glow(0,-55,28,'#00bbf9',0.65);
+    ctx.restore();
+  }
+  else if(id === 'kraken'){
+    // Kraken: 8 Xúc Tu quẫy sóng xung quanh + Đầu Bạch Tuộc Khổng Lồ & Mắt Vàng Dị Dạng
+    for(let i=0;i<8;i++){
+      const a = (i/8)*TAU + t*2.2;
+      const tx1 = Math.cos(a)*22, ty1 = Math.sin(a)*10 - 6;
+      const tx2 = Math.cos(a+0.4)*(42+Math.sin(t*6+i)*6), ty2 = Math.sin(a+0.4)*20 - 18 - Math.abs(Math.sin(t*5+i))*14;
+      ctx.strokeStyle=ink; ctx.lineWidth=8;
+      ctx.beginPath(); ctx.moveTo(tx1,ty1); ctx.quadraticCurveTo((tx1+tx2)/2, ty1-18, tx2, ty2); ctx.stroke();
+      ctx.strokeStyle=i%2?col:'#2b9348'; ctx.lineWidth=5;
+      ctx.beginPath(); ctx.moveTo(tx1,ty1); ctx.quadraticCurveTo((tx1+tx2)/2, ty1-18, tx2, ty2); ctx.stroke();
+    }
+    // Đầu Kraken khổng lồ
+    poly([[-22,-18],[-26,-48],[-12,-68],[12,-68],[26,-48],[22,-18]],col,ink,2.4);
+    poly([[-14,-24],[-16,-48],[0,-62],[16,-48],[14,-24]],'#55a630');
+    ctx.fillStyle='#ffea00'; ctx.fillRect(-13,-34,8,6); ctx.fillRect(5,-34,8,6);
+    ctx.fillStyle='#05040a'; ctx.fillRect(-10,-33,3,4); ctx.fillRect(8,-33,3,4);
+  }
+  else if(id === 'longvuong'){
+    // Đông Hải Long Vương: Thân Rồng Phương Đông uốn lượn hình chữ S, Sừng Hươu Vàng, Bờm Xanh & Ngọc Định Hải
+    for(let seg=6;seg>=1;seg--){
+      const sx = Math.sin(t*6 + seg*0.7)*(10+seg*3.5);
+      const sy = -8 - (6-seg)*7;
+      drawDiamond(sx, sy, 14-seg*1.2, 9-seg*0.8, seg%2?'#0096c7':'#4cc9f0', ink, 2);
+      poly([[sx-3,sy-8],[sx,sy-16],[sx+3,sy-8]],'#ffd166',ink,1.2); // Vây lưng vàng
+    }
+    // Đầu Long Vương, Sừng Rồng & Râu Rồng dài
+    const hx = Math.sin(t*6)*8, hy = -54;
+    poly([[hx-13,hy],[hx,hy-16],[hx+13,hy],[hx+10,hy+12],[hx-10,hy+12]],'#00b4d8',ink,2.2);
+    poly([[hx-8,hy-10],[hx-18,hy-28],[hx-4,hy-14]],'#ffd166',ink,1.8); // Sừng trái
+    poly([[hx+8,hy-10],[hx+18,hy-28],[hx+4,hy-14]],'#ffd166',ink,1.8); // Sừng phải
+    ctx.strokeStyle='#caf0f8'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(hx-8,hy+6); ctx.quadraticCurveTo(hx-28,hy+14,hx-34,hy+2); ctx.stroke(); // Râu rồng
+    ctx.beginPath(); ctx.moveTo(hx+8,hy+6); ctx.quadraticCurveTo(hx+28,hy+14,hx+34,hy+2); ctx.stroke();
+    // Viên Ngọc Định Hải Thần Châu bay lơ lửng
+    const px = Math.cos(t*4)*28, py = -36 + Math.sin(t*4)*10;
+    glow(px,py,24,'#ffd166',0.75);
+    ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.arc(px,py,6,0,TAU); ctx.fill();
+    ctx.strokeStyle='#ffd166'; ctx.lineWidth=2; ctx.stroke();
+  }
+  else if(id === 'leviathan'){
+    // Leviathan: Xà Thần Biển Sâu với đôi cánh vây gai sắc nhọn & hàm răng nanh băng giá
+    for(let seg=5;seg>=1;seg--){
+      const sx = Math.cos(t*5+seg)*16;
+      const sy = -6 - (5-seg)*8;
+      poly([[sx-14,sy],[sx,sy-12],[sx+14,sy],[sx,sy+8]],'#1d4ed8',ink,2);
+    }
+    poly([[-14,-38],[-48,-52+step],[-36,-22]],'#4cc9f0',ink,2); // Vây cánh gai trái
+    poly([[14,-38],[48,-52-step],[36,-22]],'#4cc9f0',ink,2);   // Vây cánh gai phải
+    poly([[-12,-50],[0,-68],[12,-50],[8,-34],[-8,-34]],'#3b82f6',ink,2.2);
+    ctx.fillStyle='#00f5d4'; ctx.fillRect(-7,-52,4,4); ctx.fillRect(3,-52,4,4);
+  }
+  else if(id === 'thuytinh'){
+    // Thủy Tinh: Cưỡi trên Cột Lốc Xoáy Nước 3D, Áo Choàng Bão Tố & Pháp Trượng Hô Mưa Gọi Gió
+    for(let w=0;w<4;w++){
+      const wy = -w*10 - 4;
+      const wr = 10 + w*4.5 + Math.sin(t*10+w)*2;
+      ring(0, wy, wr, w%2?'#00f5d4':'#4cc9f0', 0.75, 2.2);
+    }
+    poly([[-14,-50],[14,-50],[18,-22],[-18,-22]],'#0f766e',ink,2);
+    poly([[-9,-64],[0,-74],[9,-64],[8,-48],[-8,-48]],'#00f5d4',ink,2); // Mão Thủy Thần
+    ctx.fillStyle='#ffffff'; ctx.fillRect(-5,-57,4,3); ctx.fillRect(2,-57,4,3);
+    // Pháp trượng Thủy Lôi
+    ctx.strokeStyle='#caf0f8'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(20,-18); ctx.lineTo(20,-64); ctx.stroke();
+    drawDiamond(20,-68,8,8,'#00f5d4','#ffffff',1.8);
+    glow(20,-68,26,'#00f5d4',0.65);
+  }
+
+  // 3. NHÓM RỪNG RẬM (FENRIR, CỬU VĨ THIÊN HỒ, MEDUSA, BẠCH HỔ, CERNUNNOS)
+  else if(id === 'fenrir'){
+    // Ma Sói Fenrir: Hình dáng Sói Khổng Lồ bờm tím gai góc, Nanh Trắng sắc nhọn & Xích Thần Gleipnir đứt bay quanh người
+    poly([[-26,-10],[-20,-38],[18,-42],[28,-10]],'#3c096c',ink,2.4); // Thân sói
+    poly([[-18,-36],[-28,-54],[-8,-48],[6,-54],[16,-36]],'#5a189a',ink,2); // Bờm lưng gai góc
+    // Đầu Sói dữ tợn & Hàm răng nanh
+    poly([[8,-44],[26,-52],[38,-38],[22,-28],[8,-30]],'#240046',ink,2.2);
+    poly([[8,-48],[12,-64],[18,-48]],'#7b2cbf',ink,1.8); // Tai sói
+    poly([[16,-48],[22,-64],[26,-48]],'#7b2cbf',ink,1.8);
+    ctx.fillStyle='#ff2e4c'; ctx.fillRect(20,-45,5,3); // Mắt đỏ máu
+    poly([[22,-32],[25,-25],[28,-32],[31,-25],[34,-32]],'#ffffff',ink,1.2); // Nanh sói
+    // Xích thần Gleipnir phát sáng bị giật đứt
+    ctx.strokeStyle='#e0aaff'; ctx.lineWidth=2.5; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(-14,-28); ctx.lineTo(-38,-48+step*2); ctx.moveTo(10,-28); ctx.lineTo(36,-12-step*2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  else if(id === 'cuuvi'){
+    // CỬU VĨ THIÊN HỒ: 9 Chiếc Đuôi Hồ Ly lớn xòe quạt phía sau lưng + Quả Cầu Hồ Hỏa Hồng Ngọc!
+    for(let tail=0;tail<9;tail++){
+      const ang = -Math.PI*0.88 + (tail/8)*Math.PI*0.76 + Math.sin(t*4+tail)*0.06;
+      const tx = Math.cos(ang)*52, ty = -24 + Math.sin(ang)*42;
+      const mx = Math.cos(ang)*28, my = -24 + Math.sin(ang)*20;
+      poly([[0,-20],[mx-7,my-5],[tx,ty],[mx+7,my+5]], tail%2?'#ff4d8d':'#ff8fa3', ink, 1.8);
+      drawDiamond(tx*0.92, ty*0.92, 5, 5, '#ffffff'); // Chóp đuôi trắng
+    }
+    // Thân y phục Hồ Tiên & Tai Cáo
+    poly([[-12,-44],[12,-44],[16,-6],[-16,-6]],'#c9184a',ink,2);
+    poly([[-8,-44],[8,-44],[10,-10],[-10,-10]],'#ffccd5',ink,1.5);
+    poly([[-9,-58],[9,-58],[10,-42],[-10,-42]],'#ffe5ec',ink,2);
+    poly([[-9,-56],[-14,-74],[-3,-58]],'#ff4d8d',ink,1.8); // Tai hồ ly trái
+    poly([[9,-56],[14,-74],[3,-58]],'#ff4d8d',ink,1.8);   // Tai hồ ly phải
+    ctx.fillStyle='#ff0a54'; ctx.fillRect(-5,-52,4,3); ctx.fillRect(2,-52,4,3);
+    // 3 Viên Hồ Hỏa (Foxfire Orbs) bay lơ lửng quanh người
+    for(let f=0;f<3;f++){
+      const fa = t*3.5 + f*(TAU/3);
+      const fx = Math.cos(fa)*30, fy = -34 + Math.sin(fa)*12;
+      flame(fx, fy, 5, 14, t*10+f, false, 1);
+    }
+  }
+  else if(id === 'medusa'){
+    // Medusa: Đuôi Rắn uốn lượn, Tóc Rắn Xanh ngóc đầu & Cung Tên Hóa Đá
+    for(let seg=5;seg>=1;seg--){
+      const sx = Math.sin(t*7+seg)*12;
+      const sy = -4 - (5-seg)*5;
+      poly([[sx-12+seg,sy],[sx+12-seg,sy],[sx+10-seg,sy+7],[sx-10+seg,sy+7]],'#2d6a4f',ink,1.8);
+    }
+    poly([[-12,-46],[12,-46],[14,-20],[-14,-20]],'#40916c',ink,2);
+    poly([[-9,-60],[9,-60],[10,-44],[-10,-44]],'#95d5b2',ink,2);
+    // Mái tóc gồm 6 con rắn lục đang ngóc đầu
+    ctx.strokeStyle='#52b788'; ctx.lineWidth=3;
+    for(let s=-3;s<=3;s++){
+      if(s===0) continue;
+      ctx.beginPath(); ctx.moveTo(s*2.5,-58);
+      ctx.quadraticCurveTo(s*8,-74, s*11+Math.sin(t*8+s)*4, -66);
+      ctx.stroke();
+    }
+    // Đôi mắt lục bảo phát sáng hóa đá
+    glow(0,-52,22,'#70e000',0.7);
+    ctx.fillStyle='#ccff33'; ctx.fillRect(-6,-54,4,3); ctx.fillRect(2,-54,4,3);
+  }
+  else if(id === 'bachho'){
+    // Bạch Hổ: Thánh Thú Trắng vằn đen, Đôi Cánh Canh Kim sắc bén & Móng Vuốt Sấm Sét
+    const flap = Math.sin(t*6)*6;
+    poly([[-12,-36],[-48,-56+flap],[-40,-24]],'#e2e8f0',ink,2); // Cánh Bạch Hổ
+    poly([[12,-36],[48,-56+flap],[40,-24]],'#e2e8f0',ink,2);
+    poly([[-26,-8],[-22,-36],[22,-36],[26,-8]],'#f8fafc',ink,2.4); // Thân Hổ Trắng
+    // Vằn hổ đen
+    ctx.fillStyle='#0f172a';
+    ctx.fillRect(-16,-32,3,14); ctx.fillRect(-6,-34,3,16); ctx.fillRect(6,-34,3,16); ctx.fillRect(15,-32,3,14);
+    // Đầu Chúa Sơn Lâm & Chữ "Vương" trên trán
+    poly([[-13,-56],[13,-56],[15,-36],[-15,-36]],'#ffffff',ink,2.2);
+    ctx.fillStyle='#38bdf8'; ctx.fillRect(-6,-48,4,4); ctx.fillRect(3,-48,4,4);
+    ctx.fillStyle='#0f172a'; ctx.fillRect(-4,-54,8,2); ctx.fillRect(-1,-54,2,5); // Chữ Vương (王)
+  }
+  else if(id === 'cernunnos'){
+    // Lộc Thần Cernunnos: Bộ Gạc Hươu Cổ Thụ khổng lồ tỏa nhánh phát sáng & Pháp Trượng Rừng Già
+    poly([[-16,-44],[16,-44],[20,-6],[-20,-6]],'#3f6212',ink,2.2);
+    poly([[-10,-58],[10,-58],[11,-42],[-11,-42]],'#65a30d',ink,2);
+    ctx.fillStyle='#ccff33'; ctx.fillRect(-6,-52,4,3); ctx.fillRect(2,-52,4,3);
+    // Cặp Gạc Hươu Đại Ngàn nhiều nhánh
+    ctx.strokeStyle='#a3e635'; ctx.lineWidth=3.2;
+    for(const s of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(s*6,-58); ctx.lineTo(s*22,-78); ctx.lineTo(s*36,-92);
+      ctx.moveTo(s*16,-70); ctx.lineTo(s*12,-86);
+      ctx.moveTo(s*24,-80); ctx.lineTo(s*38,-76);
+      ctx.stroke();
+      glow(s*26,-82,22,'#70e000',0.45);
+    }
+  }
+
+  // 4. NHÓM THÀNH PHỐ (ZEUS, THOR, NA TRA, ARES, LÔI CÔNG)
+  else if(id === 'zeus'){
+    // Zeus: Áo Choàng Trắng viền Vàng Olympus, Râu Bạc, Vòng Nguyệt Quế & Tia Chớp Thượng Đế trên tay
+    poly([[-16,-44],[16,-44],[22,-6],[-22,-6]],'#e2e8f0',ink,2.2);
+    poly([[-16,-44],[4,-44],[-8,-6],[-20,-6]],'#ffd166',ink,1.8); // Dải hoàng bào vắt chéo
+    poly([[-10,-58],[10,-58],[10,-42],[-10,-42]],'#f8fafc',ink,2);
+    poly([[-12,-46],[12,-46],[0,-30]],'#cbd5e1',ink,1.6); // Râu Zeus
+    ctx.fillStyle='#38bdf8'; ctx.fillRect(-6,-53,4,3); ctx.fillRect(2,-53,4,3);
+    // Lưỡi Sét Thượng Đế Zíc-zắc (Master Lightning Bolt)
+    ctx.save(); ctx.translate(24,-34+step);
+    poly([[-4,-28],[6,-8],[-2,-6],[8,24],[-6,4],[2,2]],'#fef08a',ink,1.8);
+    glow(0,0,34,'#38bdf8',0.75);
+    ctx.restore();
+  }
+  else if(id === 'thor'){
+    // Thor: Áo Choàng Đỏ Asgard, Mũ Cánh Bạc & Thần Chùy Mjolnir phát tia sét
+    poly([[-18,-44],[18,-44],[26,-4],[-26,-4]],'#dc2626',ink,2.2); // Áo choàng đỏ
+    poly([[-14,-44],[14,-44],[16,-10],[-16,-10]],'#334155',ink,2);
+    drawDiamond(-6,-30,4,4,'#93c5fd',ink,1.2); drawDiamond(6,-30,4,4,'#93c5fd',ink,1.2);
+    poly([[-10,-58],[10,-58],[11,-42],[-11,-42]],'#64748b',ink,2);
+    poly([[-10,-54],[-22,-68],[-12,-46]],'#e2e8f0',ink,1.8); // Cánh mũ trái
+    poly([[10,-54],[22,-68],[12,-46]],'#e2e8f0',ink,1.8);   // Cánh mũ phải
+    // BÚA THẦN MJOLNIR
+    ctx.save(); ctx.translate(24,-28-step); ctx.rotate(Math.sin(t*8)*0.25);
+    ctx.fillStyle='#92400e'; ctx.fillRect(-2,-2,4,18);
+    drawIsoBlock(0,-4,13,7,14,'#93c5fd','#60a5fa','#3b82f6','#ffffff');
+    glow(0,-10,28,'#60a5fa',0.7);
+    ctx.restore();
+  }
+  else if(id === 'natra'){
+    // NA TRA: Đứng trên 2 bánh xe lửa PHONG HỎA LUÂN, dải lụa đỏ HỖN THIÊN LĂNG bay lượn trên đầu & HỎA TIÊM THƯƠNG!
+    // 2 Bánh xe Phong Hỏa Luân xoay dưới 2 chân
+    for(const s of [-1,1]){
+      ring(s*11, -2, 8, '#ff4d4d', 0.95, 2.5);
+      ring(s*11, -2, 5, '#ffd166', 0.9, 1.8);
+    }
+    // Dải lụa đỏ Hỗn Thiên Lăng bay uốn lượn vòng qua đầu
+    ctx.strokeStyle='#ff2e4c'; ctx.lineWidth=4.5;
+    ctx.beginPath();
+    ctx.moveTo(-22,-24);
+    ctx.bezierCurveTo(-38,-68+step*3, 38,-78-step*3, 24,-24);
+    ctx.stroke();
+    ctx.strokeStyle='#ffd166'; ctx.lineWidth=1.5; ctx.stroke();
+
+    // Thân Giáp Liên Hoa & Đầu 2 Búi Tóc Na Tra
+    poly([[-12,-44],[12,-44],[15,-10],[-15,-10]],'#e11d48',ink,2);
+    poly([[-8,-42],[8,-42],[0,-16]],'#fcd34d',ink,1.5);
+    poly([[-9,-56],[9,-56],[10,-42],[-10,-42]],'#fde68a',ink,2);
+    ctx.fillStyle='#1f2937';
+    ctx.beginPath(); ctx.arc(-11,-58,5,0,TAU); ctx.arc(11,-58,5,0,TAU); ctx.fill(); // 2 búi tóc tròn
+    ctx.strokeStyle='#ff2e4c'; ctx.lineWidth=1.8; ctx.stroke();
+    // Hỏa Tiêm Thương (Giáo lửa) & Càn Khôn Quyền (Vòng vàng)
+    ctx.save(); ctx.translate(22,-26);
+    ctx.strokeStyle='#fcd34d'; ctx.lineWidth=2.8;
+    ctx.beginPath(); ctx.moveTo(0,18); ctx.lineTo(0,-34); ctx.stroke();
+    flame(0,-34,6,18,t*14,false,2);
+    ctx.restore();
+  }
+  else if(id === 'ares'){
+    // Chiến Thần Ares: Mũ Chiến Binh Sparta có Mào Đỏ lớn, Khiên Tròn Khắc Chữ Λ & Đại Kiếm Đỏ Máu
+    poly([[-16,-44],[16,-44],[20,-6],[-20,-6]],'#7f1d1d',ink,2.2);
+    poly([[-10,-58],[10,-58],[11,-42],[-11,-42]],'#b45309',ink,2);
+    // Mào lông đỏ rực của Mũ Chiến Sparta
+    poly([[-12,-58],[0,-78],[14,-60],[8,-56],[-8,-56]],'#ef4444',ink,2);
+    ctx.fillStyle='#ff2e4c'; ctx.fillRect(-6,-51,12,3); // Khe mắt phát sáng đỏ
+    // Khiên Tròn Chiến Thần bên tay trái
+    ctx.fillStyle='#991b1b'; ctx.beginPath(); ctx.arc(-20,-24,13,0,TAU); ctx.fill();
+    ctx.strokeStyle='#ffd166'; ctx.lineWidth=2.5; ctx.stroke();
+    // Đại Kiếm Chiến Thần bên tay phải
+    poly([[20,-16],[26,-58],[32,-16]],'#ef4444',ink,2);
+  }
+  else if(id === 'loicong'){
+    // Lôi Công: Đôi Cánh Phong Lôi Tím, Mỏ Chim Lôi Chấn & Chùy Đục Sấm Sét
+    const flap = Math.sin(t*8)*9;
+    poly([[-12,-38],[-52,-60+flap],[-44,-22]],'#7e22ce',ink,2);
+    poly([[12,-38],[52,-60+flap],[44,-22]],'#7e22ce',ink,2);
+    poly([[-14,-44],[14,-44],[16,-10],[-16,-10]],'#581c87',ink,2);
+    poly([[-10,-58],[10,-58],[11,-42],[-11,-42]],'#a855f7',ink,2);
+    poly([[0,-51],[15,-47],[0,-43]],'#ffd166',ink,1.6); // Mỏ Lôi Công
+    drawIsoBlock(-22,-28+step,8,5,12,'#e9d5ff','#a855f7','#6b21a8','#ffffff'); // Búa sét
+    drawIsoBlock(22,-28-step,6,4,14,'#fef08a','#eab308','#a16207','#ffffff');  // Đục sét
+  }
+
+  // 5. BOSS CHUNG CỰC VŨ TRỤ: HẮC LONG NIDHOGG-LONG VƯƠNG
+  else {
+    const flap = Math.sin(t*7)*14;
+    // Đuôi rồng uốn lượn
+    for(let seg=5;seg>=1;seg--){
+      const sx = -seg*12 + Math.sin(t*6+seg)*6;
+      const sy = -10 + seg*3;
+      drawDiamond(sx, sy, 10-seg, 6-seg*0.6, '#240b36', ink, 1.8);
+    }
+    // Đôi cánh Rồng Vũ Trụ khổng lồ
+    poly([[-12,-38],[-68,-64+flap],[-82,-28+flap],[-42,-14],[-12,-22]],col,ink,2.4);
+    poly([[12,-38],[68,-64+flap],[82,-28+flap],[42,-14],[12,-22]],col,ink,2.4);
+    poly([[-16,-35],[-56,-52+flap],[-62,-28+flap],[-16,-24]],acc);
+    poly([[16,-35],[56,-52+flap],[62,-28+flap],[16,-24]],acc);
+    // Thân giáp Hắc Long & Lõi Tinh Vân
+    poly([[-18,-48],[0,-60],[18,-48],[22,-14],[0,-4],[-22,-14]],'#190a29',ink,2.5);
+    drawDiamond(0,-30,11,16,acc,'#ffffff',1.8);
+    // Đầu Rồng & Sừng Hoàng Kim
+    poly([[-14,-56],[0,-74],[14,-56],[10,-42],[-10,-42]],col,ink,2.2);
+    poly([[-10,-66],[-26,-92],[-6,-70]],'#ffd166',ink,2);
+    poly([[10,-66],[26,-92],[6,-70]],'#ffd166',ink,2);
+    ctx.fillStyle='#ffffff'; ctx.fillRect(-8,-56,5,4); ctx.fillRect(3,-56,5,4);
+  }
+
+  ctx.restore();
+
+  // BẢNG TÊN & THẦN KHÍ NỔI TRÊN ĐẦU BOSS TRONG TRẬN ĐẤU
+  if(e.bossName){
+    ctx.save();
+    const labelY = y - (e.ultimate ? 98 : 84);
+    ctx.font = '900 10.5px Segoe UI, sans-serif';
+    const w = Math.max(ctx.measureText(e.bossName).width + 22, 130);
+    ctx.fillStyle = 'rgba(10, 6, 18, 0.86)';
+    ctx.strokeStyle = acc;
+    ctx.lineWidth = 1.4;
+    ctx.fillRect(x - w/2, labelY - 13, w, 26);
+    ctx.strokeRect(x - w/2, labelY - 13, w, 26);
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText((e.bossIcon||'') + ' ' + e.bossName, x, labelY - 2);
+    ctx.font = '700 8.5px Segoe UI, sans-serif';
+    ctx.fillStyle = acc;
+    ctx.fillText(e.weapon || ('Thần thoại ' + e.origin), x, labelY + 9);
+    ctx.restore();
+  }
+}
+
 function drawEnemy(e){
   const p=iso(e.x,e.y),x=Math.round(p.x),y=Math.round(p.y),t=state.time,step=Math.sin(t*9+e.x)*2;
   const col=e.hitFlash>0?'#ffffff':e.color;
   ctx.fillStyle='#020308bb'; ctx.beginPath(); ctx.ellipse(x+4,y+4,e.r+6,8,0,0,TAU); ctx.fill();
-  ring(x,y+2,e.r*0.98,col,.38,e.type==='boss'?2.2:1.5);
 
-  if(e.type==='slime'){
+  if(e.type==='boss'){
+    drawBespokeMythicBoss(e, x, y, t, step, col);
+  }
+  else if(e.type==='slime'){
+    ring(x,y+2,e.r*0.95,col,.32,1.5);
     poly([[x-15,y],[x-13,y-13],[x-7,y-20+step],[x+7,y-20+step],[x+14,y-11],[x+16,y]],'#3d1622','#05040a',2);
     poly([[x-11,y-3],[x-8,y-14],[x-3,y-19+step],[x+8,y-14],[x+11,y-3]],col,'#05040a',1.4);
     ctx.fillStyle='#fff3b0';ctx.fillRect(x-6,y-13,4,4);ctx.fillRect(x+4,y-12,3,3);
   }
   else if(e.type==='drone'){
+    ring(x,y+2,e.r*0.95,col,.32,1.5);
     const yy=y-16+Math.sin(t*5)*3;
     poly([[x-20,yy],[x-8,yy-10],[x+9,yy-10],[x+20,yy],[x+8,yy+9],[x-8,yy+9]],'#1f293d','#05040a',2);
     drawDiamond(x,yy,9,5,col,'#05040a',1.4);
@@ -1824,85 +2270,26 @@ function drawEnemy(e){
     glow(x,yy,20,col,.35);
   }
   else if(e.type==='wisp'){
+    ring(x,y+2,e.r*0.95,col,.32,1.5);
     flame(x,y-2,14,32+Math.sin(t*6)*5,t*8,true);
     glow(x,y-14,32,col,.35);
     ctx.fillStyle='#081c12';ctx.fillRect(x-6,y-16,4,4);ctx.fillRect(x+4,y-16,4,4);
   }
-  else if(e.type==='boss' && e.ultimate){
-    // VẼ RỒNG CHUNG CỰC VŨ TRỤ (COSMIC DRAGON NIDHOGG-LONG VƯƠNG)
-    const flap = Math.sin(t*7)*14;
-    ctx.save(); ctx.translate(x,y);
-    glow(0,-38,95,e.color,0.45);
-    ring(0,2,42,e.accent,0.65,2.5);
-
-    // Đuôi rồng uốn lượn
-    for(let seg=5;seg>=1;seg--){
-      const sx = -seg*12 + Math.sin(t*6+seg)*6;
-      const sy = -10 + seg*3;
-      drawDiamond(sx, sy, 10-seg, 6-seg*0.6, '#240b36', '#05040a', 1.8);
-    }
-    // Đôi cánh Rồng Vũ Trụ khổng lồ
-    poly([[-12,-38],[-68,-64+flap],[-82,-28+flap],[-42,-14],[-12,-22]],e.color,'#05040a',2.4);
-    poly([[12,-38],[68,-64+flap],[82,-28+flap],[42,-14],[12,-22]],e.color,'#05040a',2.4);
-    poly([[-16,-35],[-56,-52+flap],[-62,-28+flap],[-16,-24]],e.accent);
-    poly([[16,-35],[56,-52+flap],[62,-28+flap],[16,-24]],e.accent);
-
-    // Thân giáp Hắc Long & Lõi Tinh Vân
-    poly([[-18,-48],[0,-60],[18,-48],[22,-14],[0,-4],[-22,-14]],'#190a29','#05040a',2.5);
-    drawDiamond(0,-30,11,16,e.accent,'#ffffff',1.8);
-
-    // Đầu Rồng & Sừng Hoàng Kim
-    poly([[-14,-56],[0,-74],[14,-56],[10,-42],[-10,-42]],col,'#05040a',2.2);
-    poly([[-10,-66],[-26,-92],[-6,-70]],'#ffd166','#05040a',2);
-    poly([[10,-66],[26,-92],[6,-70]],'#ffd166','#05040a',2);
-    ctx.fillStyle='#ffffff'; ctx.fillRect(-8,-56,5,4); ctx.fillRect(3,-56,5,4);
-    ctx.restore();
-  }
   else {
-    // Golem hoặc 20 Boss Thần Thoại Âu - Á
-    const isBoss = e.type==='boss';
-    const scale = isBoss ? 1.68 : 1.05;
-    ctx.save(); ctx.translate(x,y); ctx.scale(scale,scale);
-    if(isBoss){
-      // Hào quang Thần Thoại sau lưng Boss
-      ctx.strokeStyle=e.accent||'#ffd166'; ctx.lineWidth=1.8;
-      ctx.beginPath(); ctx.arc(0,-26,22+Math.sin(t*5)*2,0,TAU); ctx.stroke();
-      glow(0,-24,38,col,0.38);
-    }
+    ring(x,y+2,e.r*0.95,col,.32,1.5);
+    ctx.save(); ctx.translate(x,y); ctx.scale(1.05,1.05);
     ctx.fillStyle='#2b2333';ctx.fillRect(-13,-8+step,9,12);ctx.fillRect(4,-8-step,9,12);
     poly([[-14,-30],[-4,-37],[11,-32],[16,-11],[7,-5],[-11,-8]],col,'#05040a',2);
     ctx.fillStyle='#1f1829';ctx.fillRect(-8,-25,17,16);
-    ctx.fillStyle=e.accent||'#ffd166';ctx.fillRect(-3,-23,7,9);
-    glow(0,-19,26,e.accent||'#ff9248',.55);
+    ctx.fillStyle='#ffd166';ctx.fillRect(-3,-23,7,9);
     poly([[-22,-27-step],[-13,-27-step],[-13,-7-step],[-22,-7-step]],col,'#05040a',1.8);
     poly([[15,-25+step],[24,-25+step],[24,-4+step],[15,-4+step]],col,'#05040a',1.8);
-    if(isBoss){
-      // Vương miện / Sừng Thần Thoại và Vũ khí đặc trưng
-      poly([[-16,-31],[-24,-50],[-7,-36]],e.accent||'#ffd166','#05040a',1.8);
-      poly([[12,-33],[25,-48],[22,-25]],e.accent||'#ffd166','#05040a',1.8);
-      poly([[20,-38],[24,-38],[24,4],[20,4]],e.accent||'#ffd166','#05040a',1.5);
-      drawDiamond(22,-42,6,10,col,'#ffffff',1.4);
-    }
     ctx.restore();
-
-    // Hiển thị danh hiệu Thần Thoại ngay trên đầu Boss
-    if(isBoss && e.bossName){
-      ctx.save();
-      ctx.font='900 10px Segoe UI, sans-serif';
-      ctx.textAlign='center';
-      ctx.strokeStyle='#05040a'; ctx.lineWidth=3.5;
-      ctx.strokeText(e.bossName, x, y - e.r*2 - 22);
-      ctx.fillStyle=e.accent||'#ffd166';
-      ctx.fillText(e.bossName, x, y - e.r*2 - 22);
-      ctx.restore();
-    }
   }
 
-  if(e.hp<e.maxHp||e.type==='boss'){
-    const bw = e.type==='boss' ? 54 : 38;
-    ctx.fillStyle='#07050d';ctx.fillRect(x-bw/2,y-e.r*2-14,bw,5);
-    ctx.fillStyle=e.type==='boss'?'#ffd166':'#ff4d6d';
-    ctx.fillRect(x-bw/2+1,y-e.r*2-13,(bw-2)*clamp(e.hp/e.maxHp,0,1),3);
+  if(e.hp<e.maxHp && e.type!=='boss'){
+    ctx.fillStyle='#07050d';ctx.fillRect(x-19,y-e.r*2-14,38,5);
+    ctx.fillStyle='#ff4d6d';ctx.fillRect(x-18,y-e.r*2-13,36*clamp(e.hp/e.maxHp,0,1),3);
   }
   if(e.burn>0){
     flame(x+9,y-4,6,18,t*13,false,e.heatTier||1);
@@ -1931,18 +2318,49 @@ function drawShield(x,y,r,t,power,tier=1){
   ring(x,y+34,r*.82,c,.45,2);
 }
 
+// ĐẠN CỦA BOSS ĐƯỢC VẼ THEO VŨ KHÍ ĐẶC TRƯNG (Gậy Kim Cô Bổng, Đinh Ba, Búa Mjolnir, Càn Khôn Quyền, Tia Sét...)
 function drawProjectiles(){
   for(const pr of state.projectiles){
     const p=iso(pr.x,pr.y);
     ctx.save();
     if(pr.owner==='enemy'){
-      // Đạn Thần Lực của Boss
-      glow(p.x,p.y-18,26,pr.color,0.5);
-      drawDiamond(p.x,p.y-18,pr.r+3,pr.r+3,pr.color,'#05040a',2);
-      drawDiamond(p.x,p.y-18,pr.r*0.6,pr.r*0.6,'#ffffff');
+      const sh = pr.shape || 'orb';
+      const ang = Math.atan2(pr.vy, pr.vx);
+      glow(p.x,p.y-18,28,pr.color,0.55);
+      ctx.translate(p.x, p.y-18);
+
+      if(sh==='staff'){
+        // Đạn Kim Cô Bổng xoay tròn
+        ctx.rotate(state.time*14);
+        poly([[-14,-2.5],[14,-2.5],[14,2.5],[-14,2.5]],'#ef233c','#05040a',1.4);
+        ctx.fillStyle='#ffd166'; ctx.fillRect(-14,-3,5,6); ctx.fillRect(9,-3,5,6);
+      } else if(sh==='hammer'){
+        // Đạn Búa Thần Mjolnir / Đại Chùy xoay
+        ctx.rotate(state.time*12);
+        ctx.fillStyle='#fde68a'; ctx.fillRect(-2,0,4,10);
+        poly([[-9,-7],[9,-7],[9,2],[-9,2]],pr.color,'#05040a',1.6);
+      } else if(sh==='trident' || sh==='spear'){
+        // Đạn Đinh Ba Poseidon / Giáo Chiến Thần
+        ctx.rotate(ang);
+        poly([[-12,-2],[10,-2],[16,0],[10,2],[-12,2]],pr.accent||'#ffd166','#05040a',1.4);
+        poly([[6,-6],[14,-4],[6,-2]],pr.color); poly([[6,6],[14,4],[6,2]],pr.color);
+      } else if(sh==='ring' || sh==='sun'){
+        // Đạn Càn Khôn Quyền của Na Tra / Thái Dương Luân của Ra
+        ctx.strokeStyle=pr.accent||'#ffd166'; ctx.lineWidth=3.2;
+        ctx.beginPath(); ctx.arc(0,0,pr.r+2,0,TAU); ctx.stroke();
+        ctx.fillStyle=pr.color; ctx.beginPath(); ctx.arc(0,0,pr.r*0.5,0,TAU); ctx.fill();
+      } else if(sh==='bolt'){
+        // Đạn Tia Chớp Sấm Sét của Zeus / Lôi Công
+        ctx.rotate(ang);
+        poly([[-10,-4],[2,-1],[-2,2],[12,4],[0,1],[4,-2]],'#fef08a','#05040a',1.4);
+      } else {
+        drawDiamond(0,0,pr.r+3,pr.r+3,pr.color,'#05040a',2);
+        drawDiamond(0,0,pr.r*0.6,pr.r*0.6,'#ffffff');
+      }
       ctx.restore();
       continue;
     }
+
     const tier=pr.reaction?.tier||1;
     const electric=pr.kind==='beam', poison=pr.reaction?.els.includes('Cl');
     if(pr.trail?.length){
@@ -2123,7 +2541,6 @@ function drawEffects(){
     if(e.type==='cataclysm') drawCataclysm(e,p,t);
 
     if(e.type==='bossTelegraph'){
-      // Vòng cảnh báo đỏ rực của Kỹ năng Boss Thần Thoại
       ctx.fillStyle='rgba(255, 46, 76, 0.22)';
       ctx.beginPath(); ctx.ellipse(p.x,p.y,e.r*1.55*t,e.r*0.78*t,0,0,TAU); ctx.fill();
       ring(p.x,p.y,e.r,e.color||'#ff2e4c',0.9,2.2);
@@ -2335,237 +2752,4 @@ function emit(x,y,color,count,speed){
 function fitResolution(){
   const rect=canvas.getBoundingClientRect();
   const dpr=window.devicePixelRatio||1;
-  renderScale=quality==='low'?1:Math.min(3,Math.max(2,Math.ceil(Math.min((rect.width||W)/W,(rect.height||H)/H)*dpr)));
-  canvas.width=W*renderScale; canvas.height=H*renderScale;
-  ctx.imageSmoothingEnabled=false;
-}
-
-function initLab(){
-  state.enemies=[];
-  for(const k in state.player.skillTier) state.player.skillTier[k]=4;
-  document.querySelectorAll('[data-tier]').forEach(b=>b.classList.toggle('active',b.dataset.tier==='4'));
-  state.player.inventory=Object.fromEntries(Object.keys(colors).map(k=>[k,99]));
-  const spots=[[-115,-105],[135,-85],[165,75],[-85,120]];
-  spots.forEach(([x,y],i)=>{
-    const en={
-      type:['golem','slime','drone','golem'][i],
-      x,y,hp:9999,maxHp:9999,speed:0,r:16,
-      color:['#e0b77d','#ff6b35','#4df0ff','#a29bfe'][i],
-      drop:'O',armor:0,burn:0,poison:0,slow:0,hitFlash:0,dummy:true
-    };
-    resolveObstacleCollisions(en, en.r);
-    state.enemies.push(en);
-  });
-}
-
-function updatePanels(){
-  const p=state.player;
-  const mult = getStageMultiplier(state.stage);
-  const timeRem = Math.max(0, Math.ceil(state.stageDuration - state.stageTimer));
-
-  document.getElementById('envPassiveBanner').textContent=biomes[state.biome].passive;
-  document.getElementById('envArmorBadge').textContent=biomes[state.biome].badge;
-  document.getElementById('stageTag').textContent='T'+state.stage+' ('+biomes[state.biome].title+')';
-  document.getElementById('timerTag').textContent=state.mode==='endless' ? (state.bossActive ? 'ĐANG ĐẤU BOSS!' : timeRem+'s') : '—';
-  document.getElementById('multTag').textContent='x'+mult.toFixed(2);
-  document.getElementById('scoreTag').textContent=state.score;
-  document.getElementById('bestScoreTag').textContent=state.best;
-
-  document.getElementById('hpBar').style.width=clamp(p.hp/p.maxHp*100,0,100)+'%';
-  document.getElementById('enBar').style.width=clamp(p.energy/p.maxEnergy*100,0,100)+'%';
-  document.getElementById('shBar').style.width=clamp(p.shield/p.maxShield*100,0,100)+'%';
-  document.getElementById('xpBar').style.width=clamp(p.xp/p.xpNeed*100,0,100)+'%';
-
-  document.getElementById('hpText').textContent=Math.max(0,Math.floor(p.hp))+' / '+p.maxHp;
-  document.getElementById('enText').textContent=Math.floor(p.energy)+' / '+p.maxEnergy;
-  document.getElementById('shText').textContent=Math.floor(p.shield)+' / '+p.maxShield;
-  document.getElementById('xpText').textContent=Math.floor(p.xp)+' / '+p.xpNeed;
-
-  document.getElementById('pilotStatus').textContent='LV '+p.level+' / '+(p.dashCd>0?'LƯỚT '+p.dashCd.toFixed(1)+'s':'LƯỚT SẴN SÀNG');
-  document.getElementById('threatCount').textContent=state.enemies.length;
-
-  const boss = state.enemies.find(e=>e.type==='boss');
-  if(state.mode==='lab'){
-    document.getElementById('missionLabel').textContent='PHÒNG THỬ • Bấm "Gọi Boss Map Này" hoặc "🐉 Gọi Rồng Chung Cực" để thử chiến đấu!';
-  } else if(state.mode==='training'){
-    document.getElementById('missionLabel').textContent='Huấn luyện • Hạ 8 quái ('+state.kills+'/8) và lên cấp 1 lần';
-  } else if(boss){
-    document.getElementById('missionLabel').textContent='⚔ ĐANG QUYẾT CHIẾN: '+boss.bossName+' • Hạ Boss để đổi sang Map ngẫu nhiên tiếp theo!';
-  } else {
-    document.getElementById('missionLabel').textContent='Màn T'+state.stage+' ('+biomes[state.biome].title+' • Sức mạnh quái x'+mult.toFixed(2)+') • Boss Thần Thoại xuất hiện sau: '+timeRem+'s';
-  }
-
-  document.getElementById('bankTag').textContent=banks[state.bank].name;
-  document.getElementById('q1').textContent=state.queue[0]||'—';
-  document.getElementById('q2').textContent=state.queue[1]||'—';
-
-  const sk=document.getElementById('skills');
-  if(!sk.childElementCount){
-    for(const [k,v] of Object.entries(skillDefs)){
-      const d=document.createElement('button'); d.className='skill'; d.dataset.skill=k;
-      d.innerHTML=icon(k)+'<span class="key">'+k.toUpperCase()+'</span><h4>'+v.name+'</h4><div class="cd" id="cd_'+k+'">Sẵn sàng</div><span class="tierPips"><i></i><i></i><i></i><i></i></span><div class="cooldownTrack"></div>';
-      d.onclick=()=>{state.selectedSkill=k; updatePanels(); canvas.focus();};
-      sk.appendChild(d);
-    }
-  }
-  const heat=getReaction('q',state.queue).heat;
-  document.getElementById('heatName').textContent=heatLabels[heat-1];
-  document.getElementById('heatName').style.color=thermalColors[heat-1][1];
-  document.getElementById('heatDesc').textContent='Màn T'+state.stage+' (x'+mult.toFixed(2)+') • '+biomes[state.biome].modDesc;
-  document.querySelectorAll('#heatSpec i').forEach((n,i)=>n.classList.toggle('on',i<heat));
-
-  [...sk.children].forEach(el=>{
-    const k=el.dataset.skill, tier=p.skillTier[k];
-    el.classList.toggle('active',state.selectedSkill===k);
-    el.style.setProperty('--skill',k==='q'?thermalColors[heat-1][1]:skillDefs[k].color);
-    document.getElementById('cd_'+k).textContent=p.cd[k]>0?('Hồi '+p.cd[k].toFixed(1)+'s'):'Sẵn sàng';
-    el.querySelector('.cooldownTrack').style.transform='scaleX('+(1-p.cd[k]/skillDefs[k].baseCd)+')';
-    Array.from(el.querySelector('.tierPips').children).forEach((pip,i)=>pip.classList.toggle('on',i<tier));
-  });
-
-  const r=document.getElementById('reactionName');
-  if(state.queue.length){
-    const preview = getReaction(state.selectedSkill, state.queue);
-    r.textContent = preview.envTag ? (state.queue.join('+') + ' → ' + preview.envTag) : preview.name;
-  } else {
-    r.textContent = state.time<state.reactionUntil ? state.lastReaction : 'Phím 1–4 nạp • Phím F Siêu Chiêu Cuối';
-  }
-
-  const elBox=document.getElementById('elements'); elBox.innerHTML='';
-  banks[state.bank].els.forEach((el,idx)=>{
-    const b=document.createElement('button'); b.className='elBtn';
-    b.style.borderColor=colors[el]+'88';
-    b.innerHTML='<strong style="color:'+colors[el]+'">'+el+'</strong><small>'+(idx+1)+' • x'+(p.inventory[el]||0)+'</small>';
-    b.onclick=()=>loadElement(idx); elBox.appendChild(b);
-  });
-
-  const drops=document.getElementById('dropList'); drops.innerHTML='';
-  Object.keys(colors).slice(0,9).forEach(el=>{
-    const d=document.createElement('div'); d.className='drop';
-    d.innerHTML='<strong style="color:'+colors[el]+'">'+el+'</strong><div>x'+(p.inventory[el]||0)+'</div>';
-    drops.appendChild(d);
-  });
-
-  document.querySelectorAll('.b-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.biome===state.biome));
-  document.getElementById('bossHUD').innerHTML = boss
-    ? '<div>'+boss.bossName+' • '+Math.ceil(boss.hp)+' / '+boss.maxHp+' HP</div><div class="sub">Thần thoại '+boss.origin+' • '+boss.unlockedSkills+' Kỹ năng Mở khóa • Màn T'+state.stage+'</div><div class="bar"><span style="width:'+clamp(boss.hp/boss.maxHp*100,0,100)+'%"></span></div>'
-    : '';
-}
-
-function loop(ts){
-  const dt=Math.min(0.033,(ts-last)/1000||0); last=ts;
-  if(state.running&&!state.paused) update(dt);
-  render(); requestAnimationFrame(loop);
-}
-
-// Gắn sự kiện UI
-document.querySelectorAll('[data-start]').forEach(n=>n.onclick=()=>reset(n.dataset.start));
-document.getElementById('howTo').onclick=()=>reset('lab');
-document.getElementById('pauseBtn').onclick=()=>togglePause();
-document.getElementById('resumeBtn').onclick=()=>togglePause();
-document.getElementById('backMenuBtn').onclick=()=>{state.running=false;openModal('startModal');};
-document.getElementById('resetBtn').onclick=()=>reset(state.mode||'endless');
-document.getElementById('closeBank').onclick=()=>{hideAllModals(); state.paused=false; canvas.focus();};
-
-document.getElementById('configBtn').onclick=()=>{
-  if(!state.running)return;
-  const sp=document.getElementById('settingsPanel');
-  sp.classList.toggle('open');
-  if(sp.classList.contains('open')){state.paused=true;keys={};mouse.left=false;}
-  else if(!document.querySelector('.modalWrap.show'))state.paused=false;
-};
-document.getElementById('qualitySelect').onchange=e=>{quality=e.target.value;fitResolution();};
-document.getElementById('audioBtn').onclick=e=>{audioOn=!audioOn;e.target.textContent='Âm thanh: '+(audioOn?'bật':'tắt');if(audioOn)sound('e');};
-
-document.querySelectorAll('[data-tier]').forEach(b=>b.onclick=()=>{
-  for(const k in state.player.skillTier)state.player.skillTier[k]=+b.dataset.tier;
-  state.player.shield=0; state.effects=[]; state.projectiles=[];
-  for(const k in state.player.cd)state.player.cd[k]=0;
-  document.querySelectorAll('[data-tier]').forEach(el=>el.classList.toggle('active',el===b));
-  updatePanels(); canvas.focus();
-});
-
-document.getElementById('labCast').onclick=()=>{
-  const presets={cataclysm:['f',['O','Na']],flame:['q',['O']],electric:['e',['Cu']],shield:['r',['C']]};
-  const [k,els]=presets[document.getElementById('labPreset').value];
-  state.queue=els.slice(); state.player.cd[k]=0; state.selectedSkill=k; state.player.energy=state.player.maxEnergy;
-  skillCast(k); canvas.focus();
-};
-
-document.getElementById('labSpawnBoss').onclick=()=>{
-  spawnMythicBoss(false);
-  canvas.focus();
-};
-document.getElementById('labSpawnDragon').onclick=()=>{
-  state.stage = 5;
-  spawnMythicBoss(true);
-  canvas.focus();
-};
-
-document.querySelectorAll('.b-tab').forEach(btn=>btn.onclick=()=>{
-  setBiome(btn.dataset.biome);
-  canvas.focus();
-});
-
-function togglePause(){
-  document.getElementById('settingsPanel').classList.remove('open');
-  if(!state.running||document.getElementById('upgradeModal').classList.contains('show'))return;
-  if(document.getElementById('bankModal').classList.contains('show')){hideAllModals();state.paused=false;return;}
-  state.paused=!state.paused;
-  if(state.paused){
-    document.getElementById('pauseTitle').textContent='TẠM DỪNG';
-    document.getElementById('pauseText').textContent='Trận đấu đang tạm dừng.';
-    openModal('pauseModal');
-  } else {hideAllModals(); canvas.focus();}
-}
-
-function openBank(){
-  if(!state.running||state.paused)return;
-  const box=document.getElementById('bankTabs'); box.innerHTML='';
-  banks.forEach((b,i)=>{
-    const d=document.createElement('button'); d.className='bankCard'+(i===state.bank?' active':'');
-    d.innerHTML='<strong>'+b.name+'</strong><div class="chips">'+b.els.map((e,j)=>'<span class="chip" style="color:'+colors[e]+'">'+(j+1)+': '+e+'</span>').join('')+'</div>';
-    d.onclick=()=>{state.bank=i; updatePanels(); hideAllModals(); state.paused=false; canvas.focus();};
-    box.appendChild(d);
-  });
-  openModal('bankModal');
-}
-
-window.addEventListener('keydown',e=>{
-  const k=e.key.toLowerCase();
-  if(['tab',' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
-  keys[k]=true; if(e.repeat)return;
-  if(k==='p'||k==='escape'){togglePause(); return;}
-  if(k==='tab'){openBank(); return;}
-  if(state.paused||!state.running)return;
-  if(k==='shift') dash();
-  if(['1','2','3','4'].includes(k)) loadElement(Number(k)-1);
-  if(k==='backspace') clearQueue();
-  if(['q','e','r','f'].includes(k)){state.selectedSkill=k; skillCast(k);}
-  updatePanels();
-});
-window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
-
-canvas.addEventListener('mousemove',e=>{
-  const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/W,r.height/H),ox=(r.width-W*scale)/2,oy=(r.height-H*scale)/2;
-  mouse.x=(e.clientX-r.left-ox)/scale; mouse.y=(e.clientY-r.top-oy)/scale;
-});
-canvas.addEventListener('mousedown',e=>{
-  canvas.focus();
-  if(e.button===0){mouse.left=true;baseAttack();}
-  if(e.button===2){mouse.right=true;skillCast(state.selectedSkill);}
-});
-window.addEventListener('mouseup',()=>{mouse.left=false;mouse.right=false;});
-canvas.addEventListener('contextmenu',e=>e.preventDefault());
-window.addEventListener('resize',fitResolution);
-
-state=makeState('city');
-initInv();
-fitResolution();
-updatePanels();
-openModal('startModal');
-requestAnimationFrame(loop);
-})();
-</script>
-</body>
-</html>
+  renderScale=quality==='low'?1
