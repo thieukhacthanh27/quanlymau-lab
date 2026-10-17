@@ -21,142 +21,52 @@ from streamlit_gsheets import GSheetsConnection
 # ==========================================
 # 1. CẤU HÌNH GIAO DIỆN & THIẾT KẾ (UI/UX)
 # ==========================================
-st.set_page_config(page_title="HATICO · Laboratory Console", page_icon="🔬", layout="wide")
+st.set_page_config(page_title="GC HATICO - Lab GC", page_icon="🔬", layout="wide")
 
 st.markdown("""
 <style>
-:root{--lab-bg:#080e1b;--lab-panel:#101c2e;--lab-line:#263c54;--lab-text:#e8f0fa;--lab-muted:#a0b3cb;--lab-cyan:#62e5e0;--lab-violet:#ac9cff}
-.stApp{background:radial-gradient(ellipse at 90% 0%,#172c484d,transparent 55%),var(--lab-bg);color:var(--lab-text)}
-.stMainBlockContainer{padding-top:2rem;max-width:1550px;padding-bottom:4rem}
-[data-testid="stHeader"]{background:#080e1be8}
-[data-testid="stSidebar"]{background:#0c1423;border-right:1px solid var(--lab-line)}
-[data-testid="stSidebar"] [data-testid="stRadio"] label{padding:9px 12px;border:1px solid transparent;border-radius:9px;margin-bottom:4px;transition:background .15s}
-[data-testid="stSidebar"] [data-testid="stRadio"] label:hover{background:#17283d}
-[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked){background:#173345;border-color:#39717c;box-shadow:inset 3px 0 var(--lab-cyan)}
-[data-testid="stSidebar"] [data-testid="stRadio"] label p{font-size:13px}
-.brand{font-size:27px;letter-spacing:2px;font-weight:800;color:#f3f7fc;margin-top:8px}
-.brand em{color:var(--lab-cyan);font-style:normal;font-size:15px}
-.brand-sub{font:10px ui-monospace,monospace;letter-spacing:2px;color:var(--lab-muted);margin:8px 0 24px}
-.main-title{font-size:1.85rem!important;font-weight:750;color:var(--lab-text);margin-bottom:.5rem}
-h1,h2,h3{letter-spacing:-.025em}
-.eyebrow{font:11px ui-monospace,monospace;letter-spacing:2.5px;color:var(--lab-cyan);text-transform:uppercase}
-.hero{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:24px;margin:8px 0 24px;padding:32px;border:1px solid #34516b;border-radius:20px;background:linear-gradient(110deg,#142a3c,#101c30 65%,#20243e);box-shadow:0 16px 50px #0003}
-.hero:before{content:'';position:absolute;z-index:-1;inset:0;background-image:linear-gradient(#71dce308 1px,transparent 1px),linear-gradient(90deg,#71dce308 1px,transparent 1px);background-size:30px 30px;mask-image:linear-gradient(90deg,transparent,#000)}
-.hero h1{font-size:36px;font-weight:750;margin:10px 0 12px;padding:0;letter-spacing:-1.2px;color:#f1f7ff}
-.hero p{color:#b3c4d9;margin:0;font-size:14px;max-width:560px;line-height:1.7}
-.hero-art{width:180px;height:130px;flex-shrink:0;opacity:.8}
-.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}
-.hero-tags span,.date-pill{background:#0b1a2ab3;border:1px solid #34516b;border-radius:6px;padding:7px 10px;font:11px ui-monospace,monospace;color:#c4d4e8;white-space:nowrap}
-.date-pill{margin-top:12px;text-align:center}
-.kpi{position:relative;overflow:hidden;background:linear-gradient(145deg,#142238,#101a2b);border:1px solid var(--lab-line);border-radius:14px;padding:19px 22px;min-height:150px}
-.kpi:before{content:'';position:absolute;top:20px;left:0;width:3px;height:32px;background:var(--accent);box-shadow:0 0 16px var(--accent)}
-.kpi-label{color:#b5c5d9;font-size:11px;font-weight:650;letter-spacing:1px}
-.kpi-number{font:500 40px/1.5 ui-monospace,monospace;color:#f1f7ff;font-variant-numeric:tabular-nums}
-.kpi-foot{font-size:11px;color:var(--lab-muted)}
-.section-title{font-size:17px;font-weight:700;color:var(--lab-text);margin:0 0 6px}
-.section-note{font-size:12px;color:var(--lab-muted);margin-bottom:20px}
-.sub-title{font-size:1.15rem;font-weight:700;margin:1rem 0}
-.flow-row{display:flex;align-items:center;gap:14px;margin:17px 0;font-size:12px}
-.flow-label{width:125px;color:#b8c9dc;flex-shrink:0}
-.flow-track{height:6px;flex:1;background:#223247;border-radius:8px;overflow:hidden}
-.flow-fill{height:100%;background:linear-gradient(90deg,#389ca9,#70e7df);border-radius:8px}
-.flow-count{width:28px;font:600 13px ui-monospace,monospace;text-align:right;color:var(--lab-text)}
-.notice{padding:14px;background:#30291d;border:1px solid #655132;border-radius:9px;color:#f1ce91;font-size:12px;margin:10px 0;line-height:1.7}
-.stButton button,.stDownloadButton button{border-radius:9px;font-weight:600;border:1px solid #344c66;min-height:43px;transition:border-color .15s,background .15s}
-.stButton button:hover,.stDownloadButton button:hover{border-color:var(--lab-cyan)}
-.stButton button[kind="primary"],.stDownloadButton button[kind="primary"]{background:#69e0d8;color:#071b25;border-color:#69e0d8}
-.stButton button[kind="primary"] p,.stDownloadButton button[kind="primary"] p{color:#071b25}
-button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--lab-cyan)!important;outline-offset:3px}
-button:disabled{opacity:.45}
-[data-testid="stVerticalBlockBorderWrapper"]>div{border-radius:14px!important}
-[data-testid="stDataFrame"],[data-testid="stDataEditor"]{border:1px solid #344c66;border-radius:10px;overflow:hidden}
-[data-testid="stExpander"]{background:#101b2c;border-radius:10px;border-color:var(--lab-line)}
-[data-testid="stMetric"]{background:#101c2e;border:1px solid var(--lab-line);padding:18px;border-radius:12px}
-.stTabs [data-baseweb="tab-list"]{gap:12px;background:transparent;border-bottom:1px solid var(--lab-line)}
-.stTabs [data-baseweb="tab"]{padding:10px 16px}
-.stTabs [aria-selected="true"]{color:var(--lab-cyan)!important;background:#162c3c;border-radius:8px 8px 0 0}
-.stTabs [data-baseweb="tab-highlight"]{background:var(--lab-cyan)}
-.warning-box{background:#30291d;border-left:4px solid #e6b16b;padding:15px;border-radius:7px;color:#f1ce91}
-.lab-topline{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--lab-line);padding:0 0 14px;margin-bottom:20px;font:10px ui-monospace,monospace;letter-spacing:1.5px;color:var(--lab-muted)}
-.lab-topline strong{color:var(--lab-cyan);font-weight:500}
-@media(max-width:760px){.hero{padding:22px;display:block}.hero-art{display:none}.hero h1{font-size:28px}.date-pill{display:inline-block;margin-top:18px}.kpi{min-height:124px;padding:15px}.kpi-number{font-size:32px}.stMainBlockContainer{padding:1rem}.flow-label{width:110px}.lab-topline{letter-spacing:.5px}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
-@media print{.stApp{background:white;color:#111}.hero,.kpi{background:white;color:#111;box-shadow:none}.hero h1,.hero p,.kpi-number,.kpi-label,.section-title{color:#111}[data-testid="stSidebar"],.hero-art,.lab-topline{display:none}}
-/* Decorative CSS 3D scene. No external script, no analytical data. */
-.hero{background:radial-gradient(ellipse at 82% 45%,#174c5b66,transparent 45%),linear-gradient(115deg,#142a3c,#10182d 65%,#221d3e);min-height:320px}
-.hero>div:first-child{position:relative;z-index:2;flex:1}
-.hero:before{transform:perspective(650px) rotateX(58deg) scale(1.4);transform-origin:bottom;opacity:.65}
-.lab-scene-wrap{flex:0 0 280px;max-width:100%;position:relative}
-.lab-scene{position:relative;width:280px;max-width:100%;height:235px;perspective:850px;pointer-events:none}
-.lab-model{position:absolute;inset:20px 35px 5px;transform-style:preserve-3d;animation:lab-orbit 24s linear infinite}
-.lab-ring{position:absolute;inset:12px;border:1px solid #64e5e080;border-radius:50%;box-shadow:0 0 12px #62e5e01a,inset 0 0 12px #62e5e01a;transform-style:preserve-3d}
-.lab-ring.r1{transform:rotateX(68deg)}
-.lab-ring.r2{transform:rotateY(65deg);border-color:#b2a0ff99}
-.lab-ring.r3{transform:rotateX(-50deg) rotateY(40deg);border-style:dashed;border-color:#6baeff66}
-.lab-ring:after{content:'';position:absolute;top:50%;left:-5px;width:10px;height:10px;border-radius:50%;background:#a7fff3;box-shadow:0 0 16px #62e5e0}
-.lab-core{position:absolute;left:calc(50% - 26px);top:calc(50% - 26px);width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#eaffff,#68dcd7 22%,#147786 58%,#09293d 85%);box-shadow:0 0 38px #60e1df55;transform:translateZ(12px)}
-.lab-bond{position:absolute;top:50%;left:50%;width:78px;height:4px;transform-origin:0 50%;background:linear-gradient(90deg,#4d9ca3,#c5eff0);border-radius:8px;transform-style:preserve-3d}
-.lab-bond:after{content:'';position:absolute;right:-13px;top:-12px;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#f3edff,#b2a0ff 30%,#514b9b 65%,#161d3c);box-shadow:0 0 18px #a89cff44}
-.lab-bond.b1{transform:rotateZ(-35deg) rotateY(25deg)}
-.lab-bond.b2{transform:rotateZ(90deg) rotateY(-30deg)}
-.lab-bond.b3{transform:rotateZ(205deg) rotateY(35deg)}
-.lab-platform{position:absolute;width:220px;height:74px;left:30px;bottom:0;border:1px solid #57d8d355;border-radius:50%;background:radial-gradient(ellipse,#2bb8b626,transparent 65%);box-shadow:0 12px 28px #0005,inset 0 -7px 20px #62e5e014}
-.lab-platform:after{content:'';position:absolute;inset:12px;border:1px solid #7f8eff33;border-radius:50%}
-.lab-scene-label{text-align:center;font:10px ui-monospace,monospace;letter-spacing:2px;color:#91bbc9;margin:7px 0 12px}
-.kpi{transform:perspective(800px) rotateX(0) rotateY(0);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;box-shadow:0 8px 22px #0002}
-@media(hover:hover) and (pointer:fine){.kpi:hover{transform:perspective(800px) rotateX(3deg) rotateY(-3deg) translateY(-5px);border-color:#4f879c;box-shadow:8px 14px 28px #0005}.hero:hover .lab-model{animation-play-state:paused}}
-@keyframes lab-orbit{from{transform:rotateX(-12deg) rotateY(0deg) rotateZ(-8deg)}to{transform:rotateX(-12deg) rotateY(360deg) rotateZ(-8deg)}}
-@media(max-width:1000px){.lab-scene-wrap{flex-basis:220px}.lab-scene{width:220px;height:205px}.lab-model{inset:20px 20px 5px}.lab-platform{width:180px;left:20px}.hero h1{font-size:30px}}
-@media(max-width:760px){.hero{min-height:0}.lab-scene-wrap{display:none}.kpi:hover{transform:none}}
-@media(prefers-reduced-motion:reduce){.lab-model{animation:none!important;transform:rotateX(-12deg) rotateY(25deg)}.kpi,.kpi:hover{transform:none!important;transition:none!important}}
-@media print{.lab-scene-wrap{display:none}.kpi{transform:none!important}}
-
-/* HATICO HUD: static depth, restrained highlights, clear work surfaces. */
-:root{--lab-bg:#0c1015;--lab-panel:#151b22;--lab-line:#303a44;--lab-text:#e8edf2;--lab-muted:#a4afb9;--lab-cyan:#91d8e8;--lab-violet:#d5aa63}
-.stApp{background:#0c1015;color:#e8edf2}
-[data-testid="stHeader"]{background:#0c1015f2}
-[data-testid="stSidebar"]{background:#10151b;border-right:1px solid #303a44}
-[data-testid="stSidebar"] [data-testid="stRadio"] label{border-radius:4px}
-[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked){background:#202a32;border-color:#3f515b;box-shadow:inset 2px 0 #d5aa63}
-.brand{font-size:24px;letter-spacing:3px}.brand em{color:#d5aa63}.brand-sub{color:#a4afb9;letter-spacing:1.3px}
-.hero{min-height:230px;padding:26px 30px;background:linear-gradient(110deg,#1a242d,#131a21 70%);border:1px solid #3b4954;border-radius:6px;box-shadow:none;gap:24px}
-.hero:before{inset:10px;border-top:1px solid #91d8e822;border-bottom:1px solid #91d8e822;background:none;transform:none;mask-image:none;opacity:1}
-.hero h1{font-size:32px;line-height:1.25;letter-spacing:-.5px;margin:10px 0;color:#f0f4f7}
-.hero p{font-size:14px;color:#b0bbc5;max-width:610px}
-.eyebrow{color:#d5aa63;letter-spacing:2px;font-size:11px}
-.hero-tags{margin-top:16px;gap:14px}
-.hero-tags span{border:0;border-left:2px solid #566a77;border-radius:0;background:transparent;padding:0 0 0 8px;color:#b0bbc5}
-.date-pill{background:transparent;border:0;color:#a4afb9;font-size:11px;padding:4px}
-.kpi{min-height:130px;background:#151b22;border:1px solid #303a44;border-radius:6px;padding:16px 20px;box-shadow:none;transform:none!important;transition:border-color .15s}
-.kpi:before{width:2px;height:22px;top:18px;background:#d5aa63;box-shadow:none}
-.kpi:hover{border-color:#617785;transform:none!important;box-shadow:none}
-.kpi-label{font-size:11px;color:#b4bfc9;letter-spacing:.5px}.kpi-number{font-size:34px;color:#edf2f6}.kpi-foot{color:#a4afb9}
-.section-title{color:#e8edf2}.section-note{color:#a4afb9}.flow-label{color:#b4bfc9}.flow-track{background:#27313a}.flow-fill{background:#82bbcc}.flow-count{color:#e8edf2}
-.stButton button,.stDownloadButton button{border-radius:5px;border-color:#46535f;background:#1b242d;color:#e8edf2;box-shadow:none}
-.stButton button[kind="primary"],.stDownloadButton button[kind="primary"]{background:#91d8e8;border-color:#91d8e8;color:#101b22}
-.stButton button[kind="primary"] p,.stDownloadButton button[kind="primary"] p{color:#101b22}
-[data-testid="stExpander"],[data-testid="stMetric"]{background:#151b22;border-radius:6px;border-color:#303a44}
-[data-testid="stDataFrame"],[data-testid="stDataEditor"]{border-color:#46535f;border-radius:5px}
-[data-testid="stVerticalBlockBorderWrapper"]>div{border-radius:6px!important}
-.stTabs [aria-selected="true"]{background:#202a32;border-radius:4px 4px 0 0;color:#91d8e8!important}
-.notice,.warning-box{background:#29251d;border-color:#5d513a;color:#e6c58f}
-.lab-topline{letter-spacing:1px;color:#a4afb9}.lab-topline strong{color:#d5aa63}
-.lab-scene-wrap{flex:0 0 210px}
-.lab-scene{width:210px;height:165px;perspective:650px}
-.lab-platform,.lab-bond{display:none}
-.lab-model{inset:4px 26px;animation:none!important;transform:rotateX(8deg) rotateY(-18deg);transition:transform .5s ease;transform-style:preserve-3d}
-.lab-ring{inset:0;border:1px solid #8ebdcd66;box-shadow:none;border-radius:50%}
-.lab-ring.r1{transform:translateZ(0);border:8px double #527483}
-.lab-ring.r2{inset:14px;transform:translateZ(12px);border:7px dashed #a4d6e4;opacity:.8}
-.lab-ring.r3{inset:33px;transform:translateZ(24px);border:2px solid #d5aa63;box-shadow:0 0 18px #91d8e819}
-.lab-ring:after{display:none}
-.lab-core{left:calc(50% - 27px);top:calc(50% - 27px);width:54px;height:54px;transform:translateZ(34px);background:radial-gradient(circle,#e3f7fa 5%,#94cbd8 35%,#356173 68%,#1a313c 72%);border:5px solid #557d8c;box-shadow:0 0 22px #91d8e833}
-.lab-scene-label{font-size:10px;letter-spacing:1.7px;color:#a4afb9;margin:4px 0}
-@media(hover:hover) and (pointer:fine){.hero:hover .lab-model{transform:rotateX(0deg) rotateY(0deg)}}
-@media(max-width:1000px){.lab-scene-wrap{flex-basis:180px}.lab-scene{width:180px;height:150px}.lab-model{inset:5px 20px}.hero h1{font-size:28px}}
-@media(max-width:760px){.hero{padding:22px;min-height:0}.lab-scene-wrap{display:none}.hero h1{font-size:26px}.kpi{min-height:120px}}
-@media(prefers-reduced-motion:reduce){.lab-model,.hero:hover .lab-model{transform:none!important;transition:none!important}}
-
+.stApp {background:#f3f6f8;color:#142c3b}
+.stMainBlockContainer {padding-top:2rem;max-width:1500px;padding-bottom:4rem}
+[data-testid="stSidebar"] {background:#102d38;border-right:0}
+[data-testid="stSidebar"] h2,[data-testid="stSidebar"] p,[data-testid="stSidebar"] label {color:#d9e8e9!important}
+[data-testid="stSidebar"] [data-testid="stRadio"] label {padding:8px 10px;border-radius:8px;margin-bottom:3px}
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {background:#21515d}
+[data-testid="stSidebar"] .stButton button,[data-testid="stSidebar"] [data-testid="stPopover"] button {background:#1c424f;color:#e4f2f1;border-color:#355865}
+[data-testid="stSidebar"] .stButton button p {color:#e4f2f1!important}
+[data-testid="stSidebar"] hr {border-color:#34515c}
+.main-title {font-size:2rem!important;font-weight:750;color:#142c3b;margin-bottom:.3rem}
+.sub-title {font-size:1.15rem;font-weight:700;margin:1rem 0}
+.eyebrow {font-size:11px;letter-spacing:2px;font-weight:750;color:#63848b;text-transform:uppercase}
+.hero {display:flex;align-items:center;justify-content:space-between;gap:24px;margin:8px 0 25px}
+.hero h1 {font-size:34px;font-weight:750;margin:5px 0 8px;padding:0;letter-spacing:-1px}
+.hero p {color:#6a7e89;margin:0;font-size:14px}
+.date-pill {background:white;border:1px solid #dce6e9;border-radius:25px;padding:10px 17px;font-size:12px;white-space:nowrap;color:#537079}
+.brand {font-size:24px;letter-spacing:1px;font-weight:800;color:white;margin-top:4px}
+.brand em {color:#5bd2ba;font-style:normal}
+.brand-sub {font-size:11px;letter-spacing:2px;color:#8aaab5;margin:4px 0 28px}
+.kpi {background:white;border:1px solid #e0e8ec;border-radius:13px;padding:20px 23px;min-height:150px;border-top:3px solid var(--accent)}
+.kpi-label {color:#607986;font-size:13px;font-weight:600}
+.kpi-number {font-size:36px;font-weight:750;line-height:1.5;color:#173847}
+.kpi-foot {font-size:11px;color:#82959d}
+.section-title {font-size:17px;font-weight:700;color:#173847;margin:0 0 4px}
+.section-note {font-size:12px;color:#7b9199;margin-bottom:17px}
+.flow-row {display:flex;align-items:center;gap:14px;margin:12px 0;font-size:12px}
+.flow-label {width:125px;color:#5e7783;flex-shrink:0}
+.flow-track {height:7px;flex:1;background:#edf2f4;border-radius:8px;overflow:hidden}
+.flow-fill {height:100%;background:#23a68f;border-radius:8px}
+.flow-count {width:24px;font-weight:700;text-align:right;color:#173847}
+.notice {padding:12px 14px;background:#fff8eb;border:1px solid #f4e6c9;border-radius:9px;color:#89662e;font-size:12px;margin:10px 0}
+.stButton button,.stDownloadButton button {border-radius:8px;font-weight:600;border:1px solid #d7e4e8;min-height:41px}
+.stButton button[kind="primary"],.stDownloadButton button[kind="primary"] {background:#168d7d;border-color:#168d7d;color:white}
+[data-testid="stVerticalBlockBorderWrapper"]>div {border-radius:13px!important}
+[data-testid="stDataFrame"],[data-testid="stDataEditor"] {border:1px solid #e1e9ed;border-radius:9px;overflow:hidden}
+[data-testid="stExpander"] {background:white;border-radius:10px}
+[data-testid="stMetric"] {background:white;border:1px solid #e1e9ed;padding:16px;border-radius:12px}
+.stTabs [data-baseweb="tab-list"] {gap:24px;background:transparent}
+.stTabs [aria-selected="true"] {color:#168d7d!important}
+.stTabs [data-baseweb="tab-highlight"] {background:#168d7d}
+.warning-box {background:#fff4e9;border-left:4px solid #d99944;padding:15px;border-radius:7px}
+@media(max-width:760px){.hero{display:block}.date-pill{display:inline-block;margin-top:15px}.hero h1{font-size:27px}.kpi{min-height:120px;padding:15px}.stMainBlockContainer{padding:1rem}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -2072,10 +1982,7 @@ def render_ai_assistant():
 # ==========================================
 # 5. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
-st.sidebar.markdown("<div class='brand'>HATICO<em> / LAB</em></div><div class='brand-sub'>LAB OPERATIONS / HUD</div>",unsafe_allow_html=True)
-effects_3d=st.sidebar.toggle("Hiệu ứng 3D",value=True,key="lab_effects_3d",help="Bật/tắt hiệu ứng chiều sâu của lõi năng lượng khi rê chuột. Không ảnh hưởng dữ liệu hoặc phép tính.")
-if not effects_3d:
-    st.markdown("<style>.lab-model{animation:none!important;transform:none!important}.kpi,.kpi:hover{transform:none!important;transition:none!important;box-shadow:none!important}.hero:before{transform:none!important}</style>",unsafe_allow_html=True)
+st.sidebar.markdown("<div class='brand'>HATICO<em> / LAB</em></div><div class='brand-sub'>GC · LABORATORY WORKSPACE</div>",unsafe_allow_html=True)
 if DEMO_MODE:
     st.sidebar.caption("🧪 BẢN THỬ · Dữ liệu minh họa")
 else:
@@ -2130,20 +2037,18 @@ if st.session_state.get("flash"):
 if DEMO_MODE:
     st.caption("🧪 CHẾ ĐỘ DEMO — Mẫu và hóa chất minh họa; các thay đổi chỉ lưu trong phiên thử.")
 
-st.markdown(f'<div class="lab-topline"><span>HATICO <strong>/ LAB CONSOLE</strong></span><span>{html.escape(menu)} · {today_date.strftime("%d.%m.%Y")}</span></div>',unsafe_allow_html=True)
-
 if menu == "✨ HATICO AI":
     render_ai_assistant()
 
 elif menu == "🏠 Trang chủ (Tổng quan)":
-    st.markdown(f"""<div class="hero"><div><div class="eyebrow">HATICO / OPERATIONS HUD</div><h1>Trung tâm vận hành phòng lab.</h1><p>Từ tiếp nhận đến kết quả. Theo dõi tiến độ, kiểm soát chất lượng và hoàn thiện biên bản trong cùng một không gian.</p><div class="hero-tags"><span>GC–MS</span><span>GC–FID</span><span>PHÂN TÍCH MÔI TRƯỜNG</span></div></div><div class="lab-scene-wrap"><div class="lab-scene" aria-hidden="true"><div class="lab-platform"></div><div class="lab-model"><div class="lab-ring r1"></div><div class="lab-ring r2"></div><div class="lab-ring r3"></div><div class="lab-bond b1"></div><div class="lab-bond b2"></div><div class="lab-bond b3"></div><div class="lab-core"></div></div></div><div class="lab-scene-label">ENERGY CORE / HATICO</div><div class="date-pill">{today_date.strftime('%d / %m / %Y')}</div></div></div>""",unsafe_allow_html=True)
+    st.markdown(f"""<div class="hero"><div><div class="eyebrow">Không gian vận hành / Tổng quan</div><h1>Một ngày làm việc hiệu quả.</h1><p>Theo dõi mẫu, kiểm soát tiến độ và chuẩn bị cho lượt chạy tiếp theo.</p></div><div class="date-pill">◷ &nbsp; {today_date.strftime('%d / %m / %Y')}</div></div>""",unsafe_allow_html=True)
     active = ~df_current["Trạng Thái"].isin(STATUSES[-2:])
     received = int((df_current["Ngày Nhận"] == today_date).sum())
     ready = int(df_current["Trạng Thái"].eq(STATUSES[2]).sum())
     pending = int(((df_current["Ngày Nhận"] < today_date) & active).sum())
     done = int((~active).sum())
     
-    cards=[("TIẾP NHẬN HÔM NAY",received,"Theo ngày nhận mẫu", "#62e5e0"),("SẴN SÀNG CHẠY MÁY",ready,"Đã chuyển sang chờ chạy", "#72b8ff"),("MẪU CÒN TỒN",pending,"Nhận trước hôm nay, chưa lưu/hủy", "#edbb76"),("ĐÃ LƯU / TIÊU HỦY",done,"Trên toàn bộ danh sách", "#b3a1ff")]
+    cards=[("TIẾP NHẬN HÔM NAY",received,"Theo ngày nhận mẫu", "#239f8d"),("SẴN SÀNG CHẠY MÁY",ready,"Đã chuyển sang chờ chạy", "#5d8fbe"),("MẪU CÒN TỒN",pending,"Nhận trước hôm nay, chưa lưu/hủy", "#dbab5b"),("ĐÃ LƯU / TIÊU HỦY",done,"Trên toàn bộ danh sách", "#8b82be")]
     for col,(label,n,foot,color) in zip(st.columns(4),cards):
         col.markdown(f'<div class="kpi" style="--accent:{color}"><div class="kpi-label">{label}</div><div class="kpi-number">{n:02}</div><div class="kpi-foot">{foot}</div></div>',unsafe_allow_html=True)
     st.write("")
@@ -2628,10 +2533,10 @@ elif menu == "🧪 Kiểm soát Hóa chất":
     
     if not base.empty:
         col1, col2, col3, col4 = st.columns(4)
-        col1.markdown(f'<div class="kpi" style="--accent:#62e5e0; min-height:110px; padding:15px"><div class="kpi-label">Tổng số hóa chất</div><div class="kpi-number">{len(base)}</div></div>', unsafe_allow_html=True)
-        col2.markdown(f'<div class="kpi" style="--accent:#72b8ff; min-height:110px; padding:15px"><div class="kpi-label">Chuẩn phân tích</div><div class="kpi-number">{len(base[base["Phân Loại"] == "Chất chuẩn phân tích"])}</div></div>', unsafe_allow_html=True)
-        col3.markdown(f'<div class="kpi" style="--accent:#b3a1ff; min-height:110px; padding:15px"><div class="kpi-label">Nội chuẩn/Surrogate</div><div class="kpi-number">{len(base[base["Phân Loại"] == "Chất chuẩn (IS/Surrogate)"])}</div></div>', unsafe_allow_html=True)
-        col4.markdown(f'<div class="kpi" style="--accent:#edbb76; min-height:110px; padding:15px"><div class="kpi-label">Cần rà soát</div><div class="kpi-number">{len(base[base["Cần Kiểm Tra"].astype(str).str.strip() != ""]) if "Cần Kiểm Tra" in base.columns else 0}</div></div>', unsafe_allow_html=True)
+        col1.markdown(f'<div class="kpi" style="--accent:#239f8d; min-height:110px; padding:15px"><div class="kpi-label">Tổng số hóa chất</div><div class="kpi-number">{len(base)}</div></div>', unsafe_allow_html=True)
+        col2.markdown(f'<div class="kpi" style="--accent:#5d8fbe; min-height:110px; padding:15px"><div class="kpi-label">Chuẩn phân tích</div><div class="kpi-number">{len(base[base["Phân Loại"] == "Chất chuẩn phân tích"])}</div></div>', unsafe_allow_html=True)
+        col3.markdown(f'<div class="kpi" style="--accent:#8b82be; min-height:110px; padding:15px"><div class="kpi-label">Nội chuẩn/Surrogate</div><div class="kpi-number">{len(base[base["Phân Loại"] == "Chất chuẩn (IS/Surrogate)"])}</div></div>', unsafe_allow_html=True)
+        col4.markdown(f'<div class="kpi" style="--accent:#dbab5b; min-height:110px; padding:15px"><div class="kpi-label">Cần rà soát</div><div class="kpi-number">{len(base[base["Cần Kiểm Tra"].astype(str).str.strip() != ""]) if "Cần Kiểm Tra" in base.columns else 0}</div></div>', unsafe_allow_html=True)
         st.write("")
 
     with st.expander('➕ Thêm hóa chất thủ công'):
@@ -2872,3 +2777,4 @@ elif menu == "⚙️ Cấu hình Hệ thống":
                             st.error(f"⚠️ Lỗi kết nối: {sheet_err}")
                 else: st.error("Không tìm thấy cấu trúc bảng hợp lệ (Cột Tên / Cột MDL / Cột LOQ).")
             except Exception as e: st.error(f"Lỗi đọc file: {e}")
+
