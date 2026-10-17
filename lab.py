@@ -2079,6 +2079,32 @@ def render_elementa_v2():
 
 
 # ==========================================
+# ELEMENTAL ARCADE — ĐIỀU HƯỚNG HAI MINI GAME
+# ==========================================
+def render_elemental_arcade():
+    import streamlit.components.v1 as components
+
+    games = {
+        "⚔️ Elemental Battle": "elemental_battle.html",
+        "🚀 Galaxy Defender": "galaxy_defender.html",
+    }
+    st.markdown("## 🎮 ELEMENTAL ARCADE")
+    st.caption("Hai trò chơi độc lập · Huấn luyện và Sinh tồn vô cực")
+    selected = st.radio("Chọn trò chơi", list(games), horizontal=True, key="arcade_game")
+    game_file = Path(__file__).resolve().parent / games[selected]
+    if not game_file.is_file():
+        st.info(f"Chưa có {game_file.name}. Hãy tải file HTML này lên cùng thư mục với lab.py trên GitHub.")
+        st.caption("Menu đã hoạt động; khung game sẽ xuất hiện khi bạn thêm file tương ứng.")
+        return
+    try:
+        game_html = game_file.read_text(encoding="utf-8")
+    except OSError as exc:
+        st.error(f"Không đọc được game: {exc}")
+        return
+    components.html(game_html, height=740, scrolling=False)
+
+
+# ==========================================
 # 5. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
 # ==========================================
 st.sidebar.markdown("<div class='brand'>HATICO<em> / LAB</em></div><div class='brand-sub'>GC · LABORATORY WORKSPACE</div>",unsafe_allow_html=True)
@@ -2094,6 +2120,7 @@ menu = st.sidebar.radio("📌 ĐIỀU HƯỚNG CHÍNH", [
     "🏠 Trang chủ (Tổng quan)",
     "✨ HATICO AI",
     "🌌 ELEMENTA 3D Lab",
+    "🎮 ELEMENTAL ARCADE",
     "📥 Quản lý Tiếp nhận", 
     "⚙️ Vận hành GC-MS",
     "🔥 Vận hành GC-FID",
@@ -2139,6 +2166,9 @@ if DEMO_MODE:
 
 if menu == "🌌 ELEMENTA 3D Lab":
     render_elementa_v2()
+
+elif menu == "🎮 ELEMENTAL ARCADE":
+    render_elemental_arcade()
 
 elif menu == "✨ HATICO AI":
     render_ai_assistant()
