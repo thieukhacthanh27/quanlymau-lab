@@ -26,7 +26,14 @@ st.set_page_config(page_title="GC HATICO - Lab GC", page_icon="🔬", layout="wi
 st.markdown("""
 <style>
 .stApp {background:#f3f6f8;color:#142c3b}
-.stMainBlockContainer {padding-top:2rem;max-width:1500px;padding-bottom:4rem}
+.stMainBlockContainer {
+    padding-top: 0.35rem !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+    padding-bottom: 0.5rem !important;
+}
 [data-testid="stSidebar"] {background:#102d38;border-right:0}
 [data-testid="stSidebar"] h2,[data-testid="stSidebar"] p,[data-testid="stSidebar"] label {color:#d9e8e9!important}
 [data-testid="stSidebar"] [data-testid="stRadio"] label {padding:8px 10px;border-radius:8px;margin-bottom:3px}
