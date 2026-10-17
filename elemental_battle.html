@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Galaxy Chem - Elemental Battle V8 • Mythic Odyssey & Cosmic Dragon</title>
+<title>Galaxy Chem - Elemental Battle V7 • Hades Isometric Edition</title>
 <style>
 :root{
   --bg:#06070c; --panel:#10121c; --panel2:#181b2a; --line:#3b3146; --accent:#ff6b4a; --accent2:#ffd166; --text:#f4f1ea; --muted:#9e95a8;
@@ -15,19 +15,19 @@ button{font:inherit;color:var(--text)}
 button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
 #app{height:100dvh;display:grid;grid-template-rows:62px 1fr 30px;padding:0;gap:0}
 .header,.footer,.panel,.modal,.choice{border:2px solid var(--line);background:linear-gradient(180deg,rgba(24,20,34,.96),rgba(10,9,16,.96));box-shadow:0 0 0 2px rgba(5,4,10,.95) inset,0 8px 24px rgba(0,0,0,.6)}
-.header{display:flex;align-items:center;justify-content:space-between;border:0;border-bottom:2px solid #2e2538;border-radius:0;background:linear-gradient(90deg,#0f0c18,#191326,#0f0c18);padding:8px 16px;z-index:2}
-.brand{display:flex;align-items:center;gap:10px}
+.header{display:flex;align-items:center;justify-content:space-between;border:0;border-bottom:2px solid #2e2538;border-radius:0;background:linear-gradient(90deg,#0f0c18,#191326,#0f0c18);padding:8px 20px;z-index:2}
+.brand{display:flex;align-items:center;gap:12px}
 .logo{width:38px;height:38px;border-radius:8px;border:2px solid #e0a96d;display:grid;place-items:center;color:#ffd166;font-weight:900;font-size:21px;background:linear-gradient(135deg,#3d1a24,#160d18);box-shadow:0 0 14px rgba(255,107,74,.35)}
-.brand h1{margin:0;font-size:14px;letter-spacing:1.8px;font-weight:900;color:#f7ede2}
+.brand h1{margin:0;font-size:15px;letter-spacing:2px;font-weight:900;color:#f7ede2}
 .brand h1 span{color:#ff7b54!important;text-shadow:0 0 10px rgba(255,123,84,.4)}
-.brand small{display:block;font-size:8.5px;letter-spacing:2px;margin-top:3px;color:#b89f8d;text-transform:uppercase}
-.topstats{display:flex;gap:2px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-.pill{font-size:11px;background:transparent;border:0;padding:5px 9px;border-left:1px solid #352b40;border-radius:0;color:#a89bb5;font-weight:700}
-.pill strong{color:#ffd166;margin-left:4px}
+.brand small{display:block;font-size:9px;letter-spacing:2.5px;margin-top:3px;color:#b89f8d;text-transform:uppercase}
+.topstats{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pill{font-size:11px;background:transparent;border:0;padding:5px 10px;border-left:1px solid #352b40;border-radius:0;color:#a89bb5;font-weight:700}
+.pill strong{color:#ffd166;margin-left:5px}
 
 /* Quick Biome Bar on Header */
-.biome-switcher{display:flex;gap:4px;background:#09070f;padding:4px;border-radius:6px;border:1px solid #382c47;margin-right:6px}
-.b-tab{padding:4px 8px;border-radius:4px;border:1px solid transparent;background:transparent;color:#a99bb8;font-size:10.5px;font-weight:800;cursor:pointer;transition:.15s}
+.biome-switcher{display:flex;gap:5px;background:#09070f;padding:4px;border-radius:6px;border:1px solid #382c47;margin-right:8px}
+.b-tab{padding:5px 10px;border-radius:4px;border:1px solid transparent;background:transparent;color:#a99bb8;font-size:11px;font-weight:800;cursor:pointer;transition:.15s}
 .b-tab:hover{color:#fff;background:#1e172b}
 .b-tab.active{background:linear-gradient(135deg,#421e29,#26152b);color:#ffd166;border-color:#d48c56;box-shadow:0 0 12px rgba(255,138,76,.28)}
 
@@ -38,8 +38,8 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
 .sidebar,.rightbar{display:none}
 .footer{border:0;border-top:2px solid #2b2236;border-radius:0;background:#0c0a14;font-size:10px;letter-spacing:.4px;padding:5px 24px;color:#9b8ea8;box-shadow:none;z-index:3;display:flex;justify-content:space-between;align-items:center}
 
-.overlayLabel{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:10.5px;background:#110d1ce6;border:1px solid #574166;border-radius:4px;color:#f5e9dc;padding:6px 16px;white-space:nowrap;letter-spacing:1.2px;z-index:3;pointer-events:none;font-weight:800;box-shadow:0 4px 16px #000a}
-.envBanner{position:absolute;top:42px;left:50%;transform:translateX(-50%);font-size:10px;background:rgba(20,14,30,0.92);border:1px solid #8a5a44;border-radius:99px;color:#ffd166;padding:4px 16px;white-space:nowrap;z-index:3;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.6);font-weight:700}
+.overlayLabel{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:10px;background:#110d1ce6;border:1px solid #574166;border-radius:4px;color:#f5e9dc;padding:6px 16px;white-space:nowrap;letter-spacing:1.2px;z-index:3;pointer-events:none;font-weight:700;box-shadow:0 4px 16px #000a}
+.envBanner{position:absolute;top:44px;left:50%;transform:translateX(-50%);font-size:10px;background:rgba(20,14,30,0.92);border:1px solid #8a5a44;border-radius:99px;color:#ffd166;padding:4px 16px;white-space:nowrap;z-index:3;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.6);font-weight:700}
 .overlayRight{display:none}
 
 .hud{position:absolute;z-index:3;pointer-events:none}
@@ -64,8 +64,8 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
 .heatSpectrum i.on{opacity:1;box-shadow:0 0 10px var(--c)}
 .thermalHUD small{font-size:9px;color:#b8a9c9;display:block;line-height:1.35}
 
-.radar{right:20px;top:16px;width:196px}
-.radar #minimap{height:102px;border:1px solid #382b47;border-radius:4px;background:#08060e;display:block;width:100%}
+.radar{right:20px;top:16px;width:190px}
+.radar #minimap{height:100px;border:1px solid #382b47;border-radius:4px;background:#08060e;display:block;width:100%}
 .radar .sectionLabel{font-size:9px;text-transform:uppercase;color:#ffd166;letter-spacing:1.5px;margin-bottom:6px;font-weight:700}
 .radar .statcard{padding:8px}
 
@@ -110,7 +110,7 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
 
 .modalWrap{position:fixed;inset:0;background:#040308cc;backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
 .modalWrap.show{display:flex}
-.modal{width:min(100%,1040px);border:2px solid #6b4c3b;background:linear-gradient(145deg,#1d152b,#0b0813);box-shadow:0 30px 100px #000d;border-radius:14px;padding:28px;max-height:90dvh;overflow:auto}
+.modal{width:min(100%,1020px);border:2px solid #6b4c3b;background:linear-gradient(145deg,#1d152b,#0b0813);box-shadow:0 30px 100px #000d;border-radius:14px;padding:28px;max-height:90dvh;overflow:auto}
 .modal h2{margin:0 0 10px;font-size:26px;letter-spacing:2px;color:#ffd166}
 .modal p{margin:0 0 14px;font-size:13px;color:#c2b4cf;line-height:1.65}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
@@ -129,14 +129,14 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
 .bankCard .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .chip{padding:4px 7px;border-radius:6px;background:#1c142b;border:1px solid #523d6b;font-size:11px;font-weight:700}
 
-#settingsPanel{position:absolute;right:20px;top:132px;z-index:6;width:305px;max-height:calc(100% - 195px);overflow:auto;background:#130e21f8;border:1.5px solid #5c4575;padding:14px;border-radius:8px;display:none}
+#settingsPanel{position:absolute;right:20px;top:132px;z-index:6;width:295px;max-height:calc(100% - 195px);overflow:auto;background:#130e21f8;border:1.5px solid #5c4575;padding:14px;border-radius:8px;display:none}
 #settingsPanel.open{display:block}
 #settingsPanel .sectionLabel{margin-top:10px;font-size:10px;text-transform:uppercase;color:#ffd166;letter-spacing:1.5px;margin-bottom:6px;font-weight:800}
 #settingsPanel .btn{font-size:11px;padding:8px;margin-right:6px;margin-top:6px}
 #settingsPanel .queueHint{line-height:1.65;font-size:11px;color:#c2b2d1}
 #settingsPanel select{background:#1f1733;color:#f5ece2;border:1px solid #5a4573;padding:6px;width:100%;margin:4px 0 8px;border-radius:4px}
 
-#labTools{position:absolute;top:76px;left:50%;transform:translateX(-50%);z-index:4;background:#161026f2;border:1.5px solid #6b4e85;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:6px;max-width:calc(100% - 440px);flex-wrap:wrap;justify-content:center;box-shadow:0 8px 28px #000b}
+#labTools{position:absolute;top:78px;left:50%;transform:translateX(-50%);z-index:4;background:#161026f2;border:1.5px solid #6b4e85;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:6px;max-width:calc(100% - 440px);flex-wrap:wrap;justify-content:center;box-shadow:0 8px 28px #000b}
 #labTools[hidden]{display:none}
 #labTools button,#labTools select{color:#f5ece2;background:#241a38;border:1px solid #5e4778;border-radius:5px;padding:5px 10px;font:700 11px Segoe UI;cursor:pointer}
 #labTools button.active{border-color:#ffd166;color:#ffd166;background:#3d243b}
@@ -145,14 +145,11 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
 
 .toast{position:fixed;left:50%;bottom:125px;transform:translateX(-50%) translateY(20px);padding:9px 16px;border-radius:6px;background:#160f24f8;border:1.5px solid #d48c56;color:#ffd166;font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:.25s;z-index:30;box-shadow:0 8px 24px #000b}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.bossHUD{position:absolute;top:74px;left:50%;transform:translateX(-50%);width:380px;text-align:center;font-size:11px;font-weight:900;letter-spacing:2px;color:#ffd166;pointer-events:none;z-index:3;background:#120c1ee6;padding:6px 12px;border-radius:8px;border:1.5px solid #8a4b38;box-shadow:0 6px 20px #000b}
-.bossHUD:empty{display:none}
-.bossHUD small{display:block;font-size:9px;color:#ff9e7d;letter-spacing:1.2px;margin-top:2px}
-.bossHUD .bar{height:7px;margin-top:5px;background:#1a0d18;border:1px solid #6e3546;border-radius:3px;overflow:hidden}
-.bossHUD .bar span{background:linear-gradient(90deg,#c91e3a,#ff7b54,#ffd166);display:block;height:100%}
+.bossHUD{position:absolute;top:78px;left:50%;transform:translateX(-50%);width:320px;text-align:center;font-size:10.5px;font-weight:900;letter-spacing:3px;color:#ff9e7d;pointer-events:none;z-index:3}
+.bossHUD .bar{height:6px;margin-top:5px;background:#1a0d18;border:1px solid #6e3546}
+.bossHUD .bar span{background:linear-gradient(90deg,#c91e3a,#ff7b54);display:block;height:100%}
 
-@media(max-width:1180px){
-  .biome-switcher{display:none}
+@media(max-width:1100px){
   .dock{width:440px;bottom:10px}
   .loadout{width:196px;left:12px;bottom:12px}
   .quick{right:12px;bottom:12px}
@@ -161,6 +158,7 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
   .radar{right:12px;width:154px;top:14px}
 }
 @media(max-width:820px){
+  .biome-switcher{display:none}
   .grid3{grid-template-columns:1fr}
   .bankTabs{grid-template-columns:repeat(2,1fr)}
 }
@@ -172,20 +170,19 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
     <div class="brand">
       <div class="logo">G</div>
       <div>
-        <h1>GALAXY CHEM <span>MYTHIC ODYSSEY V8</span></h1>
-        <small>Hades 3D • 21 Mythological Bosses • Cosmic Dragon</small>
+        <h1>GALAXY CHEM <span>HADES 3D ARENA</span></h1>
+        <small>Fixed-Angle 3D • Heavy Ink & Bloom • V7</small>
       </div>
     </div>
     <div class="topstats">
       <div class="biome-switcher" id="headerBiomes" title="Đổi nhanh địa hình 3D góc cố định">
-        <button class="b-tab active" data-biome="city">🌆 Thành phố</button>
-        <button class="b-tab" data-biome="desert">☀ Sa mạc</button>
-        <button class="b-tab" data-biome="coast">🌊 Biển</button>
-        <button class="b-tab" data-biome="forest">🌲 Rừng</button>
-        <button class="b-tab" data-biome="cosmos">🌌 Vũ Trụ</button>
+        <button class="b-tab active" data-biome="city">🌆 Thành phố (Tòa nhà chắn đường)</button>
+        <button class="b-tab" data-biome="desert">☀ Sa mạc (+50% Giáp)</button>
+        <button class="b-tab" data-biome="coast">🌊 Biển (-50% Lửa / +Điện,Băng)</button>
+        <button class="b-tab" data-biome="forest">🌲 Rừng (Cháy lan & Bãi lửa)</button>
       </div>
-      <div class="pill">Ải: <strong id="stageTag">T1 (x1.0)</strong></div>
-      <div class="pill">Boss sau: <strong id="timerTag">60s</strong></div>
+      <div class="pill">Mode: <strong id="modeName">Huấn luyện</strong></div>
+      <div class="pill">Wave: <strong id="waveTag">1</strong></div>
       <div class="pill">Điểm: <strong id="scoreTag">0</strong></div>
     </div>
   </div>
@@ -200,11 +197,10 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
       </div>
       <div class="statcard">
         <div id="biomes">
-          <button class="bio active" data-biome="city">🌆 Thành phố (Tòa Nhà Chắn)</button>
-          <button class="bio" data-biome="desert">☀ Sa mạc (+50% Giáp)</button>
-          <button class="bio" data-biome="coast">🌊 Biển (-50% Lửa / +Điện)</button>
-          <button class="bio" data-biome="forest">🌲 Rừng (Cháy Lan)</button>
-          <button class="bio" data-biome="cosmos" style="grid-column:span 2;border-color:#9d4edd;color:#e0aaff">🌌 Vũ Trụ (Thần Long Chung Cực)</button>
+          <button class="bio active" data-biome="city">🌆 Thành phố (Vật Cản Tòa Nhà)</button>
+          <button class="bio" data-biome="desert">☀ Sa mạc (Tăng Giáp)</button>
+          <button class="bio" data-biome="coast">🌊 Biển (Giảm Lửa / Tăng Điện)</button>
+          <button class="bio" data-biome="forest">🌲 Rừng (Cháy Lan & Bãi Lửa)</button>
         </div>
       </div>
       <div class="statcard">
@@ -222,7 +218,7 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
     <div class="panel" id="gamePanel">
       <div id="gameFrame">
         <canvas id="game" width="960" height="540" tabindex="0"></canvas>
-        <div class="overlayLabel" id="missionLabel">Vô cực • Ải T1 • Sống sót 60s để triệu hồi Boss Thần Thoại</div>
+        <div class="overlayLabel" id="missionLabel">Huấn luyện • Hạ 8 quái và lên cấp 1 lần</div>
         <div class="envBanner" id="envPassiveBanner">🌆 Thành Phố: Các tòa nhà 3D là vật cản cứng chặn đường di chuyển & đạn bắn • Chỉ số cân bằng</div>
       </div>
     </div>
@@ -233,7 +229,6 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
           <h3 id="playerInfo">Lv.1</h3>
           <div class="pixelTag" id="bestScoreTag">Best 0</div>
           <span id="biomeName" style="display:none">Thành phố</span>
-          <span id="modeName" style="display:none">Vô cực</span>
         </div>
       </div>
       <div class="statcard">
@@ -255,23 +250,23 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
   </div>
 
   <div class="footer">
-    <div>WASD · Di chuyển &nbsp;|&nbsp; SHIFT · Lướt Bóng Ma &nbsp;|&nbsp; CHUỘT TRÁI/PHẢI · Chém / Kỹ năng &nbsp;|&nbsp; PHÍM F · Siêu Nổ Thiên Thạch (Cataclysm)</div>
-    <div>Mỗi 60s triệu hồi Boss Thần Thoại &nbsp;|&nbsp; Hạ Boss tự động sang Ải mới (Tăng sức mạnh cấp số nhân) &nbsp;|&nbsp; Ải T5: Vũ Trụ Thần Long</div>
+    <div>WASD · Di chuyển &nbsp;|&nbsp; SHIFT · Lướt Bóng Ma &nbsp;|&nbsp; CHUỘT TRÁI/PHẢI · Chém / Chiêu thức &nbsp;|&nbsp; PHÍM F · Siêu Nổ Thiên Thạch (Cataclysm)</div>
+    <div>TAB · Đổi Bảng Nguyên Tố (I–IV) &nbsp;|&nbsp; 1–4 · Nạp Nguyên Tố &nbsp;|&nbsp; P / ESC · Tạm dừng</div>
   </div>
 </div>
 
 <div class="modalWrap show" id="startModal">
   <div class="modal">
-    <div class="eyebrow">GALAXY CHEM / MYTHIC ODYSSEY & COSMIC DRAGON</div>
-    <h2 class="heroTitle">ELEMENTAL<br><span>ODYSSEY 3D.</span></h2>
-    <p>Hệ thống **Vượt Ải Vô Cực & Boss Thần Thoại Âu – Á** trong đấu trường 3D góc cố định phong cách Hades:<br>
-    • <strong>⏱ Chu kỳ 60 Giây & Đổi Map Ngẫu Nhiên:</strong> Quái không tăng sức mạnh theo giây mà giữ ổn định trong từng màn. Đúng <strong>60 giây</strong>, 1 trong <strong>5 Boss Thần Thoại</strong> đặc trưng của Map đó sẽ giáng lâm. Hạ Boss sẽ **tự động dịch chuyển sang Map mới ngẫu nhiên** và tăng hệ số sức mạnh theo cấp số nhân!<br>
-    • <strong>🐉 Ải T5 — Map Vũ Trụ & Boss Chung Cực:</strong> Khi đạt đến lần đổi map thứ 5 (Ải T5, sức mạnh quái & boss tăng gấp ~6.5 lần), bạn sẽ bước vào **🌌 Tinh Vân Vũ Trụ** (cân bằng +12% sát thương toàn hệ, +10% tốc chạy & hồi năng lượng) để quyết chiến với **Hư Không Thần Long (Aurelion Bahamut)**!<br>
-    • <strong>⚔ 21 Boss Thần Thoại Âu – Á:</strong> Từ *Anubis, Hạn Bạt, Cửu Vĩ Hồ, Poseidon, Long Vương, Fenrir, Cernunnos, Hình Thiên* cho đến *Thor, Susanoo* với bộ kỹ năng tiến hóa theo số Ải.</p>
+    <div class="eyebrow">GALAXY CHEM / HADES-STYLE ISOMETRIC 3D</div>
+    <h2 class="heroTitle">ELEMENTAL<br><span>CATACLYSM 3D.</span></h2>
+    <p>Đấu trường 3D góc nhìn cố định (Isometric Painterly 3D) phong cách <strong>Hades</strong> với viền mực đen sắc nét, hiệu ứng ánh sáng rực rỡ và kỹ năng hầm hố:<br>
+    • <strong>💥 Chiêu F (Core Cataclysm):</strong> Triệu hồi Trận Pháp Cổ Ngữ và giáng <strong>Cột Trụ Năng Lượng Khổng Lồ</strong> từ bầu trời, làm rạn nứt mặt đất, văng mảnh vỡ 3D và tạo sóng xung kích đa tầng.<br>
+    • <strong>🌆 Thành phố (Vật cản tòa nhà):</strong> Các tòa nhà cao tầng 3D đóng vai trò là <strong>vật cản vật lý thực sự</strong> — chặn đường đi của nhân vật, quái vật và che chắn đạn (Line-of-Sight), giữ chỉ số cân bằng.<br>
+    • <strong>🌊 Biển / ☀ Sa mạc / 🌲 Rừng:</strong> Nước biển giảm 50% Lửa nhưng khuếch đại Điện/Băng/Na; Sa mạc tăng 50% Giáp; Rừng kích hoạt Cháy Lan & Bãi Lửa.</p>
     <div class="grid3">
-      <div class="choice" data-start="endless"><h4>🔥 Vượt Ải Vô Cực (Khuyên dùng)</h4><p>Mỗi màn 60s gọi Boss Thần Thoại. Hạ Boss tự động đổi Map ngẫu nhiên và nhân cấp số sức mạnh cho tới Ải T5 Vũ Trụ!</p><small>Bắt đầu hành trình từ Ải T1</small></div>
-      <div class="choice" data-start="training"><h4>⚔ Màn Huấn Luyện Nhanh</h4><p>Làm quen điều khiển, nạp nguyên tố, tận dụng tòa nhà chắn đạn và thử nghiệm chiêu cuối F.</p><small>Hạ 8 quái & lên cấp 1 lần</small></div>
-      <div class="choice" id="howTo"><h4>◈ Phòng Thử Boss & Vũ Trụ</h4><p>Bất tử năng lượng, có nút **Triệu hồi thử Boss Thần Thoại** và **Gọi Rồng Vũ Trụ Chung Cực** ngay lập tức!</p><small>Test chiêu F Bậc IV & Boss</small></div>
+      <div class="choice" data-start="training"><h4>⚔ Màn 1: Đấu Trường 3D</h4><p>Trải nghiệm đồ họa 3D phong cách Hades, tận dụng các tòa nhà Thành phố để che chắn và tung chiêu cuối F hủy diệt.</p><small>Hạ 8 quái & lên cấp 1 lần</small></div>
+      <div class="choice" data-start="endless"><h4>🔥 Màn 2: Vực Thẳm Vô Cực</h4><p>Quái vật đông và hung hãn hơn qua từng đợt. Phối hợp địa hình và nâng cấp Bậc IV để đối đầu Boss Titan.</p><small>Chế độ sinh tồn đỉnh cao</small></div>
+      <div class="choice" id="howTo"><h4>◈ Phòng Thử Chiêu Hầm Hố</h4><p>Bất tử năng lượng, mở sẵn chọn Bậc I–IV để bạn ngắm nhìn chiêu F giáng thiên thạch, Q chém lưỡi lửa và E pháo điện.</p><small>Thử ngay chiêu F Bậc IV!</small></div>
     </div>
   </div>
 </div>
@@ -279,7 +274,7 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
 <div class="modalWrap" id="bankModal">
   <div class="modal">
     <h2>CHỌN BẢNG NGUYÊN TỐ (ĐA DẠNG HỆ)</h2>
-    <p>Mỗi bảng gán 4 nguyên tố vào phím <strong>1–4</strong>. Phối hợp 2 nguyên tố trước khi bấm <strong>Q / E / R / F</strong> để tạo biến thể khắc chế địa hình và Boss.</p>
+    <p>Mỗi bảng gán 4 nguyên tố vào phím <strong>1–4</strong>. Phối hợp 2 nguyên tố trước khi bấm <strong>Q / E / R / F</strong> để tạo biến thể hủy diệt.</p>
     <div class="bankTabs" id="bankTabs"></div>
     <div class="actions" style="margin-top:14px"><button class="btn" id="closeBank">Đóng</button></div>
   </div>
@@ -287,7 +282,7 @@ button:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
 
 <div class="modalWrap" id="upgradeModal">
   <div class="modal">
-    <h2>BAN PHƯỚC THẦN THOẠI (BOONS)</h2>
+    <h2>BAN PHƯỚC NGUYÊN TỐ (BOONS)</h2>
     <p id="upgradeReason">Bạn vừa đạt một mốc sức mạnh. Chọn 1 trong 3 nâng cấp dưới đây.</p>
     <div class="grid3" id="upgradeChoices"></div>
   </div>
@@ -318,8 +313,6 @@ const banks=[
  {name:'III • Điện, Băng, Cát',els:['Cu','Ar','Si','Mg']},
  {name:'IV • Đa Hệ Khắc Chế',els:['Cu','Ar','Cl','C']}
 ];
-
-// 5 BẢN ĐỒ (4 Map Địa Hình + 1 Map Vũ Trụ Cân Bằng Tuyệt Đối)
 const biomes={
  city:{
    title:'Thành phố',
@@ -340,47 +333,7 @@ const biomes={
    title:'Rừng',
    passive:'🌲 Rừng Rậm: Nhiều cây cối khiến Lửa (Q, O) tăng 25% ST, tự động Cháy Lan sang quái gần và tạo Bãi Lửa trên mặt đất',
    modDesc:'Cháy lan & Tạo bãi lửa'
- },
- cosmos:{
-   title:'Vũ Trụ',
-   passive:'🌌 Tinh Vân Vũ Trụ: Môi trường Chân Không Cân Bằng (+12% Sát thương toàn hệ, +10% Tốc chạy & Hồi năng lượng, Không khắc hệ)',
-   modDesc:'Cân bằng toàn hệ (+12% ST & Tốc độ)'
  }
-};
-
-// DANH SÁCH 21 BOSS THẦN THOẠI ÂU – Á (Mỗi Map 5 Boss ngẫu nhiên + 1 Boss Chung Cực Vũ Trụ)
-const BOSS_ROSTER={
-  desert:[
-    {id:'anubis', name:'ANUBIS • Thần Tử Vong Ai Cập', origin:'Ai Cập', color:'#ffd166', sub:'#7048e8', style:'jackal', desc:'Phán Quyết Linh Hồn & Bão Cát Tử Thần'},
-    {id:'apophis', name:'APOPHIS • Xà Thần Nhật Thực', origin:'Ai Cập', color:'#ff5e1f', sub:'#c91e3a', style:'serpent', desc:'Phun Lửa Hỗn Mang & Vòng Xoáy Hắc Ám'},
-    {id:'hanba', name:'HẠN BẠT • Nữ Thần Hạn Hán', origin:'Trung Hoa', color:'#ff8c24', sub:'#fff2b2', style:'deity', desc:'Hào Quang Thiêu Đốt & Cột Lửa Đại Hạn'},
-    {id:'ammit', name:'AMMIT • Quái Thú Nuốt Tim', origin:'Ai Cập', color:'#edb879', sub:'#ff3b2f', style:'beast', desc:'Cúồng Nộ Xé Xác & Sóng Ngầm Sa Mạc'},
-    {id:'shamash', name:'SHAMASH • Thái Dương Thần', origin:'Lưỡng Hà', color:'#ffe066', sub:'#ff6b4a', style:'titan', desc:'Quang Luân Mặt Trời & Mưa Thiên Hỏa'}
-  ],
-  coast:[
-    {id:'poseidon', name:'POSEIDON • Hải Vương Thần', origin:'Hy Lạp', color:'#4df0ff', sub:'#1c7ed6', style:'deity', desc:'Đinh Ba Sóng Thần & Thủy Lôi Xung Kích'},
-    {id:'longvuong', name:'ĐÔNG HẢI LONG VƯƠNG • Ao Guang', origin:'Á Đông', color:'#5ce1ff', sub:'#ffd166', style:'dragon', desc:'Hơi Thở Băng Giá & Cơn Thịnh Nộ Biển Đông'},
-    {id:'leviathan', name:'LEVIATHAN • Thủy Quái Vực Thẳm', origin:'Cổ Đại', color:'#3be8ff', sub:'#7048e8', style:'serpent', desc:'Xoáy Nước Hủy Diệt & Mưa Thủy Áp'},
-    {id:'jormungandr', name:'JÖRMUNGANDR • Mãng Xà Midgard', origin:'Bắc Âu', color:'#65f788', sub:'#2b8a3e', style:'serpent', desc:'Sương Độc Ragna & Sóng Thần Axit'},
-    {id:'gonggong', name:'CỘNG CÔNG • Thủy Thần Húc Núi', origin:'Trung Hoa', color:'#72b6ff', sub:'#ff4d6d', style:'titan', desc:'Đại Hồng Thủy & Húc Vỡ Trụ Trời'}
-  ],
-  forest:[
-    {id:'cernunnos', name:'CERNUNNOS • Lộc Giác Cổ Thần', origin:'Celtic', color:'#65f788', sub:'#ffd166', style:'stag', desc:'Gai Rừng Nguyên Sinh & Triệu Hồi Tinh Linh'},
-    {id:'kyuubi', name:'CỬU VĨ THIÊN HỒ • Tamamo', origin:'Nhật Bản', color:'#ff6b9d', sub:'#ff8c24', style:'fox', desc:'Hồ Ly Chân Hỏa & Ma Trận Mê Hoặc'},
-    {id:'fenrir', name:'FENRIR • Sói Khổng Lồ Tận Thế', origin:'Bắc Âu', color:'#a5d8ff', sub:'#ff2e4c', style:'beast', desc:'Cú Vồ Xé Rách Không Gian & Hàn Băng Trảo'},
-    {id:'xingtian', name:'HÌNH THIÊN • Chiến Thần Không Đầu', origin:'Trung Hoa', color:'#ff4d4d', sub:'#e0b77d', style:'titan', desc:'Búa Rìu Cuồng Chiến & Chấn Động Đại Địa'},
-    {id:'leshy', name:'LESHY • Chúa Tể Rừng Sâu', origin:'Slav', color:'#8ce99a', sub:'#4dabf7', style:'stag', desc:'Vòng Vây Cổ Thụ & Mưa Bào Tử Độc'}
-  ],
-  city:[
-    {id:'talos', name:'TALOS • Cự Nhân Đồng Tự Động', origin:'Hy Lạp', color:'#e0b77d', sub:'#ff5e1f', style:'titan', desc:'Pháo Laze Nóng Chảy & Dậm Nát Đô Thị'},
-    {id:'thor', name:'THOR • Thần Sấm Mjölnir', origin:'Bắc Âu', color:'#5ce1ff', sub:'#ffd166', style:'deity', desc:'Búa Sét Giáng Thế & Bão Từ Trường'},
-    {id:'susanoo', name:'SUSANOO • Kiếm Thần Bão Táp', origin:'Nhật Bản', color:'#b197fc', sub:'#4df0ff', style:'deity', desc:'Kiếm Khí Lôi Vũ & Trận Cuồng Phong'},
-    {id:'nezha', name:'NA TRA • Tam Thái Tử Hỏa Tiêm', origin:'Trung Hoa', color:'#ff6b4a', sub:'#ffd166', style:'deity', desc:'Phong Hỏa Luân Xung Kích & Hỗn Thiên Lăng'},
-    {id:'golem', name:'METATRON GOLEM • Pháo Đài Cổ Ngữ', origin:'Châu Âu', color:'#93aaff', sub:'#ffd166', style:'titan', desc:'Tường Chắn Trọng Lực & Pháo Hạt Nhân'}
-  ],
-  cosmos:[
-    {id:'cosmic_dragon', name:'AURELION BAHAMUT • Hư Không Thần Long', origin:'Chung Cực Vũ Trụ', color:'#e0aaff', sub:'#ffd166', style:'cosmic_dragon', desc:'Hơi Thở Tinh Vân, Thiên Thạch Hủy Diệt & Lỗ Đen Vũ Trụ'}
-  ]
 };
 
 const skillDefs={
@@ -397,7 +350,7 @@ const upgrades=[
     r:'Tăng số lượng khiên bay hộ thể 3D và dựng pháo đài nguyên khối cao hơn.',
     f:'Cột trụ Thiên Thạch to gấp bội, nhiều vòng ma pháp, vết nứt dung nham và mảnh vỡ 3D.'
   })[k],skill:k,apply:p=>p.skillTier[k]=Math.min(4,p.skillTier[k]+1)})),
-  {name:'Huyết Chiến Thần',desc:'+22% sát thương tổng mọi đòn đánh.',apply:p=>p.damage*=1.22},
+  {name:'Huyết Chiến Thần',desc:'+20% sát thương tổng mọi đòn đánh.',apply:p=>p.damage*=1.20},
   {name:'Tụ Điện Zeus (Cu)',desc:'Hệ Điện (Cu) giật sét liên hoàn mạnh hơn, đặc biệt trên mặt Biển.',apply:p=>p.modPower.Cu=(p.modPower.Cu||0)+1},
   {name:'Hàn Băng Demeter (Ar)',desc:'Hệ Băng (Ar) đóng băng sâu hơn và tăng sát thương trên Biển.',apply:p=>p.modPower.Ar=(p.modPower.Ar||0)+1},
   {name:'Giáp Cát Athena (Si)',desc:'Hệ Cát/Đất (Si) bắn thêm đạn và cộng thêm Khiên ở Sa mạc.',apply:p=>p.modPower.Si=(p.modPower.Si||0)+1},
@@ -406,7 +359,7 @@ const upgrades=[
   {name:'Thủy Lôi Poseidon (Na)',desc:'Nổ dây chuyền cực mạnh, kích nổ lớn trên Biển.',apply:p=>p.modPower.Na=(p.modPower.Na||0)+1},
   {name:'Độc Chết Chóc (Cl)',desc:'Độc ăn mòn mạnh và lâu hơn.',apply:p=>p.modPower.Cl=(p.modPower.Cl||0)+1},
   {name:'Bước Chân Hermes',desc:'+16% tốc độ chạy và hồi lướt nhanh hơn.',apply:p=>{p.speed*=1.16;p.dashRecover*=0.86}},
-  {name:'Giáp Hắc Ám',desc:'+12% giảm sát thương cơ bản & hồi 40 HP.',apply:p=>{p.armor=clamp(p.armor+.12,0,.60);p.hp=Math.min(p.maxHp,p.hp+40);}}
+  {name:'Giáp Hắc Ám',desc:'+10% giảm sát thương cơ bản.',apply:p=>p.armor=clamp(p.armor+.1,0,.55)}
 ];
 
 let state, keys={}, mouse={x:W/2,y:H/2,left:false,right:false}, last=0;
@@ -415,12 +368,7 @@ let floorCache=null,floorCacheKey='';
 
 function readBest(){try{return Number(localStorage.getItem('gc_pixel_best')||0)||0;}catch{return 0;}}
 
-// Hệ số nhân sức mạnh theo cấp số nhân mỗi khi qua màn (Stage Scaling)
-// T1 = 1.0x | T2 = 1.6x | T3 = 2.56x | T4 = 4.10x | T5 (Boss Chung Cực) = 6.55x
-function getStageMult(stage=1){
-  return Math.pow(1.6, Math.max(0, stage - 1));
-}
-
+// Khởi tạo vật thể 3D trên bản đồ. Ở Thành phố (city), các tòa nhà có solid=true làm vật cản đường thực sự!
 function generateMapProps(biome){
   const props=[];
   if(biome==='city'){
@@ -441,14 +389,11 @@ function generateMapProps(biome){
   } else if(biome==='coast'){
     const spots=[[-230,-140],[230,-140],[-240,140],[240,140],[-95,-175],[110,175],[-305,-20],[305,20]];
     spots.forEach(([x,y],i)=>props.push({type:'coral',x,y,r:18,scale:0.95+(i%3)*0.15,solid:true}));
-  } else if(biome==='cosmos'){
-    // Các cột Tinh Thạch Hư Không lơ lửng trong Vũ Trụ
-    const spots=[[-250,-145],[250,-145],[-250,145],[250,145],[0,-195],[0,195],[-330,0],[330,0]];
-    spots.forEach(([x,y],i)=>props.push({type:'monolith',x,y,r:18,scale:1+(i%2)*0.15,solid:true,seed:i}));
   }
   return props;
 }
 
+// Giải quyết va chạm vật lý tròn - tròn giữa thực thể (nhân vật/quái) và các tòa nhà/vật cản
 function resolveObstacleCollisions(ent, radius){
   if(!state || !state.mapProps) return;
   for(const prop of state.mapProps){
@@ -468,244 +413,77 @@ function resolveObstacleCollisions(ent, radius){
 function makeState(keepBiome){
   const b = keepBiome || (state ? state.biome : 'city');
   return {
-    running:false, paused:true, mode:'endless', biome:b, time:0, score:0,
-    stage:1, stageTime:0, stageDuration:60, bossSpawned:false, visitedBiomes:[b],
-    wave:1, waveTimer:0, spawnCd:1.5, kills:0, roomKills:0, best:readBest(),
+    running:false, paused:true, mode:'training', biome:b, time:0, score:0, wave:1, waveTimer:0, kills:0, roomKills:0, best:readBest(),
     cam:{x:0,y:0}, bank:0, queue:[], selectedSkill:'q', toast:'', toastT:0,
-    player:{x:0,y:0,vx:0,vy:0,hp:200,maxHp:200,energy:100,maxEnergy:100,shield:0,maxShield:100,armor:0,damage:24,speed:174,xp:0,xpNeed:36,level:1,dashCd:0,dashRecover:1,inv:0,attackCd:0,cd:{q:0,e:0,r:0,f:0},skillTier:{q:1,e:1,r:1,f:1},shieldTier:1,modPower:{},inventory:{},facing:0},
-    enemies:[], projectiles:[], enemyProjectiles:[], effects:[], particles:[], drops:[], mapProps:generateMapProps(b),
+    player:{x:0,y:0,vx:0,vy:0,hp:180,maxHp:180,energy:100,maxEnergy:100,shield:0,maxShield:100,armor:0,damage:22,speed:172,xp:0,xpNeed:40,level:1,dashCd:0,dashRecover:1,inv:0,attackCd:0,cd:{q:0,e:0,r:0,f:0},skillTier:{q:1,e:1,r:1,f:1},shieldTier:1,modPower:{},inventory:{},facing:0},
+    enemies:[], projectiles:[], effects:[], particles:[], drops:[], mapProps:generateMapProps(b),
     upgradePending:false, trainingGoal:{kills:8,levelups:1}, levelups:0
   };
 }
 
 function initInv(){
   ['H','O','Fe','C','Na','Cl','N','S','Mg','Cu','Si','Ar'].forEach(e=>state.player.inventory[e]=10);
-  state.player.inventory.H=15; state.player.inventory.O=15; state.player.inventory.Cu=12; state.player.inventory.Ar=12; state.player.inventory.Si=12;
+  state.player.inventory.H=14; state.player.inventory.O=14; state.player.inventory.Cu=12; state.player.inventory.Ar=12; state.player.inventory.Si=12;
 }
 
-function setBiome(b, silent=false){
+function setBiome(b){
   state.biome = b;
   floorCacheKey = '';
   state.mapProps = generateMapProps(b);
   resolveObstacleCollisions(state.player, 14);
   for(const e of state.enemies) resolveObstacleCollisions(e, e.r);
-  if(b==='desert' && state.player.shield < 35){
-    state.player.shield = Math.min(state.player.maxShield, state.player.shield + 30);
+  if(b==='desert' && state.player.shield < 30){
+    state.player.shield = Math.min(state.player.maxShield, state.player.shield + 25);
   }
-  if(!silent) toast('Địa hình: ' + biomes[b].title + ' (' + biomes[b].modDesc + ')');
+  toast('Địa hình: ' + biomes[b].title + ' (' + biomes[b].modDesc + ')');
   updatePanels();
 }
 
 function reset(mode){
-  const startBiomes=['city','desert','coast','forest'];
-  const startBiome = mode==='endless' ? startBiomes[Math.floor(Math.random()*startBiomes.length)] : (state ? state.biome : 'city');
+  const curBiome = state ? state.biome : 'city';
   keys={}; mouse.left=false;
   document.getElementById('settingsPanel')?.classList.remove('open');
-  state=makeState(startBiome);
+  state=makeState(curBiome);
   state.mode=mode; state.running=true; state.paused=false;
   state.player.inventory={}; initInv();
   if(state.biome==='desert') state.player.shield = 35;
-  spawnMobPack(4);
+  spawnWave(true);
   if(mode==='lab') initLab();
   document.getElementById('labTools').hidden=mode!=='lab';
   updatePanels(); hideAllModals();
-  toast(mode==='lab'?'Phòng thử V8 • Bấm nút "Gọi Boss" hoặc "Rồng Vũ Trụ" trên thanh công cụ!':mode==='training'?'Huấn luyện: Hạ 8 quái và lên cấp 1 lần!':'Ải T1 ('+biomes[state.biome].title+') • Sống sót 60 giây trước khi Boss Thần Thoại xuất hiện!');
+  toast(mode==='lab'?'Phòng thử Hades 3D • Hãy chọn Bậc IV và bấm F để xem Siêu Chiêu Cuối!':mode==='training'?'Bắt đầu chiến đấu! Tận dụng tòa nhà để chắn đạn & bấm F hủy diệt!':'Vực thẳm vô cực khởi động!');
   canvas.focus();
 }
 
-function spawnMobPack(count=3){
-  for(let i=0;i<count;i++) spawnEnemy();
+function spawnWave(initial=false){
+  const count=initial?4:3+Math.min(7,Math.floor(state.wave*1.3));
+  for(let i=0;i<count;i++) spawnEnemy(i===count-1 && state.wave%5===0?'boss':null);
 }
 
-// Quái thường KHÔNG tăng sức mạnh theo thời gian giây nữa, mà chỉ nhân theo cấp số nhân của Ải (stage)
-function spawnEnemy(){
-  const a=rand(0,TAU),r=rand(240,350);
+function spawnEnemy(kind){
+  const a=rand(0,TAU),r=rand(240,340);
   const px=clamp(state.player.x+Math.cos(a)*r,-420,420), py=clamp(state.player.y+Math.sin(a)*r,-300,300);
-  const type=['slime','drone','golem','wisp'][Math.floor(rand(0,4))];
+  const type=kind||(['slime','drone','golem','wisp'][Math.floor(rand(0,4))]);
   const dropsByBiome={
     desert:['C','Fe','Si','O'],
     coast:['Cu','Ar','Na','Cl'],
     forest:['O','H','Cl','N'],
-    city:['H','O','Cu','Fe'],
-    cosmos:['O','Cu','Ar','Na','Cl','Si']
+    city:['H','O','Cu','Fe']
   }[state.biome] || ['H','O','Fe','C'];
   const drop = dropsByBiome[Math.floor(Math.random()*dropsByBiome.length)];
-  const mult = getStageMult(state.stage);
   const data={
-    slime:{hp:38,speed:64,r:13,color:'#ff6b35',dmg:11},
-    drone:{hp:32,speed:94,r:11,color:'#4df0ff',dmg:10},
-    golem:{hp:68,speed:50,r:16,color:'#e0b77d',dmg:15},
-    wisp:{hp:30,speed:78,r:11,color:'#65f788',dmg:10}
+    slime:{hp:36,speed:64,r:13,color:'#ff6b35'},
+    drone:{hp:30,speed:94,r:11,color:'#4df0ff'},
+    golem:{hp:64,speed:50,r:16,color:'#e0b77d'},
+    wisp:{hp:28,speed:76,r:11,color:'#65f788'},
+    boss:{hp:180+state.wave*22,speed:46,r:24,color:'#ff2e4c'}
   }[type];
-  const hp = Math.round(data.hp * mult);
-  const speed = data.speed * (1 + (state.stage - 1)*0.07);
-  const dmg = data.dmg * mult;
-  const en = {type,x:px,y:py,hp,maxHp:hp,speed,dmg,r:data.r,color:data.color,drop,armor:type==='golem'?0.2:0,burn:0,poison:0,slow:0,shock:0,hitFlash:0,spreadCd:0};
+  const en = {type,x:px,y:py,hp:data.hp+state.wave*6,maxHp:data.hp+state.wave*6,speed:data.speed+state.wave*1.5,r:data.r,color:data.color,drop,armor:type==='golem'||type==='boss'?0.2:0,burn:0,poison:0,slow:0,shock:0,hitFlash:0,spreadCd:0};
   resolveObstacleCollisions(en, en.r);
   state.enemies.push(en);
 }
 
-// TRIỆU HỒI BOSS THẦN THOẠI ÂU - Á HOẶC RỒNG VŨ TRỤ CHUNG CỰC
-function spawnMythicBoss(forceCosmic=false){
-  const isCosmic = forceCosmic || state.biome==='cosmos' || (state.mode==='endless' && state.stage===5);
-  if(isCosmic && state.biome!=='cosmos'){
-    setBiome('cosmos', true);
-  }
-  const pool = isCosmic ? BOSS_ROSTER.cosmos : (BOSS_ROSTER[state.biome] || BOSS_ROSTER.city);
-  const tpl = pool[Math.floor(Math.random()*pool.length)];
-  const mult = getStageMult(state.stage);
-  const baseHp = isCosmic ? 460 : 250;
-  const hp = Math.round(baseHp * mult);
-  const dmg = Math.round((isCosmic ? 26 : 19) * mult);
-  const a = rand(0,TAU), dist = 250;
-  const bx = clamp(state.player.x+Math.cos(a)*dist,-380,380);
-  const by = clamp(state.player.y+Math.sin(a)*dist,-250,250);
-
-  const boss = {
-    type:'boss', isBoss:true, isCosmic,
-    bossId:tpl.id, bossName:tpl.name, origin:tpl.origin, bossDesc:tpl.desc, style:tpl.style,
-    x:bx, y:by, hp, maxHp:hp,
-    speed:(isCosmic?58:50)*(1+(state.stage-1)*0.06),
-    dmg, r:isCosmic?32:25,
-    color:tpl.color, subColor:tpl.sub, drop:'O',
-    armor:isCosmic?0.28:0.20,
-    burn:0, poison:0, slow:0, shock:0, hitFlash:0,
-    skillCd:2.2, skillIndex:0, dashVx:0, dashVy:0, dashTime:0
-  };
-  resolveObstacleCollisions(boss, boss.r);
-  state.enemies.push(boss);
-  state.bossSpawned = true;
-
-  pushEffect({type:'cataclysm',x:bx,y:by,t:0,life:0.85,r:85,color:tpl.color,reaction:{tier:3,heat:3,els:['O']}});
-  shake = Math.max(shake, isCosmic?14:9);
-  screenFlash = 0.45; screenFlashCol = tpl.color;
-  sound('impact');
-  toast((isCosmic?'🐉 BOSS CHUNG CỰC GIÁNG LÂM: ':'⚠ BOSS THẦN THOẠI XUẤT HIỆN: ') + tpl.name + ' (Ải T'+state.stage+')');
-  updatePanels();
-}
-
-// HỆ THỐNG KỸ NĂNG BOSS TĂNG THEO ĐỘ KHÓ (Số Ải càng cao, Boss mở khóa càng nhiều chiêu và bắn dày hơn)
-function executeBossSkill(boss){
-  const p = state.player;
-  const stg = state.stage;
-  const dir = norm(p.x - boss.x, p.y - boss.y);
-  const baseAngle = Math.atan2(dir.y, dir.x);
-  // Ải T1 mở 2 chiêu, T2 mở 3 chiêu, T3+ mở đủ 4 chiêu; Boss Rồng Vũ Trụ có thêm chiêu thứ 5
-  const unlockedSkills = boss.isCosmic ? 5 : Math.min(4, 1 + stg);
-  const move = boss.skillIndex % unlockedSkills;
-  boss.skillIndex++;
-
-  // Tốc độ hồi chiêu của Boss nhanh dần theo số Ải
-  boss.skillCd = Math.max(1.35, (boss.isCosmic ? 2.5 : 3.3) - stg*0.28);
-
-  if(move === 0){
-    // Chiêu 1: Vòng Đạn Thần Phạt (Radial Barrage) - Số lượng đạn tăng theo Stage
-    const count = (boss.isCosmic ? 12 : 6) + stg * 2;
-    for(let i=0;i<count;i++){
-      const ang = baseAngle + (i/count)*TAU;
-      state.enemyProjectiles.push({
-        x:boss.x, y:boss.y,
-        vx:Math.cos(ang)*(195+stg*14), vy:Math.sin(ang)*(195+stg*14),
-        r:boss.isCosmic?7:5.5, life:3.2, dmg:boss.dmg*0.75,
-        color:boss.color, sub:boss.subColor
-      });
-    }
-    pushEffect({type:'burst',x:boss.x,y:boss.y,t:0,life:.45,r:48,color:boss.color});
-    sound('e');
-  }
-  else if(move === 1){
-    // Chiêu 2: Thần Kích Xung Phong (Mythic Charge + Shockwave)
-    const dashSpeed = 340 + stg*25;
-    boss.dashVx = dir.x * dashSpeed;
-    boss.dashVy = dir.y * dashSpeed;
-    boss.dashTime = 0.45;
-    pushEffect({type:'enemyTelegraph',x:boss.x+dir.x*110,y:boss.y+dir.y*110,t:0,life:0.45,r:52+stg*5,color:boss.subColor,dmg:boss.dmg*0.95});
-    sound('q');
-  }
-  else if(move === 2){
-    // Chiêu 3: Trận Pháp Thiên Phạt (Multi-Target Sky Pillars dưới chân người chơi)
-    const pillars = Math.min(6, 2 + Math.floor(stg/2) + (boss.isCosmic?2:0));
-    for(let i=0;i<pillars;i++){
-      const ox = i===0 ? 0 : rand(-115,115);
-      const oy = i===0 ? 0 : rand(-85,85);
-      const tx = clamp(p.x + ox, -420, 420);
-      const ty = clamp(p.y + oy, -290, 290);
-      pushEffect({type:'enemyTelegraph',x:tx,y:ty,t:0,life:0.85,r:46+stg*4,color:boss.color,dmg:boss.dmg*1.1});
-    }
-    sound('f');
-  }
-  else if(move === 3){
-    // Chiêu 4: Hơi Thở Thần Long / Thương Ánh Sáng Liên Hoàn (Focused Cone Volley)
-    const waves = 3 + Math.min(4, stg);
-    for(let w=0;w<waves;w++){
-      for(let s=-1;s<=1;s++){
-        const ang = baseAngle + s*0.18 + rand(-0.04,0.04);
-        const sp = 230 + w*38 + stg*12;
-        state.enemyProjectiles.push({
-          x:boss.x, y:boss.y,
-          vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp,
-          r:6.5, life:2.8, dmg:boss.dmg*0.8,
-          color:boss.subColor, sub:boss.color
-        });
-      }
-    }
-    shake = Math.max(shake, 4);
-    sound('r');
-  }
-  else if(move === 4){
-    // Chiêu 5 (Độc quyền Boss Chung Cực Vũ Trụ): Mưa Sao Băng Xoắn Ốc & Triệu Hồi Tinh Linh Hư Không
-    for(let i=0;i<16;i++){
-      const ang = (i/16)*TAU + state.time;
-      state.enemyProjectiles.push({
-        x:boss.x, y:boss.y,
-        vx:Math.cos(ang)*240, vy:Math.sin(ang)*240,
-        r:7, life:3.5, dmg:boss.dmg*0.85,
-        color:'#ffd166', sub:'#e0aaff'
-      });
-    }
-    for(let k=0;k<4;k++){
-      const a = k*TAU/4 + state.time;
-      pushEffect({type:'enemyTelegraph',x:clamp(p.x+Math.cos(a)*85,-420,420),y:clamp(p.y+Math.sin(a)*85,-290,290),t:0,life:0.8,r:56,color:'#e0aaff',dmg:boss.dmg*1.15});
-    }
-    if(state.enemies.length < 8) spawnEnemy();
-    shake = Math.max(shake, 7);
-    sound('impact');
-  }
-}
-
-// CHUYỂN MÀN & ĐỔI MAP NGẪU NHIÊN SAU KHI HẠ BOSS TRONG CHẾ ĐỘ VÔ CỰC
-function advanceEndlessStage(defeatedBoss){
-  state.stage++;
-  state.stageTime = 0;
-  state.bossSpawned = false;
-  state.enemies = []; // Quét sạch quái cũ để sang thế giới mới
-  state.enemyProjectiles = [];
-
-  // Hồi phục một phần máu và năng lượng khi vượt ải
-  state.player.hp = Math.min(state.player.maxHp, state.player.hp + state.player.maxHp * 0.35);
-  state.player.energy = state.player.maxEnergy;
-
-  let nextBiome;
-  if(state.stage === 5){
-    // Đến lần đổi map thứ 5 (Ải T5): Bắt buộc tiến vào Map Vũ Trụ để gặp Boss Chung Cực!
-    nextBiome = 'cosmos';
-  } else {
-    const regular=['city','desert','coast','forest'];
-    const unvisited = regular.filter(b=>!state.visitedBiomes.includes(b) && b!==state.biome);
-    const candidates = unvisited.length ? unvisited : regular.filter(b=>b!==state.biome);
-    nextBiome = candidates[Math.floor(Math.random()*candidates.length)];
-    state.visitedBiomes.push(nextBiome);
-  }
-
-  setBiome(nextBiome, true);
-  spawnMobPack(4);
-
-  const multStr = 'x' + getStageMult(state.stage).toFixed(2);
-  screenFlash = 0.5; screenFlashCol = '#ffd166';
-  chooseUpgrade('Đã hạ ' + defeatedBoss.bossName + '! Dịch chuyển sang Ải T' + state.stage + ' • ' + biomes[nextBiome].title + ' (Sức mạnh quái ' + multStr + ')');
-}
-
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');state.toastT=2.8;}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');state.toastT=2.4;}
 function updateToast(dt){if(state.toastT>0){state.toastT-=dt; if(state.toastT<=0)document.getElementById('toast').classList.remove('show');}}
 function hideAllModals(){['startModal','bankModal','upgradeModal','pauseModal'].forEach(id=>document.getElementById(id).classList.remove('show'));}
 function openModal(id){keys={};mouse.left=false;hideAllModals(); document.getElementById(id).classList.add('show'); state.paused=true;}
@@ -744,7 +522,7 @@ function evolveReaction(r){
   r.tier=p.skillTier[r.skill]||1;
   let baseHeat = r.tier+(r.els.includes('O')?1:0)+Math.floor((p.modPower.O||0)/2);
   if(state.biome==='coast') baseHeat = Math.max(1, baseHeat - 1);
-  if((state.biome==='forest'||state.biome==='cosmos') && (r.skill==='q'||r.els.includes('O'))) baseHeat = Math.min(4, baseHeat + 1);
+  if(state.biome==='forest' && (r.skill==='q'||r.els.includes('O'))) baseHeat = Math.min(4, baseHeat + 1);
   r.heat=clamp(baseHeat,1,4);
   r.damage*=1+(r.tier-1)*.25;
   r.range+=.12*(r.tier-1);
@@ -765,7 +543,7 @@ function getReaction(skill,els){
   const set=new Set(els), p=state.player, power=p.modPower;
   const reaction={
     skill,els,name:reactionName(skill,els),
-    damage:p.damage*(skill==='f'?1.7:1),range:1,dot:0,armorBreak:0,blast:0,shield:0,slow:0,
+    damage:p.damage*(skill==='f'?1.65:1),range:1,dot:0,armorBreak:0,blast:0,shield:0,slow:0,
     projectiles:1,beam:false,ice:false,sand:false,firePatch:false,
     color:skillDefs[skill].color, envTag:''
   };
@@ -829,13 +607,6 @@ function getReaction(skill,els){
       reaction.firePatch = true;
       reaction.envTag = '🌲 Rừng khô: Lửa +25% ST, Cháy lan & Bãi lửa';
     }
-  }
-  else if(state.biome === 'cosmos'){
-    // Map Vũ Trụ: Cân bằng tuyệt đối, cộng nhẹ 12% cho mọi hệ để đối đầu Boss Chung Cực
-    reaction.damage *= 1.12;
-    reaction.shield *= 1.12;
-    reaction.range *= 1.08;
-    reaction.envTag = '🌌 Tinh Vân Vũ Trụ: Cộng hưởng toàn hệ (+12%)';
   }
 
   return evolveReaction(reaction);
@@ -904,6 +675,7 @@ function skillCast(skill){
     }
   }
   if(skill==='f'){
+    // SIÊU CHIÊU CUỐI F: Trận pháp khóa mục tiêu + Thiên thạch / Cột trụ năng lượng giáng xuống
     const range=Math.min(dir.d,260);
     const tx=clamp(p.x+dir.x*range,-430,430), ty=clamp(p.y+dir.y*range,-300,300);
     pushEffect({type:'telegraph',x:tx,y:ty,t:0,life:.36,r:68+24*r.range,color:r.color,reaction:r});
@@ -946,7 +718,7 @@ function baseAttack(){
   const aim=getAim(), dir=norm(aim.x-p.x,aim.y-p.y);
   p.facing=Math.atan2(dir.y,dir.x);
   pushEffect({type:'slash',x:p.x,y:p.y,dir:p.facing,t:0,life:.20,color:'#ffae52'});
-  hitCone(p.x,p.y,p.facing,62,0.88,{damage:p.damage*(state.biome==='cosmos'?0.98:0.88),dot:0,armorBreak:state.biome==='desert'?0.05:0,slow:0});
+  hitCone(p.x,p.y,p.facing,62,0.88,{damage:p.damage*0.88,dot:0,armorBreak:state.biome==='desert'?0.05:0,slow:0});
 }
 
 function dash(){
@@ -954,13 +726,14 @@ function dash(){
   const dx=(keys['d']?1:0)-(keys['a']?1:0), dy=(keys['s']?1:0)-(keys['w']?1:0);
   let n=dx||dy?norm(dx,dy):norm(Math.cos(p.facing),Math.sin(p.facing));
   const startX=p.x, startY=p.y;
+  // Lướt theo từng bước nhỏ để không xuyên qua các tòa nhà ở Thành phố
   for(let step=0;step<6;step++){
-    p.x=clamp(p.x+n.x*9.5,-445,445);
-    p.y=clamp(p.y+n.y*9.5,-320,320);
+    p.x=clamp(p.x+n.x*9,-445,445);
+    p.y=clamp(p.y+n.y*9,-320,320);
     resolveObstacleCollisions(p, 14);
   }
-  p.inv=0.28; p.dashCd=1.05*p.dashRecover;
-  pushEffect({type:'dash',x:p.x,y:p.y,sx:startX,sy:startY,t:0,life:.26,color:state.biome==='cosmos'?'#e0aaff':state.biome==='coast'?'#5ce1ff':state.biome==='desert'?'#ffd166':'#ff6b4a'});
+  p.inv=0.26; p.dashCd=1.1*p.dashRecover;
+  pushEffect({type:'dash',x:p.x,y:p.y,sx:startX,sy:startY,t:0,life:.26,color:state.biome==='coast'?'#5ce1ff':state.biome==='desert'?'#ffd166':'#ff6b4a'});
   emit(p.x,p.y,'#ffd166',12,55);
 }
 
@@ -977,12 +750,12 @@ function damageEnemy(e,dmg,reaction,from){
     if(reaction.els?.includes('Cl')) e.poison=Math.max(e.poison||0,reaction.dot*.25);
     else e.burn=Math.max(e.burn||0,reaction.dot*(state.biome==='forest'?0.34:state.biome==='coast'?0.12:0.22));
   }
-  if(reaction.slow) e.slow=Math.max(e.slow||0,reaction.slow*(e.isBoss?0.6:1));
+  if(reaction.slow) e.slow=Math.max(e.slow||0,reaction.slow);
   if(reaction.beam){
     e.shock=0.45;
-    if(state.biome==='coast' || state.biome==='cosmos'){
+    if(state.biome==='coast'){
       for(const other of state.enemies){
-        if(other!==e && !other.dead && Math.hypot(other.x-e.x,other.y-e.y)<110){
+        if(other!==e && !other.dead && Math.hypot(other.x-e.x,other.y-e.y)<105){
           other.hp -= real*0.48;
           other.hitFlash = 0.12;
           pushEffect({type:'lightningLink',x:e.x,y:e.y,tx:other.x,ty:other.y,t:0,life:.18,color:'#5ce1ff'});
@@ -1004,28 +777,11 @@ function killEnemy(e){
   if(state.biome==='forest' && e.burn>0){
     spawnFirePatch(e.x, e.y, 40, e.heatTier||1, e.heatTier||2, 4.0);
   }
-  state.score+=10+(e.isBoss?150*state.stage:0);
-  state.kills++; state.roomKills++;
-  state.player.xp+=12+(e.isBoss?45:0);
-
-  const dropCount = e.isBoss ? 5 : 1;
-  const allEls = Object.keys(colors);
-  for(let d=0;d<dropCount;d++){
-    if(e.isBoss || Math.random()<0.92){
-      const el = e.isBoss ? allEls[Math.floor(Math.random()*allEls.length)] : e.drop;
-      state.drops.push({x:e.x+rand(-18,18),y:e.y+rand(-18,18),el,ttl:22});
-    }
-  }
-  for(let i=0;i<(e.isBoss?45:16);i++){
-    pushParticle({x:e.x,y:e.y,z:rand(10,32),vx:rand(-110,110),vy:rand(-110,110),vz:rand(20,95),life:.65,max:.65,size:3+Math.random()*4,color:i%2?e.color:'#ffd166'});
-  }
-  const idx = state.enemies.indexOf(e);
-  if(idx!==-1) state.enemies.splice(idx,1);
-
-  if(e.isBoss && state.mode==='endless'){
-    advanceEndlessStage(e);
-    return;
-  }
+  state.score+=10+(e.type==='boss'?60:0); state.kills++; state.roomKills++;
+  state.player.xp+=10+(e.type==='boss'?30:0);
+  if(Math.random()<0.9){state.drops.push({x:e.x,y:e.y,el:e.drop,ttl:18});}
+  for(let i=0;i<16;i++) pushParticle({x:e.x,y:e.y,z:rand(10,28),vx:rand(-70,70),vy:rand(-70,70),vz:rand(10,65),life:.55,max:.55,size:2.5+Math.random()*3.5,color:i%2?e.color:'#ffd166'});
+  state.enemies.splice(state.enemies.indexOf(e),1);
   if(state.mode==='training' && state.kills>=state.trainingGoal.kills && state.levelups>=state.trainingGoal.levelups){
     finishRun('Huấn luyện hoàn thành!');
   }
@@ -1036,15 +792,14 @@ function collectDrops(dt){
   for(let i=state.drops.length-1;i>=0;i--){
     const d=state.drops[i]; d.ttl-=dt;
     const dx=p.x-d.x,dy=p.y-d.y, dist=Math.hypot(dx,dy);
-    if(dist<22){p.inventory[d.el]=(p.inventory[d.el]||0)+1; state.drops.splice(i,1); updatePanels();}
-    else if(dist<105){d.x+=dx*Math.min(1,dt*8.5); d.y+=dy*Math.min(1,dt*8.5);}
+    if(dist<20){p.inventory[d.el]=(p.inventory[d.el]||0)+1; state.drops.splice(i,1); updatePanels();}
+    else if(dist<98){d.x+=dx*Math.min(1,dt*8); d.y+=dy*Math.min(1,dt*8);}
     else if(d.ttl<=0) state.drops.splice(i,1);
   }
 }
 
 function levelCheck(){
   const p=state.player;
-  if(state.paused) return;
   if(p.xp>=p.xpNeed){
     p.xp-=p.xpNeed; p.xpNeed=Math.floor(p.xpNeed*1.28+8);
     p.level++; state.levelups++;
@@ -1056,7 +811,7 @@ function chooseUpgrade(reason){
   state.paused=true; const list=[];
   const pool=upgrades.filter(u=>!u.skill||state.player.skillTier[u.skill]<4);
   for(let i=0;i<3;i++){const idx=Math.floor(Math.random()*pool.length); list.push(pool.splice(idx,1)[0]);}
-  document.getElementById('upgradeReason').textContent=reason;
+  document.getElementById('upgradeReason').textContent=reason+' • Chọn một Ban Phước (Boon) để cường hóa.';
   const box=document.getElementById('upgradeChoices'); box.innerHTML='';
   list.forEach(u=>{
     const div=document.createElement('button'); div.className='choice';
@@ -1074,8 +829,8 @@ function chooseUpgrade(reason){
 function finishRun(msg){
   state.running=false; state.paused=true;
   if(state.score>state.best){state.best=state.score; try{localStorage.setItem('gc_pixel_best',String(state.best));}catch{}}
-  document.getElementById('pauseTitle').textContent='KẾT THÚC HÀNH TRÌNH';
-  document.getElementById('pauseText').textContent=msg+' • Đạt Ải T'+state.stage+' • Điểm: '+state.score+' • Hạ quái: '+state.kills;
+  document.getElementById('pauseTitle').textContent='KẾT THÚC';
+  document.getElementById('pauseText').textContent=msg+' • Điểm: '+state.score+' • Hạ quái: '+state.kills;
   openModal('pauseModal');
 }
 
@@ -1084,39 +839,19 @@ function update(dt){
   s.time+=dt; p.cast=Math.max(0,(p.cast||0)-dt);
   screenFlash=Math.max(0,screenFlash-dt*2.8);
   if(s.mode==='lab'){p.energy=p.maxEnergy;p.hp=p.maxHp;for(const el in p.inventory)p.inventory[el]=99;}
-  updateToast(dt);
+  s.waveTimer+=dt; updateToast(dt);
   if(p.inv>0) p.inv-=dt;
   p.attackCd=Math.max(0,p.attackCd-dt); p.dashCd=Math.max(0,p.dashCd-dt);
   for(const k in p.cd) p.cd[k]=Math.max(0,p.cd[k]-dt);
-  const cosmosEnergyBonus = s.biome==='cosmos' ? 2.5 : 0;
-  p.energy=Math.min(p.maxEnergy,p.energy+(9+cosmosEnergyBonus)*dt+((p.modPower.Mg||0)*2));
+  p.energy=Math.min(p.maxEnergy,p.energy+9*dt+((p.modPower.Mg||0)*2));
 
   if(s.biome==='desert' && p.shield < 45){
     p.shield = Math.min(p.maxShield, p.shield + 4.5*dt);
   }
 
-  // LOGIC VƯỢT ẢI 60 GIÂY TRONG CHẾ ĐỘ VÔ CỰC
-  if(s.mode==='endless'){
-    if(!s.bossSpawned){
-      s.stageTime += dt;
-      s.spawnCd -= dt;
-      // Quái xuất hiện đều đặn trong 60s để người chơi farm EXP và nguyên tố chuẩn bị đánh Boss
-      const maxMobs = Math.min(11, 5 + s.stage);
-      if(s.spawnCd <= 0 && s.enemies.length < maxMobs){
-        spawnMobPack(2);
-        s.spawnCd = Math.max(1.8, 3.4 - s.stage*0.2);
-      }
-      if(s.stageTime >= s.stageDuration){
-        spawnMythicBoss(s.stage === 5);
-      }
-    }
-  } else if(s.mode==='training'){
-    if(s.enemies.length === 0) spawnMobPack(4);
-  }
-
-  // Di chuyển nhân vật (Map Vũ trụ tăng 10% tốc chạy)
+  // Di chuyển nhân vật & xử lý va chạm với tòa nhà / vật cản
   let ax=(keys['d']?1:0)-(keys['a']?1:0), ay=(keys['s']?1:0)-(keys['w']?1:0);
-  let n=norm(ax,ay), sp=p.speed*(s.biome==='cosmos'?1.10:1)*(keys['shift']&&p.dashCd===0?1.05:1);
+  let n=norm(ax,ay), sp=p.speed*(keys['shift']&&p.dashCd===0?1.05:1);
   p.vx=n.x*sp; p.vy=n.y*sp;
   p.x=clamp(p.x+p.vx*dt,-445,445); p.y=clamp(p.y+p.vy*dt,-320,320);
   resolveObstacleCollisions(p, 14);
@@ -1130,12 +865,11 @@ function update(dt){
       pushEffect({type:'waterRipple',x:p.x,y:p.y,t:0,life:.55,r:20,color:'#7ef4ff'});
     } else if(s.biome==='desert' && Math.random()<8*dt){
       pushParticle({x:p.x+rand(-8,8),y:p.y+rand(-8,8),z:2,vx:rand(-18,18),vy:rand(-18,18),vz:rand(8,22),life:.4,max:.4,size:2.5,color:'#dfb988'});
-    } else if(s.biome==='cosmos' && Math.random()<9*dt){
-      pushParticle({x:p.x+rand(-8,8),y:p.y+rand(-8,8),z:6,vx:rand(-14,14),vy:rand(-14,14),vz:rand(10,30),life:.45,max:.45,size:2.5,color:'#e0aaff'});
     }
   }
   if(mouse.left) baseAttack();
 
+  // Cây cháy trong Rừng
   if(s.biome==='forest'){
     for(const prop of s.mapProps){
       if(prop.burning && prop.burning>0){
@@ -1157,11 +891,11 @@ function update(dt){
     }
   }
 
-  // Cập nhật Quái vật & Boss Thần Thoại
+  // Quái vật di chuyển & bị chặn bởi tòa nhà ở Thành phố
   for(let i=s.enemies.length-1;i>=0;i--){
     const e=s.enemies[i]; if(!e||e.dead)continue;
     const dx=p.x-e.x, dy=p.y-e.y, d=Math.hypot(dx,dy)||1;
-    const slow=clamp(1-(e.slow||0),0.25,1);
+    const slow=clamp(1-(e.slow||0),0.2,1);
 
     if(e.dummy){
       e.hp=e.maxHp;
@@ -1184,21 +918,7 @@ function update(dt){
       continue;
     }
 
-    if(e.isBoss){
-      e.skillCd -= dt * slow;
-      if(e.skillCd <= 0){
-        executeBossSkill(e);
-      }
-    }
-
-    if(e.dashTime && e.dashTime > 0){
-      e.dashTime -= dt;
-      e.x = clamp(e.x + e.dashVx*dt, -430, 430);
-      e.y = clamp(e.y + e.dashVy*dt, -300, 300);
-    } else {
-      e.x += dx/d*e.speed*slow*dt;
-      e.y += dy/d*e.speed*slow*dt;
-    }
+    e.x+=dx/d*e.speed*slow*dt; e.y+=dy/d*e.speed*slow*dt;
     resolveObstacleCollisions(e, e.r);
 
     if(e.burn>0){
@@ -1231,48 +951,24 @@ function update(dt){
     const newD=Math.hypot(p.x-e.x,p.y-e.y);
     if(newD<e.r+11 && p.inv<=0){
       const desertArmor = s.biome==='desert' ? 0.25 : 0;
-      const totalArmor = clamp(p.armor + desertArmor, 0, 0.75);
-      let dmg=(e.dmg || 12)*(1-totalArmor);
+      const totalArmor = clamp(p.armor + desertArmor, 0, 0.72);
+      let dmg=(e.type==='boss'?22:12+state.wave*0.8)*(1-totalArmor);
       if(p.shield>0){const absorb=Math.min(p.shield,dmg); p.shield-=absorb; dmg-=absorb;}
-      p.hp-=dmg; p.inv=.45;
+      p.hp-=dmg; p.inv=.42;
       pushEffect({type:'hurt',x:p.x,y:p.y,t:0,life:.22,color:'#ff4d6d'});
-      if(p.hp<=0){finishRun('Bạn đã gục ngã trước ' + (e.bossName || 'quái vật')); return;}
+      if(p.hp<=0){finishRun('Bạn đã gục ngã.'); return;}
     }
     if(e.hp<=0) killEnemy(e);
   }
 
-  // Đạn của Boss bắn ra (Enemy Projectiles)
-  for(let i=s.enemyProjectiles.length-1;i>=0;i--){
-    const ep = s.enemyProjectiles[i];
-    ep.x += ep.vx*dt; ep.y += ep.vy*dt; ep.life -= dt;
-    let hit = false;
-    if(s.biome==='city'){
-      for(const prop of s.mapProps){
-        if(prop.solid && Math.hypot(prop.x-ep.x,prop.y-ep.y) < prop.r + ep.r*0.5){
-          prop.hitGlow = 0.3; hit = true; break;
-        }
-      }
-    }
-    if(!hit && Math.hypot(p.x-ep.x,p.y-ep.y) < ep.r + 12 && p.inv<=0){
-      const desertArmor = s.biome==='desert' ? 0.25 : 0;
-      const totalArmor = clamp(p.armor + desertArmor, 0, 0.75);
-      let dmg = ep.dmg * (1 - totalArmor);
-      if(p.shield>0){const absorb=Math.min(p.shield,dmg); p.shield-=absorb; dmg-=absorb;}
-      p.hp -= dmg; p.inv = 0.35;
-      pushEffect({type:'hurt',x:p.x,y:p.y,t:0,life:.22,color:ep.color});
-      hit = true;
-      if(p.hp<=0){finishRun('Bạn đã trúng thần phạt của Boss.'); return;}
-    }
-    if(ep.life<=0 || hit) s.enemyProjectiles.splice(i,1);
-  }
-
-  // Đạn của Người chơi
+  // Đạn bắn (Projectiles) & Va chạm với Tòa nhà Thành phố
   for(let i=s.projectiles.length-1;i>=0;i--){
     const pr=s.projectiles[i]; pr.x+=pr.vx*dt; pr.y+=pr.vy*dt; pr.life-=dt;
     pr.trail=pr.trail||[]; pr.trail.push({x:pr.x,y:pr.y});
     if(pr.trail.length>12+pr.reaction.tier*4) pr.trail.shift();
     let hit=false;
 
+    // Kiểm tra đạn đập vào các tòa nhà ở Thành phố
     if(s.biome==='city'){
       for(const prop of s.mapProps){
         if(prop.solid && Math.hypot(prop.x-pr.x, prop.y-pr.y) < prop.r + pr.r*0.6){
@@ -1301,7 +997,7 @@ function update(dt){
     if(pr.life<=0||hit) s.projectiles.splice(i,1);
   }
 
-  // Hiệu ứng kỹ năng
+  // Hiệu ứng kỹ năng & kích nổ Chiêu cuối F (Cataclysm)
   for(let i=s.effects.length-1;i>=0;i--){
     const e=s.effects[i]; e.t+=dt;
     if(e.type==='cloud' || e.type==='firePatch'){
@@ -1326,33 +1022,24 @@ function update(dt){
       }
     }
     if(e.t>=e.life){
-      if(e.type==='enemyTelegraph'){
-        pushEffect({type:'burst',x:e.x,y:e.y,t:0,life:0.45,r:e.r,color:e.color});
-        emit(e.x,e.y,e.color,28,110);
-        if(Math.hypot(p.x-e.x,p.y-e.y) <= e.r + 10 && p.inv<=0){
-          const desertArmor = s.biome==='desert' ? 0.25 : 0;
-          const totalArmor = clamp(p.armor + desertArmor, 0, 0.75);
-          let dmg = (e.dmg||22)*(1-totalArmor);
-          if(p.shield>0){const absorb=Math.min(p.shield,dmg); p.shield-=absorb; dmg-=absorb;}
-          p.hp -= dmg; p.inv = 0.4;
-          pushEffect({type:'hurt',x:p.x,y:p.y,t:0,life:.22,color:'#ff2e4c'});
-          if(p.hp<=0){finishRun('Bạn đã gục ngã trước tuyệt kỹ của Boss.'); return;}
-        }
-      }
       if(e.type==='telegraph'){
         const r=e.reaction;
         const isPoison = r.els.includes('Cl');
         const isForestFire = state.biome==='forest' && (r.els.includes('O') || !r.els.length);
 
+        // LUÔN KÍCH HOẠT SIÊU VỤ NỔ CỘT TRỤ 3D (CATACLYSM) CHO CHIÊU F
         const cracks=[];
         const numCracks = 8 + r.tier*2;
         for(let c=0;c<numCracks;c++){
           const baseA = (c/numCracks)*TAU + rand(-0.15,0.15);
           const segs=[];
+          let cx=0, cy=0;
           for(let sIdx=1;sIdx<=4;sIdx++){
             const len = (e.r*1.18)*(sIdx/4);
             const jitter = rand(-0.22,0.22);
-            segs.push([Math.cos(baseA+jitter)*len, Math.sin(baseA+jitter)*len]);
+            cx = Math.cos(baseA+jitter)*len;
+            cy = Math.sin(baseA+jitter)*len;
+            segs.push([cx,cy]);
           }
           cracks.push(segs);
         }
@@ -1396,6 +1083,10 @@ function update(dt){
   }
 
   collectDrops(dt); levelCheck();
+  if(s.running&&!s.paused&&s.enemies.length===0){
+    s.wave++; toast('ĐỢT '+s.wave+(s.wave%5===0?' • LÕI TITAN':'')); spawnWave();
+  }
+  if(s.mode==='training'&&s.kills>=8&&s.levelups>=1&&!s.paused) finishRun('Huấn luyện hoàn thành!');
   hudTick+=dt; if(hudTick>.10){updatePanels();hudTick=0;}
 }
 
@@ -1405,6 +1096,7 @@ function iso(x,y){
   return {x:sx,y:sy};
 }
 
+// Các hàm vẽ Hades-style với viền mực đen đậm (Heavy Ink Outlines) và góc vát sắc sảo
 function drawDiamond(x,y,w,h,fill,stroke,lineWidth=1.5){
   ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x+w,y); ctx.lineTo(x,y+h); ctx.lineTo(x-w,y); ctx.closePath();
   if(fill){ctx.fillStyle=fill; ctx.fill();}
@@ -1435,19 +1127,24 @@ function hex(x,y,r,color,alpha=1,fill=null){
   ctx.restore();
 }
 
+// Bảng màu Hades-style giàu độ tương phản (Sâu thẳm + Viền vàng đồng/neon rực rỡ)
 const palettes={
   city:['#070812','#1c1f33','#232740','#0d0f1c','#5ce1ff'],
   desert:['#120b07','#593a24','#69462b','#2e1c10','#ffd166'],
   coast:['#03101c','#0d3552','#124263','#072033','#4df0ff'],
-  forest:['#06120e','#183326','#1f4030','#0c1c14','#72f58d'],
-  cosmos:['#04020a','#170e2e','#21143d','#0c061c','#e0aaff']
+  forest:['#06120e','#183326','#1f4030','#0c1c14','#72f58d']
 };
 
+// Vẽ Khối 3D phong cách Hades (Viền mực đen dày + Cạnh bắt sáng Rim-light)
 function drawIsoBlock(x,y,w,d,h,topCol,leftCol,rightCol,rimCol='#ffffff44'){
   const ink='#07060c';
+  // Mặt bên trái
   poly([[x-w,y],[x,y+d],[x,y+d-h],[x-w,y-h]],leftCol,ink,2);
+  // Mặt bên phải
   poly([[x,y+d],[x+w,y],[x+w,y-h],[x,y+d-h]],rightCol,ink,2);
+  // Mặt đỉnh trên cùng
   drawDiamond(x,y-h,w,d,topCol,ink,2);
+  // Đường viền bắt sáng (Rim Highlight) ở sống giữa và mép trên kiểu Hades
   ctx.strokeStyle=rimCol; ctx.lineWidth=1.4;
   ctx.beginPath();
   ctx.moveTo(x-w,y-h); ctx.lineTo(x,y+d-h); ctx.lineTo(x+w,y-h);
@@ -1460,27 +1157,41 @@ function drawProp25D(prop){
   if(p.x<-110||p.x>W+110||p.y<-160||p.y>H+160) return;
   const x=Math.round(p.x), y=Math.round(p.y);
 
+  // Đổ bóng 3D đậm dưới chân vật thể
   ctx.fillStyle='rgba(2, 3, 8, 0.65)';
   ctx.beginPath(); ctx.ellipse(x+10,y+6,prop.r*1.25,prop.r*0.58,0,0,TAU); ctx.fill();
 
   if(prop.type==='building'){
     const h=prop.h||80, w=prop.r*1.12, d=prop.r*0.56;
+    // Vòng đế cảnh báo vật cản cứng dưới chân tòa nhà
     ring(x,y+2,prop.r*0.88,prop.hitGlow>0?'#ff6b4a':'#5ce1ff',prop.hitGlow>0?0.75:0.25,prop.hitGlow>0?2.5:1.4);
+
+    // Khối đế bậc thềm 3D
     drawIsoBlock(x,y,w*1.08,d*1.08,10,'#2b324d','#1e2338','#131726','#72b6ff66');
+    // Thân tòa nhà chính
     drawIsoBlock(x,y-10,w,d,h,'#343f5e','#232b42','#161b2b','#67dfff88');
+    // Tầng mái thu gọn + Lõi Neon đỉnh tháp
     drawIsoBlock(x,y-10-h,w*0.65,d*0.65,12,'#495880','#2e3854','#1d2438','#a3ebff99');
+
+    // Dải đèn Neon chạy dọc sườn tòa nhà & ô cửa sổ phát sáng
     ctx.fillStyle='#5ce1ff';
     ctx.fillRect(x-w*0.72, y-h+4, 2.5, h-12);
     ctx.fillRect(x+w*0.65, y-h+4, 2.5, h-12);
+
     ctx.fillStyle='#ffd166cc';
     for(let wy=y-h+10; wy<y-18; wy+=13){
-      ctx.fillRect(x-w*0.48,wy,5,6); ctx.fillRect(x-w*0.22,wy+4,5,6);
-      ctx.fillRect(x+w*0.14,wy+4,5,6); ctx.fillRect(x+w*0.38,wy,5,6);
+      ctx.fillRect(x-w*0.48,wy,5,6);
+      ctx.fillRect(x-w*0.22,wy+4,5,6);
+      ctx.fillRect(x+w*0.14,wy+4,5,6);
+      ctx.fillRect(x+w*0.38,wy,5,6);
     }
+    // Trụ ăng-ten / Hải đăng năng lượng trên đỉnh
     const pulse = 0.6+Math.sin(state.time*4+prop.seed)*0.4;
     drawDiamond(x,y-h-28,7,4,'#ff6b4a','#07060c',1.5);
     glow(x,y-h-28,28,'#ff6b4a',0.35*pulse);
-    if(prop.hitGlow>0) glow(x,y-h*0.4,55,'#5ce1ff',prop.hitGlow);
+    if(prop.hitGlow>0){
+      glow(x,y-h*0.4,55,'#5ce1ff',prop.hitGlow);
+    }
   }
   else if(prop.type==='tree'){
     const s=prop.scale||1;
@@ -1519,14 +1230,6 @@ function drawProp25D(prop){
     poly([[x+2,y-10],[x+11,y-32],[x+15,y-10]],'#ff6b9d','#07060c',2);
     glow(x,y-24,34,'#4df0ff',.32);
   }
-  else if(prop.type==='monolith'){
-    // Tinh Thạch Hư Không Lơ Lửng ở Map Vũ Trụ
-    const bob = Math.sin(state.time*3+prop.seed)*6;
-    ring(x,y+2,17,'#e0aaff',.45);
-    drawIsoBlock(x,y-12+bob,14,7,42,'#9d4edd','#5a189a','#3c096c','#e0aaff');
-    drawDiamond(x,y-62+bob,9,13,'#ffd166','#07060c',1.8);
-    glow(x,y-40+bob,42,'#e0aaff',.38);
-  }
 }
 
 function drawFloorTiles(){
@@ -1542,6 +1245,7 @@ function drawFloorTiles(){
         const x=1000+(gx-gy)*32*1.1, y=550+(gx+gy)*32*.55;
         const edge=Math.abs(gx)===15||Math.abs(gy)===11;
 
+        // Thành vách đá ngầm 3D sâu dưới rìa đấu trường kiểu Hades
         if(gy===11 || gx===15){
           g.fillStyle='#05060b';
           g.beginPath();
@@ -1551,6 +1255,7 @@ function drawFloorTiles(){
           g.strokeStyle='#1c1629'; g.lineWidth=1.5; g.stroke();
         }
 
+        // Gạch Isometric với viền đen đậm và vát cạnh trong
         g.beginPath();
         g.moveTo(x,y-17.6); g.lineTo(x+35.2,y); g.lineTo(x,y+17.6); g.lineTo(x-35.2,y);
         g.closePath();
@@ -1558,8 +1263,9 @@ function drawFloorTiles(){
         g.fill();
         g.strokeStyle='#08070f'; g.lineWidth=1.6; g.stroke();
 
+        // Viền khắc chìm vàng đồng / neon bên trong ô gạch
         if(!edge && (gx+gy)%2===0){
-          g.strokeStyle=b[4]+'22'; g.lineWidth=1;
+          g.strokeStyle=b[4]+'18'; g.lineWidth=1;
           g.beginPath();
           g.moveTo(x,y-14); g.lineTo(x+28,y); g.lineTo(x,y+14); g.lineTo(x-28,y);
           g.closePath(); g.stroke();
@@ -1577,9 +1283,6 @@ function drawFloorTiles(){
             g.strokeStyle='#07060c'; g.stroke();
             if((gx+gy)%2===0){g.fillStyle='#ffd166aa'; g.fillRect(x-5,y-2,10,3);}
           }
-        } else if(state.biome==='cosmos' && !edge && (gx*11+gy*17)%7===0){
-          g.fillStyle='#ffd166aa';
-          g.fillRect(x-1,y-1,2.5,2.5);
         }
       }
     }
@@ -1603,18 +1306,6 @@ function drawFloorTiles(){
     }
     ctx.restore();
   }
-  else if(state.biome==='cosmos'){
-    // Hiệu ứng Tinh Vân Vũ Trụ & Sao Băng Lấp Lánh
-    ctx.save();
-    for(let i=0;i<24;i++){
-      const sx = (i*137 + Math.sin(state.time*0.5+i)*40)%W;
-      const sy = (i*89 + Math.cos(state.time*0.4+i)*30)%H;
-      ctx.fillStyle = i%3===0 ? '#ffd166' : '#e0aaff';
-      ctx.globalAlpha = 0.35 + Math.sin(state.time*3+i)*0.3;
-      ctx.fillRect(sx, sy, i%2?2:3, i%2?2:3);
-    }
-    ctx.restore();
-  }
 }
 
 function drawBg(){
@@ -1622,12 +1313,11 @@ function drawBg(){
   ctx.fillStyle=b[0]; ctx.fillRect(0,0,W,H);
   drawFloorTiles();
   const c=iso(0,0);
-  ring(c.x,c.y,130,b[4],.24,2.2); ring(c.x,c.y,74,b[4],.18,1.6);
+  ring(c.x,c.y,130,b[4],.2,2.2); ring(c.x,c.y,74,b[4],.15,1.6);
 
-  const borderType = state.biome==='city'?'building':state.biome==='forest'?'tree':state.biome==='coast'?'coral':state.biome==='cosmos'?'monolith':'obelisk';
   for(let i=-12;i<=12;i+=4){
-    drawProp25D({type:borderType,x:i*32,y:-348,r:24,scale:1,h:76,seed:i});
-    drawProp25D({type:borderType,x:i*32,y:348,r:24,scale:1,h:76,seed:i+20});
+    drawProp25D({type:state.biome==='city'?'building':state.biome==='forest'?'tree':state.biome==='coast'?'coral':'obelisk',x:i*32,y:-348,r:24,scale:1,h:76,seed:i});
+    drawProp25D({type:state.biome==='city'?'building':state.biome==='forest'?'tree':state.biome==='coast'?'coral':'obelisk',x:i*32,y:348,r:24,scale:1,h:76,seed:i+20});
   }
 }
 
@@ -1658,12 +1348,14 @@ function drawPlayer(){
   const x=Math.round(pos.x),y=Math.round(pos.y);
   ctx.save(); ctx.translate(x,y);
 
+  // Vòng hào quang chân kiểu Hades
   ctx.fillStyle='#020308cc'; ctx.beginPath(); ctx.ellipse(0,3,22,9,0,0,TAU); ctx.fill();
-  const auraCol = state.biome==='cosmos'?'#e0aaff':state.biome==='coast'?'#4df0ff':state.biome==='desert'?'#ffd166':'#ff6b4a';
+  const auraCol = state.biome==='coast'?'#4df0ff':state.biome==='desert'?'#ffd166':'#ff6b4a';
   ring(0,3,15+Math.sin(t*6)*1.5,auraCol,.55,2);
   glow(0,0,34,auraCol,.18);
 
   if(p.inv>0)ctx.globalAlpha=.65+Math.sin(t*70)*.3;
+  // Áo choàng chiến thần viền đen sắc nét
   poly([[-11,-44],[-19,-25],[-22+walk*2,-2],[-10,1],[-3,-12],[10,0],[19+walk*2,-3],[15,-25],[9,-44]],'#141124','#05040a',2.2);
   poly([[-11,-40],[-15,-20],[-17+walk*2,-3],[-10,-1],[-5,-16],[-5,-38]],'#e8e2d5','#05040a',1.5);
   poly([[5,-39],[12,-39],[15,-18],[17+walk*2,-4],[10,-2],[5,-16]],'#b5ab9e','#05040a',1.5);
@@ -1672,6 +1364,7 @@ function drawPlayer(){
   ctx.fillStyle='#ffd166';ctx.fillRect(-8,-14+step,4,5);ctx.fillRect(4,-14-step,4,5);
   ctx.fillStyle='#0a0814';ctx.fillRect(-11,step,10,5);ctx.fillRect(3,-step,11,5);
 
+  // Giáp ngực chiến thần Hades
   poly([[-10,-44],[9,-44],[12,-23],[6,-17],[-7,-17],[-12,-28]],'#2b223d','#05040a',2);
   ctx.fillStyle='#d9cfc3';ctx.fillRect(-8,-40,5,13);ctx.fillStyle='#8c8299';ctx.fillRect(3,-40,6,13);
   ctx.fillStyle='#ffd166';ctx.fillRect(-9,-24,18,2.5);ctx.fillStyle='#140f21';ctx.fillRect(-9,-19,18,4);
@@ -1687,6 +1380,7 @@ function drawPlayer(){
     ctx.fillStyle='#ffd166';ctx.fillRect(ax-4,-43,8,2.5);
   }
 
+  // Đầu, Tóc gai & Kính Visor phát sáng
   ctx.fillStyle='#07050f';ctx.fillRect(-8,-63,16,18);ctx.fillRect(-10,-58,20,8);
   poly([[-8,-62],[-3,-68],[2,-63],[8,-67],[9,-58],[-8,-58]],'#f2ece1','#05040a',1.5);
   ctx.fillStyle=back?'#3d3352':'#d49b82';ctx.fillRect(-5,-55,11,9);
@@ -1694,9 +1388,11 @@ function drawPlayer(){
   ctx.fillStyle='#ff6b4a';ctx.fillRect(side<0?-7:-3,-54,10,2.5);
   ctx.fillStyle='#fff7d6';ctx.fillRect(side<0?-7:4,-54,3,1.5);
 
+  // Khăn choàng đỏ rực bay trong gió
   poly([[-8,-46],[8,-46],[8,-42],[-5,-41],[-10,-43]],'#d92b3a','#05040a',1.6);
   poly([[-7,-44],[-20,-41],[-32,-34+walk*3],[-22,-32+walk*3],[-10,-38]],'#ff3b4e','#05040a',1.6);
 
+  // Đại đao Infernal Blade kiểu Hades
   const swing=p.cast>0&&['q','slash'].includes(p.castSkill)?Math.sin((1-p.cast/.35)*Math.PI)*1.1-.55:0;
   const angle=Math.atan2(aim.y,aim.x)+swing;
   ctx.save(); ctx.translate(aim.x*12,-28+aim.y*5); ctx.rotate(angle);
@@ -1718,106 +1414,12 @@ function drawPlayer(){
   if(p.shield>0) drawShield(x,y-30,40,t,p.shield/p.maxShield,p.shieldTier);
 }
 
-// VẼ HÌNH DÁNG ĐẶC TRƯNG CỦA 21 BOSS THẦN THOẠI ÂU – Á & RỒNG VŨ TRỤ CHUNG CỰC
-function drawMythicBoss(e, x, y, t, step, col){
-  const sub = e.subColor || '#ffd166';
-  glow(x, y-26, e.isCosmic?78:54, col, 0.42);
-  ring(x, y+3, e.r*1.25, sub, 0.7, 2.2);
-
-  if(e.style === 'cosmic_dragon'){
-    // HƯ KHÔNG THẦN LONG (AURELION BAHAMUT) — Đôi cánh Tinh Vân Khổng Lồ, Sừng Vàng & Đuôi Rồng Uốn Lượn
-    const flap = Math.sin(t*6)*14;
-    ctx.save(); ctx.translate(x, y);
-    // Đuôi rồng uốn lượn
-    for(let seg=5;seg>=1;seg--){
-      const sx = -seg*11 + Math.sin(t*5+seg)*6;
-      const sy = -8 + seg*3;
-      drawDiamond(sx, sy, 10-seg, 6-seg*0.6, '#3c096c', '#05040a', 1.8);
-    }
-    // Đôi cánh Tinh Vân Vũ Trụ
-    poly([[-8,-36],[-68,-64+flap],[-54,-22+flap*0.5],[-28,-16]], '#5a189a', '#05040a', 2.2);
-    poly([[-12,-34],[-52,-52+flap],[-40,-24+flap*0.5]], '#e0aaff', '#ffd166', 1.4);
-    poly([[8,-36],[68,-64+flap],[54,-22+flap*0.5],[28,-16]], '#5a189a', '#05040a', 2.2);
-    poly([[12,-34],[52,-52+flap],[40,-24+flap*0.5]], '#e0aaff', '#ffd166', 1.4);
-    // Thân Rồng Giáp Vàng Hư Không
-    poly([[-18,-48],[0,-58],[18,-48],[22,-14],[0,-4],[-22,-14]], '#240046', '#05040a', 2.4);
-    drawDiamond(0, -30, 11, 16, '#ffd166', '#05040a', 1.8);
-    drawDiamond(0, -30, 6, 9, '#ffffff', '#e0aaff', 1.4);
-    // Đầu Rồng & 4 Sừng Thần Long
-    poly([[-14,-54],[0,-68],[14,-54],[10,-42],[-10,-42]], '#3c096c', '#05040a', 2.2);
-    poly([[-10,-62],[-26,-86],[-6,-66]], '#ffd166', '#05040a', 2);
-    poly([[10,-62],[26,-86],[6,-66]], '#ffd166', '#05040a', 2);
-    ctx.fillStyle='#ff2e4c'; ctx.fillRect(-7,-54,5,4); ctx.fillRect(3,-54,5,4);
-    // Ngọc Tinh Cầu xoay quanh Rồng
-    for(let k=0;k<4;k++){
-      const a = t*2.5 + k*TAU/4;
-      drawDiamond(Math.cos(a)*42, -36+Math.sin(a)*16, 5, 7, '#ffd166', '#05040a', 1.5);
-    }
-    ctx.restore();
-    return;
-  }
-
-  ctx.save(); ctx.translate(x, y); ctx.scale(1.45, 1.45);
-  // Thân chiến thần / quái thú cơ sở
-  ctx.fillStyle='#1f1829'; ctx.fillRect(-13,-8+step,9,12); ctx.fillRect(4,-8-step,9,12);
-  poly([[-15,-32],[-5,-39],[12,-34],[17,-11],[8,-5],[-12,-8]], col, '#05040a', 2);
-  ctx.fillStyle='#140f1f'; ctx.fillRect(-8,-26,17,16);
-  ctx.fillStyle=sub; ctx.fillRect(-4,-23,9,9);
-
-  if(e.style === 'jackal'){
-    // ANUBIS: Tai chó rừng nhọn cao & Trượng Quyền Năng
-    poly([[-10,-35],[-14,-56],[-3,-38]], '#140f1f', '#ffd166', 1.8);
-    poly([[6,-35],[12,-56],[1,-38]], '#140f1f', '#ffd166', 1.8);
-    ctx.strokeStyle='#ffd166'; ctx.lineWidth=2.5;
-    ctx.beginPath(); ctx.moveTo(22,-42); ctx.lineTo(22,4); ctx.stroke();
-    drawDiamond(22,-45,5,7,'#ffd166','#05040a',1.5);
-  }
-  else if(e.style === 'fox'){
-    // CỬU VĨ HỒ: Các đuôi lửa xòe phía sau lưng
-    for(let tail=-2;tail<=2;tail++){
-      const tx = tail*10, ty = -24 - Math.abs(tail)*3 + Math.sin(t*8+tail)*3;
-      poly([[0,-16],[tx-5,ty-18],[tx+5,ty-18]], sub, '#05040a', 1.5);
-    }
-  }
-  else if(e.style === 'stag'){
-    // CERNUNNOS / LESHY: Gạc hươu cổ thụ khổng lồ
-    ctx.strokeStyle=sub; ctx.lineWidth=2.6;
-    ctx.beginPath();
-    ctx.moveTo(-8,-36); ctx.lineTo(-22,-54); ctx.lineTo(-14,-62);
-    ctx.moveTo(8,-36); ctx.lineTo(22,-54); ctx.lineTo(14,-62);
-    ctx.stroke();
-  }
-  else if(e.style === 'serpent' || e.style === 'dragon'){
-    // LONG VƯƠNG / LEVIATHAN / APOPHIS: Sừng Rồng & Vây Hải Vương
-    poly([[-12,-34],[-24,-52],[-6,-38]], sub, '#05040a', 1.8);
-    poly([[10,-34],[24,-52],[6,-38]], sub, '#05040a', 1.8);
-    const orbA = t*3;
-    drawDiamond(Math.cos(orbA)*26, -24+Math.sin(orbA)*10, 4, 6, '#ffffff', col, 1.5);
-  }
-  else {
-    // DEITY / TITAN (Thor, Poseidon, Susanoo, Hạn Bạt, Hình Thiên): Hào quang Thần Luân sau lưng
-    ctx.strokeStyle=sub; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(0,-28,22,0,TAU); ctx.stroke();
-    poly([[-16,-31],[-23,-49],[-8,-36]], sub, '#05040a', 1.8);
-    poly([[12,-33],[25,-47],[22,-25]], sub, '#05040a', 1.8);
-  }
-  ctx.restore();
-}
-
 function drawEnemy(e){
   const p=iso(e.x,e.y),x=Math.round(p.x),y=Math.round(p.y),t=state.time,step=Math.sin(t*9+e.x)*2;
   const col=e.hitFlash>0?'#ffffff':e.color;
   ctx.fillStyle='#020308bb'; ctx.beginPath(); ctx.ellipse(x+4,y+4,e.r+5,7.5,0,0,TAU); ctx.fill();
-
-  if(e.isBoss){
-    drawMythicBoss(e, x, y, t, step, col);
-    // Thanh máu trên đầu Boss
-    ctx.fillStyle='#07050d'; ctx.fillRect(x-28,y-e.r*2-26,56,6);
-    ctx.fillStyle=e.color; ctx.fillRect(x-27,y-e.r*2-25,54*clamp(e.hp/e.maxHp,0,1),4);
-    return;
-  }
-
   ring(x,y+2,e.r*0.95,col,.32,1.5);
+
   if(e.type==='slime'){
     poly([[x-15,y],[x-13,y-13],[x-7,y-20+step],[x+7,y-20+step],[x+14,y-11],[x+16,y]],'#3d1622','#05040a',2);
     poly([[x-11,y-3],[x-8,y-14],[x-3,y-19+step],[x+8,y-14],[x+11,y-3]],col,'#05040a',1.4);
@@ -1836,7 +1438,8 @@ function drawEnemy(e){
     ctx.fillStyle='#081c12';ctx.fillRect(x-6,y-16,4,4);ctx.fillRect(x+4,y-16,4,4);
   }
   else{
-    ctx.save();ctx.translate(x,y);
+    const scale=e.type==='boss'?1.65:1.05;
+    ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
     ctx.fillStyle='#2b2333';ctx.fillRect(-13,-8+step,9,12);ctx.fillRect(4,-8-step,9,12);
     poly([[-14,-30],[-4,-37],[11,-32],[16,-11],[7,-5],[-11,-8]],col,'#05040a',2);
     ctx.fillStyle='#1f1829';ctx.fillRect(-8,-25,17,16);
@@ -1844,10 +1447,14 @@ function drawEnemy(e){
     glow(0,-19,26,'#ff9248',.55);
     poly([[-22,-27-step],[-13,-27-step],[-13,-7-step],[-22,-7-step]],col,'#05040a',1.8);
     poly([[15,-25+step],[24,-25+step],[24,-4+step],[15,-4+step]],col,'#05040a',1.8);
+    if(e.type==='boss'){
+      poly([[-16,-31],[-23,-49],[-8,-36]],'#ffd166','#05040a',1.8);
+      poly([[12,-33],[25,-47],[22,-25]],'#ffd166','#05040a',1.8);
+    }
     ctx.restore();
   }
 
-  if(e.hp<e.maxHp){
+  if(e.hp<e.maxHp||e.type==='boss'){
     ctx.fillStyle='#07050d';ctx.fillRect(x-19,y-e.r*2-12,38,5);
     ctx.fillStyle='#ff4d6d';ctx.fillRect(x-18,y-e.r*2-11,36*clamp(e.hp/e.maxHp,0,1),3);
   }
@@ -1855,10 +1462,15 @@ function drawEnemy(e){
     flame(x+9,y-4,6,18,t*13,false,e.heatTier||1);
     if(state.biome==='forest') ring(x,y,e.r+8,'#ff6a22',.6);
   }
-  if(e.poison>0) ring(x,y,14,'#65f788',.75);
-  if(e.slow>0.25) drawDiamond(x,y-14,e.r+3,e.r,'rgba(140,235,255,0.32)','#b8f6ff',1.6);
+  if(e.poison>0){
+    ring(x,y,14,'#65f788',.75);
+  }
+  if(e.slow>0.25){
+    drawDiamond(x,y-14,e.r+3,e.r,'rgba(140,235,255,0.32)','#b8f6ff',1.6);
+  }
 }
 
+// CHIÊU R: Khiên Thánh Lục Giác 3D xoay quanh người kiểu Aegis Shield
 function drawShield(x,y,r,t,power,tier=1){
   const isDesert = state.biome==='desert';
   const c = isDesert ? '#ffd166' : ['#ffd166','#5ce1ff','#b197fc','#ff7eb6'][tier-1];
@@ -1866,6 +1478,8 @@ function drawShield(x,y,r,t,power,tier=1){
   glow(x,y,r*1.9,c,.18);
   ctx.strokeStyle=c; ctx.lineWidth=2; ctx.globalAlpha=.45+power*.35;
   ctx.beginPath(); ctx.ellipse(x,y,r,r*1.02,0,0,TAU); ctx.stroke();
+
+  // Các tấm khiên 3D bay quỹ đạo xung quanh nhân vật
   const panels = 3 + tier;
   for(let i=0;i<panels;i++){
     const a = t*2.2 + i*(TAU/panels);
@@ -1877,16 +1491,8 @@ function drawShield(x,y,r,t,power,tier=1){
   ring(x,y+34,r*.82,c,.45,2);
 }
 
+// CHIÊU E: Mũi Thương Pháo Điện Từ (Railgun Lance) kèm tia sét xoắn ốc
 function drawProjectiles(){
-  // Đạn của Boss Thần Thoại
-  for(const ep of state.enemyProjectiles){
-    const p = iso(ep.x, ep.y);
-    glow(p.x, p.y-16, 22, ep.color, 0.5);
-    drawDiamond(p.x, p.y-16, ep.r*1.3, ep.r, ep.color, '#05040a', 1.8);
-    drawDiamond(p.x, p.y-16, ep.r*0.6, ep.r*0.5, '#ffffff');
-  }
-
-  // Đạn của Người chơi
   for(const pr of state.projectiles){
     const p=iso(pr.x,pr.y),tier=pr.reaction.tier||1;
     ctx.save();
@@ -1948,6 +1554,7 @@ function drawFirePatchField(e,p,t){
   ctx.restore();
 }
 
+// CHIÊU Q: Vòng Cung Đại Đao Rực Lửa (Hellfire Cleave) kiểu Hades với răng cưa năng lượng & viền mực
 function drawThermalArc(e){
   const progress=e.t/e.life,fade=1-progress,heat=e.reaction?.heat||1,tier=e.reaction?.tier||1,poison=e.reaction?.els.includes('Cl');
   const c=poison?['#1a5c38','#52d669','#b8ff7d','#f2ffd9']:thermalColors[heat-1];
@@ -1974,9 +1581,12 @@ function drawThermalArc(e){
   ctx.restore();
 }
 
+// SIÊU CHIÊU CUỐI F: Trận pháp cổ ngữ + Cột Trụ Thiên Thạch Giáng Thế (Core Cataclysm)
 function drawCataclysm(e,p,t){
   const fade=Math.max(0,1-t), tier=e.reaction?.tier||1, col=e.color;
   ctx.save();
+
+  // 1. Hố đen & Vết nứt dung nham phát sáng tỏa ra trên mặt đất
   ctx.globalAlpha=fade;
   ctx.fillStyle='#07050dcc';
   ctx.beginPath(); ctx.ellipse(p.x,p.y,e.r*1.45,e.r*0.72,0,0,TAU); ctx.fill();
@@ -2000,6 +1610,7 @@ function drawCataclysm(e,p,t){
     }
   }
 
+  // 2. Sóng xung kích đa tầng giãn nở cực mạnh
   for(let w=0;w<2+tier;w++){
     const wt=clamp((t-w*0.07)/(1-w*0.07),0,1);
     if(wt>0){
@@ -2008,6 +1619,7 @@ function drawCataclysm(e,p,t){
     }
   }
 
+  // 3. Cột trụ năng lượng (Sky-to-Ground Orbital Beam) xuyên thẳng từ đỉnh màn hình xuống tâm nổ
   if(t < 0.75){
     const beamFade = (0.75 - t)/0.75;
     const bw = (36 + tier*12) * (0.4 + 0.6*beamFade);
@@ -2025,10 +1637,12 @@ function drawCataclysm(e,p,t){
     ctx.fillStyle=grad;
     ctx.fillRect(p.x-bw, p.y-460, bw*2, 460);
 
+    // Lõi trắng chói lòa ở giữa cột trụ
     ctx.fillStyle='#ffffff';
     ctx.fillRect(p.x-bw*0.28, p.y-460, bw*0.56, 460);
     ctx.restore();
 
+    // Các tia sét & vòng xoáy năng lượng quấn quanh cột trụ
     ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.globalAlpha=beamFade;
     for(let s=0;s<3+tier;s++){
       ctx.beginPath();
@@ -2041,6 +1655,7 @@ function drawCataclysm(e,p,t){
     }
   }
 
+  // 4. Ngọn lửa xung kích & Mảnh vỡ đá 3D văng lên không trung
   for(let i=0;i<10+tier*2;i++){
     const a=i*TAU/(10+tier*2)+t*2, rr=e.r*0.55*(0.4+t*0.8);
     const q=iso(e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr);
@@ -2068,20 +1683,14 @@ function drawEffects(){
     if(e.type==='cloud') drawPoisonField(e,p,t);
     if(e.type==='cataclysm') drawCataclysm(e,p,t);
 
-    if(e.type==='enemyTelegraph'){
-      // Vòng cảnh báo đỏ rực của Kỹ năng Boss
-      ctx.fillStyle='rgba(255, 46, 76, 0.22)';
-      ctx.beginPath(); ctx.ellipse(p.x,p.y,e.r*1.55*t,e.r*0.78*t,0,0,TAU); ctx.fill();
-      ring(p.x,p.y,e.r,'#ff2e4c',0.85,2.2);
-      ring(p.x,p.y,e.r*t,e.color,0.9,1.8);
-    }
-
     if(e.type==='telegraph'){
+      // Trận pháp cổ ngữ xoay tròn + Thiên thạch lao từ bầu trời xuống tâm F
       const tier=e.reaction?.tier||1;
       glow(p.x,p.y,e.r*1.6,e.color,0.35*t);
       ring(p.x,p.y,e.r,e.color,.85,2.4);
       ring(p.x,p.y,e.r*(1-t*0.65),'#ffffff',.9,2);
 
+      // Ngôi sao lục giác cổ ngữ xoay trong tâm ngắm
       ctx.save();
       ctx.translate(p.x,p.y); ctx.scale(1.55,0.78); ctx.rotate(state.time*4);
       ctx.strokeStyle=e.color; ctx.lineWidth=1.8;
@@ -2096,6 +1705,7 @@ function drawEffects(){
       }
       ctx.restore();
 
+      // Quả cầu Thiên Thạch / Lõi Năng Lượng lao thẳng từ trên trời xuống tâm trận pháp
       const dropY = p.y - (1-t)*340;
       glow(p.x,dropY,48+tier*8,e.color,0.85);
       ctx.strokeStyle='#ffffff'; ctx.lineWidth=3;
@@ -2199,9 +1809,8 @@ function renderMini(){
   }
   mx.fillStyle='#ffd166'; mx.fillRect(px-3,py-3,6,6);
   for(const e of state.enemies){
-    mx.fillStyle=e.isBoss?'#ffd166':'#ff2e4c';
-    const sz = e.isBoss ? 7 : 4;
-    mx.fillRect(px+(e.x-state.player.x)*0.12-sz/2, py+(e.y-state.player.y)*0.12-sz/2, sz, sz);
+    mx.fillStyle=e.type==='boss'?'#ff9e44':'#ff2e4c';
+    mx.fillRect(px+(e.x-state.player.x)*0.12, py+(e.y-state.player.y)*0.12, 4,4);
   }
 }
 
@@ -2233,6 +1842,7 @@ function render(){
   drawEffects();
   drawParticles();
 
+  // Hiệu ứng chớp sáng màn hình (Impact Frame) khi chiêu F giáng xuống + Viền tối Vignette kiểu Hades
   if(screenFlash>0.01){
     ctx.save();
     ctx.globalCompositeOperation='lighter';
@@ -2268,3 +1878,278 @@ function icon(k){return '<svg class="skillIcon" viewBox="0 0 36 36" fill="none" 
 
 function sound(kind){
   if(!audioOn)return;
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    audioCtx.resume();
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime;
+    const f={q:170,e:650,r:270,f:95,impact:55}[kind]||200;
+    o.type=kind==='e'?'sine':'sawtooth';
+    o.frequency.setValueAtTime(f,t); o.frequency.exponentialRampToValueAtTime(32,t+.25);
+    g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.001,t+.26);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+.27);
+  }catch{audioOn=false;}
+}
+
+function emit(x,y,color,count,speed){
+  for(let i=0;i<count;i++){
+    const a=rand(0,TAU),v=rand(speed*.2,speed);
+    pushParticle({x,y,z:rand(10,38),vx:Math.cos(a)*v,vy:Math.sin(a)*v,vz:rand(55,185),life:rand(.32,.85),max:.85,size:rand(2,4.8),color:i%3===0?'#fff5c2':color});
+  }
+}
+
+function fitResolution(){
+  const rect=canvas.getBoundingClientRect();
+  const dpr=window.devicePixelRatio||1;
+  renderScale=quality==='low'?1:Math.min(3,Math.max(2,Math.ceil(Math.min(rect.width/W,rect.height/H)*dpr)));
+  canvas.width=W*renderScale; canvas.height=H*renderScale;
+  ctx.imageSmoothingEnabled=false;
+}
+
+function initLab(){
+  state.enemies=[];
+  for(const k in state.player.skillTier) state.player.skillTier[k]=4; // Mặc định bật sẵn Bậc IV trong Phòng thử để chiêm ngưỡng
+  document.querySelectorAll('[data-tier]').forEach(b=>b.classList.toggle('active',b.dataset.tier==='4'));
+  state.player.inventory=Object.fromEntries(Object.keys(colors).map(k=>[k,99]));
+  const spots=[[-115,-105],[-35,-125],[135,-85],[165,75],[-85,120]];
+  spots.forEach(([x,y],i)=>{
+    const en={
+      type:['golem','slime','drone','slime','golem'][i],
+      x,y,hp:9999,maxHp:9999,speed:0,r:16,
+      color:['#e0b77d','#ff6b35','#4df0ff','#ff9248','#a29bfe'][i],
+      drop:'O',armor:0,burn:0,poison:0,slow:0,hitFlash:0,dummy:true
+    };
+    resolveObstacleCollisions(en, en.r);
+    state.enemies.push(en);
+  });
+}
+
+function setupHUD(){
+  const main=document.querySelector('.main');
+  const vit=document.createElement('div'); vit.className='hud vitals';
+  vit.innerHTML='<div class="statcard"><div class="pilotName">NOVA <small id="envArmorBadge">HADES / 3D</small></div><div id="pilotStatus" class="sectionLabel"></div></div>';
+  vit.firstChild.appendChild(document.querySelector('.rightbar > .statcard:nth-child(2)'));
+  main.appendChild(vit);
+  vit.querySelector('.statcard .statcard').style.cssText='padding:0;border:0;background:none;box-shadow:none';
+
+  const dock=document.createElement('div'); dock.className='hud dock';
+  dock.appendChild(document.getElementById('skills')); main.appendChild(dock);
+
+  const load=document.createElement('div'); load.className='hud loadout';
+  load.innerHTML='<div class="sectionLabel">CHAMBER / NẠP NGUYÊN TỐ (TAB ĐỔI HỆ)</div>';
+  load.appendChild(document.getElementById('queueBar'));
+  load.appendChild(document.getElementById('reactionName'));
+  load.appendChild(document.getElementById('elements'));
+  main.appendChild(load);
+
+  const radar=document.createElement('div'); radar.className='hud radar';
+  radar.innerHTML='<div class="statcard"><div class="sectionLabel">RADAR 3D / <span id="threatCount">0</span> MỤC TIÊU</div></div>';
+  radar.firstChild.appendChild(mini); main.appendChild(radar);
+
+  const quick=document.createElement('div'); quick.className='hud quick';
+  quick.innerHTML='<button class="btn" id="configBtn" title="Cài đặt và đổi địa hình">☷ Địa hình & Cài đặt</button>';
+  quick.appendChild(document.getElementById('pauseBtn')); main.appendChild(quick);
+
+  const settings=document.createElement('div'); settings.id='settingsPanel';
+  settings.innerHTML='<div class="sectionLabel">ĐỔI ĐỊA HÌNH 3D</div>';
+  settings.appendChild(document.getElementById('biomes'));
+  settings.insertAdjacentHTML('beforeend','<div class="sectionLabel">CHẤT LƯỢNG ĐỒ HỌA</div><select id="qualitySelect"><option value="high">Hades 3D Cực Cao (Bloom & Ink)</option><option value="low">Tiết kiệm hiệu năng</option></select><button id="audioBtn" class="btn">Âm thanh: tắt</button><div class="sectionLabel">KHO NGUYÊN TỐ</div>');
+  settings.appendChild(document.getElementById('dropList'));
+  settings.insertAdjacentHTML('beforeend','<div class="sectionLabel">ĐẶC TÍNH ĐỊA HÌNH</div><div class="queueHint">• <strong>Thành phố:</strong> Các tòa nhà 3D là vật cản cứng chặn đường đi & đạn bắn.<br>• <strong>Sa mạc:</strong> +25% Giáp, Khiên R & nguyên tố C/Fe/Si +50% bền.<br>• <strong>Biển:</strong> Lửa giảm 50%. Điện (Cu), Băng (Ar), Kiềm (Na) +45% ST.<br>• <strong>Rừng:</strong> Lửa (Q, O) tự động cháy lan giữa quái & tạo bãi lửa.</div><div class="sectionLabel">PHIÊN CHƠI</div>');
+  settings.appendChild(document.getElementById('resetBtn'));
+  settings.appendChild(document.getElementById('shotBtn'));
+  main.appendChild(settings);
+
+  document.getElementById('configBtn').onclick=()=>{
+    if(!state.running)return;
+    settings.classList.toggle('open');
+    if(settings.classList.contains('open')){state.paused=true;keys={};mouse.left=false;}
+    else if(!document.querySelector('.modalWrap.show'))state.paused=false;
+  };
+  document.getElementById('qualitySelect').onchange=e=>{quality=e.target.value;fitResolution();};
+  document.getElementById('audioBtn').onclick=e=>{audioOn=!audioOn;e.target.textContent='Âm thanh: '+(audioOn?'bật':'tắt');if(audioOn)sound('e');};
+
+  const boss=document.createElement('div'); boss.className='bossHUD'; boss.id='bossHUD'; main.appendChild(boss);
+
+  const heat=document.createElement('div'); heat.className='thermalHUD';
+  heat.innerHTML='<span>ĐỊA HÌNH & NHIỆT SẮC</span><b id="heatName"></b><div class="heatSpectrum">'+thermalColors.map(c=>'<i style="--c:'+c[1]+'"></i>').join('')+'</div><small id="heatDesc"></small>';
+  main.appendChild(heat);
+
+  const lab=document.createElement('div'); lab.id='labTools'; lab.hidden=true;
+  lab.innerHTML='<span>BẬC CHIÊU</span>'+[1,2,3,4].map((n,i)=>'<button data-tier="'+n+'" class="'+(n===4?'active':'')+'">'+['I','II','III','IV'][i]+'</button>').join('')+'<select id="labPreset"><option value="cataclysm">💥 SIÊU CHIÊU F • Thiên Thạch Hủy Diệt (F + O + Na)</option><option value="flame">🔥 Đại Đao Lửa Hades (Q + O)</option><option value="electric">⚡ Pháo Điện Từ Zeus (E + Cu)</option><option value="shield">🛡 Khiên Thánh Aegis 3D (R + C)</option><option value="wall">🧱 Pháo Đài Đá 3D (R + Si)</option></select><button id="labCast">Thi triển ngay</button>';
+  main.appendChild(lab);
+
+  lab.querySelectorAll('[data-tier]').forEach(b=>b.onclick=()=>{
+    for(const k in state.player.skillTier)state.player.skillTier[k]=+b.dataset.tier;
+    state.player.shield=0; state.effects=[]; state.projectiles=[];
+    for(const k in state.player.cd)state.player.cd[k]=0;
+    lab.querySelectorAll('[data-tier]').forEach(el=>el.classList.toggle('active',el===b));
+    updatePanels(); canvas.focus();
+  });
+  document.getElementById('labCast').onclick=()=>{
+    const presets={cataclysm:['f',['O','Na']],flame:['q',['O']],electric:['e',['Cu']],shield:['r',['C']],wall:['r',['Si']]};
+    const [k,els]=presets[document.getElementById('labPreset').value];
+    state.queue=els.slice(); state.player.cd[k]=0; state.selectedSkill=k; state.player.energy=state.player.maxEnergy;
+    skillCast(k); canvas.focus();
+  };
+  window.addEventListener('resize',fitResolution); fitResolution();
+}
+
+function updatePanels(){
+  const p=state.player;
+  document.getElementById('biomeName').textContent=biomes[state.biome].title;
+  document.getElementById('envPassiveBanner').textContent=biomes[state.biome].passive;
+  document.getElementById('envArmorBadge').textContent=state.biome==='city'?'VẬT CẢN TÒA NHÀ':state.biome==='desert'?'GIÁP SA MẠC +25%':state.biome==='coast'?'MẶT BIỂN (-50% LỬA)':'RỪNG (CHÁY LAN)';
+  document.getElementById('modeName').textContent=state.mode==='lab'?'Phòng thử 3D':state.mode==='training'?'Huấn luyện':'Vô cực';
+  document.getElementById('waveTag').textContent=state.wave;
+  document.getElementById('scoreTag').textContent=state.score;
+  document.getElementById('bestScoreTag').textContent='Best '+state.best;
+
+  document.getElementById('hpBar').style.width=clamp(p.hp/p.maxHp*100,0,100)+'%';
+  document.getElementById('enBar').style.width=clamp(p.energy/p.maxEnergy*100,0,100)+'%';
+  document.getElementById('shBar').style.width=clamp(p.shield/p.maxShield*100,0,100)+'%';
+  document.getElementById('xpBar').style.width=clamp(p.xp/p.xpNeed*100,0,100)+'%';
+
+  document.getElementById('hpText').textContent=Math.max(0,Math.floor(p.hp))+' / '+p.maxHp;
+  document.getElementById('enText').textContent=Math.floor(p.energy)+' / '+p.maxEnergy;
+  document.getElementById('shText').textContent=Math.floor(p.shield)+' / '+p.maxShield;
+  document.getElementById('xpText').textContent=Math.floor(p.xp)+' / '+p.xpNeed;
+
+  document.getElementById('pilotStatus').textContent='LV '+p.level+' / '+(p.dashCd>0?'LƯỚT '+p.dashCd.toFixed(1)+'s':'LƯỚT SẴN SÀNG');
+  document.getElementById('threatCount').textContent=state.enemies.length;
+  document.getElementById('missionLabel').textContent=state.mode==='lab'?'PHÒNG THỬ HADES 3D • Nhấn phím F hoặc nút "Thi triển ngay" để giáng Thiên Thạch!':state.mode==='training'?'Huấn luyện • Hạ 8 quái ('+state.kills+'/8) và lên cấp 1 lần':'Vô cực • Đợt '+state.wave+' / Hạ hết quái để tiến bước';
+
+  document.getElementById('bankTag').textContent=banks[state.bank].name;
+  document.getElementById('q1').textContent=state.queue[0]||'—';
+  document.getElementById('q2').textContent=state.queue[1]||'—';
+
+  const sk=document.getElementById('skills');
+  if(!sk.childElementCount){
+    for(const [k,v] of Object.entries(skillDefs)){
+      const d=document.createElement('button'); d.className='skill'; d.dataset.skill=k;
+      d.innerHTML=icon(k)+'<span class="key">'+k.toUpperCase()+'</span><h4>'+v.name+'</h4><div class="cd" id="cd_'+k+'">Sẵn sàng</div><span class="tierPips"><i></i><i></i><i></i><i></i></span><div class="cooldownTrack"></div>';
+      d.onclick=()=>{state.selectedSkill=k; updatePanels(); canvas.focus();};
+      sk.appendChild(d);
+    }
+  }
+  const heat=getReaction('q',state.queue).heat;
+  document.getElementById('heatName').textContent=heatLabels[heat-1];
+  document.getElementById('heatName').style.color=thermalColors[heat-1][1];
+  document.getElementById('heatDesc').textContent=biomes[state.biome].modDesc;
+  document.querySelectorAll('.heatSpectrum i').forEach((n,i)=>n.classList.toggle('on',i<heat));
+
+  [...sk.children].forEach(el=>{
+    const k=el.dataset.skill, tier=p.skillTier[k];
+    el.classList.toggle('active',state.selectedSkill===k);
+    el.style.setProperty('--skill',k==='q'?thermalColors[heat-1][1]:skillDefs[k].color);
+    document.getElementById('cd_'+k).textContent=p.cd[k]>0?('Hồi '+p.cd[k].toFixed(1)+'s'):'Sẵn sàng';
+    el.querySelector('.cooldownTrack').style.transform='scaleX('+(1-p.cd[k]/skillDefs[k].baseCd)+')';
+    Array.from(el.querySelector('.tierPips').children).forEach((pip,i)=>pip.classList.toggle('on',i<tier));
+  });
+
+  const r=document.getElementById('reactionName');
+  if(state.queue.length){
+    const preview = getReaction(state.selectedSkill, state.queue);
+    r.textContent = preview.envTag ? (state.queue.join('+') + ' → ' + preview.envTag) : preview.name;
+  } else {
+    r.textContent = state.time<state.reactionUntil ? state.lastReaction : 'Phím 1–4 nạp • Phím F Siêu Chiêu Cuối';
+  }
+
+  const elBox=document.getElementById('elements'); elBox.innerHTML='';
+  banks[state.bank].els.forEach((el,idx)=>{
+    const b=document.createElement('button'); b.className='elBtn';
+    b.style.borderColor=colors[el]+'88';
+    b.innerHTML='<strong style="color:'+colors[el]+'">'+el+'</strong><small>'+(idx+1)+' • x'+(p.inventory[el]||0)+'</small>';
+    b.onclick=()=>loadElement(idx); elBox.appendChild(b);
+  });
+
+  const drops=document.getElementById('dropList'); drops.innerHTML='';
+  Object.keys(colors).slice(0,9).forEach(el=>{
+    const d=document.createElement('div'); d.className='drop';
+    d.innerHTML='<strong style="color:'+colors[el]+'">'+el+'</strong><div>x'+(p.inventory[el]||0)+'</div>';
+    drops.appendChild(d);
+  });
+
+  document.querySelectorAll('.bio, .b-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.biome===state.biome));
+  const boss=state.enemies.find(e=>e.type==='boss');
+  document.getElementById('bossHUD').innerHTML=boss&&state.mode!=='lab'?'LÕI TITAN / '+Math.ceil(boss.hp)+' HP<div class="bar"><span style="width:'+clamp(boss.hp/boss.maxHp*100,0,100)+'%"></span></div>':'';
+}
+
+function loop(ts){
+  const dt=Math.min(0.033,(ts-last)/1000||0); last=ts;
+  if(state.running&&!state.paused) update(dt);
+  render(); requestAnimationFrame(loop);
+}
+
+document.getElementById('startTraining').onclick=()=>reset('training');
+document.getElementById('startEndless').onclick=()=>reset('endless');
+document.querySelectorAll('[data-start]').forEach(n=>n.onclick=()=>reset(n.dataset.start));
+document.getElementById('howTo').onclick=()=>reset('lab');
+document.getElementById('pauseBtn').onclick=()=>togglePause();
+document.getElementById('resumeBtn').onclick=()=>togglePause();
+document.getElementById('backMenuBtn').onclick=()=>{state.running=false;openModal('startModal');};
+document.getElementById('resetBtn').onclick=()=>reset(state.mode||'training');
+document.getElementById('closeBank').onclick=()=>{hideAllModals(); state.paused=false; canvas.focus();};
+document.getElementById('shotBtn').onclick=()=>{const a=document.createElement('a'); a.download='elemental_battle_hades3d.png'; a.href=canvas.toDataURL(); a.click();};
+
+document.querySelectorAll('.bio, .b-tab').forEach(btn=>btn.onclick=()=>{
+  setBiome(btn.dataset.biome);
+  canvas.focus();
+});
+
+function togglePause(){
+  document.getElementById('settingsPanel')?.classList.remove('open');
+  if(!state.running||document.getElementById('upgradeModal').classList.contains('show'))return;
+  if(document.getElementById('bankModal').classList.contains('show')){hideAllModals();state.paused=false;return;}
+  state.paused=!state.paused;
+  if(state.paused){
+    document.getElementById('pauseTitle').textContent='TẠM DỪNG';
+    document.getElementById('pauseText').textContent='Trận đấu đang tạm dừng.';
+    openModal('pauseModal');
+  } else {hideAllModals(); canvas.focus();}
+}
+
+function openBank(){
+  if(!state.running||state.paused)return;
+  const box=document.getElementById('bankTabs'); box.innerHTML='';
+  banks.forEach((b,i)=>{
+    const d=document.createElement('button'); d.className='bankCard'+(i===state.bank?' active':'');
+    d.innerHTML='<strong>'+b.name+'</strong><div class="chips">'+b.els.map((e,j)=>'<span class="chip" style="color:'+colors[e]+'">'+(j+1)+': '+e+'</span>').join('')+'</div>';
+    d.onclick=()=>{state.bank=i; updatePanels(); hideAllModals(); state.paused=false; canvas.focus();};
+    box.appendChild(d);
+  });
+  openModal('bankModal');
+}
+
+window.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(['tab',' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
+  keys[k]=true; if(e.repeat)return;
+  if(k==='p'||k==='escape'){togglePause(); return;}
+  if(k==='tab'){openBank(); return;}
+  if(state.paused||!state.running)return;
+  if(k==='shift') dash();
+  if(['1','2','3','4'].includes(k)) loadElement(Number(k)-1);
+  if(k==='backspace') clearQueue();
+  if(['q','e','r','f'].includes(k)){state.selectedSkill=k; skillCast(k);}
+  updatePanels();
+});
+window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+
+canvas.addEventListener('mousemove',e=>{
+  const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/W,r.height/H),ox=(r.width-W*scale)/2,oy=(r.height-H*scale)/2;
+  mouse.x=(e.clientX-r.left-ox)/scale; mouse.y=(e.clientY-r.top-oy)/scale;
+});
+canvas.addEventListener('mousedown',e=>{
+  canvas.focus();
+  if(e.button===0){mouse.left=true;baseAttack();}
+  if(e.button===2){mouse.right=true;skillCast(state.selectedSkill);}
+});
+window.addEventListener('mouseup',()=>{mouse.left=false;mouse.right=false;});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+setupHUD();
+state=makeState('city'); initInv(); updatePanels(); openModal('startModal'); canvas.focus(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
