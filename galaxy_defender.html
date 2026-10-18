@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#061525"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>GALAXY CHEM • GALAXY DEFENDER V6.3 • MYTHIC BOSS UI</title>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#061525"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>GALAXY CHEM • GALAXY DEFENDER V6.5 • MYTHIC BOSS & MOBILE PRO</title>
 <style>
 :root{color-scheme:dark;--ink:#d9f5ff;--muted:#83aec8;--cyan:#62e9ff;--orange:#ffb25c;--line:#2a526e;--panel:#0b1b2cf2}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#040d18;color:var(--ink);font:13px "Segoe UI",system-ui,sans-serif}button{font:inherit;cursor:pointer;color:inherit}button:disabled{opacity:.5;cursor:not-allowed}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#040d18;color:var(--ink);font:13px "Segoe UI",system-ui,sans-serif}button{font:inherit;cursor:pointer;color:inherit}button:disabled{opacity:.5;cursor:not-allowed}
 #app{height:100dvh;min-height:0;display:grid;grid-template-rows:64px 52px minmax(0,1fr) 49px;gap:7px;padding:8px;background:radial-gradient(ellipse at 65% 0%,#183c61,#061525 57%,#030812)}
 header,.toolbar,.side,.stage,.footer{border:1px solid var(--line);background:linear-gradient(180deg,#102841f4,#071726f7);box-shadow:0 2px 18px #0008,inset 0 1px #72bfe421;border-radius:12px}
 header,.toolbar,.footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px}header .brand{display:flex;align-items:center;gap:12px;min-width:0}.mark{width:44px;height:44px;border:2px solid #55cfff;border-radius:13px;display:grid;place-items:center;font-size:26px;color:#77edff;text-shadow:0 0 12px #2ce8ff}.brand strong{font-size:21px;letter-spacing:2px;white-space:nowrap}.brand small{display:block;color:#78c0de;letter-spacing:2px;font-size:10px}.headerstat{display:flex;gap:7px;align-items:center}.statPill{padding:8px 10px;border:1px solid #27516a;border-radius:9px;background:#071827;color:#b4dce9;white-space:nowrap}.statPill b{color:#fff}
 .toolbar{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}.tag{font-weight:800;color:#6ee4ff;letter-spacing:1.2px;white-space:nowrap}.spacer{flex:1}.btn{border:1px solid #347597;border-radius:9px;background:linear-gradient(#164361,#0a273d);padding:8px 12px;font-weight:800;white-space:nowrap;transition:filter .15s}.btn:hover{filter:brightness(1.2)}.btn.active{border-color:#89efff;box-shadow:0 0 15px #33dfff40;background:#16536c}.btn.gold{border-color:#ab7137;background:linear-gradient(#69441b,#37220f);color:#ffe8b8}.btn.ghost{background:#0d2437}
-.main{min-height:0;display:grid;grid-template-columns:240px minmax(0,1fr) 255px;gap:8px}.side{padding:11px;min-height:0;overflow-y:auto;scrollbar-width:thin;display:flex;flex-direction:column;gap:9px}.side h3{font-size:13px;letter-spacing:1.5px;color:#9deaff;margin:0 0 7px;text-transform:uppercase}.section{border:1px solid #244963;background:#08192aea;padding:10px;border-radius:10px}.sub{font-size:11px;color:var(--muted);line-height:1.55}.seg{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.bar{height:10px;border-radius:20px;background:#07111b;border:1px solid #24465b;overflow:hidden;margin:5px 0 10px}.bar span{height:100%;display:block;transition:width .18s}.row{display:flex;align-items:center;justify-content:space-between;gap:7px}.row b{font-variant-numeric:tabular-nums}.hp{background:linear-gradient(90deg,#f24c69,#ff956d)}.planet{background:linear-gradient(90deg,#17bda4,#8bfbd2)}.energy{background:linear-gradient(90deg,#327bcf,#87efff)}.xp{background:linear-gradient(90deg,#ffae55,#ffe98e)}
+.main{min-height:0;display:grid;grid-template-columns:240px minmax(0,1fr) 265px;gap:8px}.side{padding:11px;min-height:0;overflow-y:auto;scrollbar-width:thin;display:flex;flex-direction:column;gap:9px}.side h3{font-size:13px;letter-spacing:1.5px;color:#9deaff;margin:0 0 7px;text-transform:uppercase}.section{border:1px solid #244963;background:#08192aea;padding:10px;border-radius:10px}.sub{font-size:11px;color:var(--muted);line-height:1.55}.seg{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.bar{height:10px;border-radius:20px;background:#07111b;border:1px solid #24465b;overflow:hidden;margin:5px 0 10px}.bar span{height:100%;display:block;transition:width .18s}.row{display:flex;align-items:center;justify-content:space-between;gap:7px}.row b{font-variant-numeric:tabular-nums}.hp{background:linear-gradient(90deg,#f24c69,#ff956d)}.planet{background:linear-gradient(90deg,#17bda4,#8bfbd2)}.energy{background:linear-gradient(90deg,#327bcf,#87efff)}.xp{background:linear-gradient(90deg,#ffae55,#ffe98e)}
 .elements{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.el{min-height:56px;border:1px solid var(--color,#39607a);border-radius:8px;background:#0c2032;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px}.el strong{font-size:19px;color:var(--color)}.el small{font-size:10px;color:#9ccada}.load{padding:8px;border:1px solid #315770;background:#091e2f;border-radius:9px;text-align:center;color:#f6dba5;min-height:37px}.skillGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.skill{padding:9px 7px;border:1px solid #2b526d;background:#0b2437;border-radius:9px;text-align:left;min-height:70px}.skill.current{border-color:#73eaff;box-shadow:0 0 12px #4ae4ff30}.skill strong{display:block;color:#e8fbff;font-size:12px}.skill small{display:block;color:#90b5c8;font-size:10px;margin-top:4px}.skill .clock{display:block;color:#ffcd76;margin-top:4px;font-size:10px}
 .stage{position:relative;min-width:0;min-height:0;overflow:hidden;border-color:#38617e;background:#020a14}.stage canvas{display:block;width:100%;height:100%;touch-action:none;outline:0;cursor:crosshair}.stage .label{position:absolute;top:9px;left:9px;padding:7px 10px;border:1px solid #3b7796;background:#061725cd;border-radius:8px;font-size:11px;letter-spacing:1px;color:#99e8ff;pointer-events:none}.stage .badge{position:absolute;top:9px;right:9px;padding:7px 10px;border:1px solid #3b7796;background:#061725cf;border-radius:8px;font-size:11px;color:#b9edff;pointer-events:none}.toast{position:absolute;top:17%;left:50%;transform:translate(-50%,-10px);padding:10px 15px;background:#0a2639ed;border:1px solid #5bd6ec;border-radius:9px;box-shadow:0 0 26px #1dbbed33;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;text-align:center;font-weight:900;z-index:7}.toast.show{opacity:1;transform:translate(-50%,0)}
 .loot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.res{font-size:12px;border:1px solid #2a5671;border-radius:8px;background:#071b2a;padding:7px 3px;text-align:center}.res strong{display:block;font-size:15px}.footer{font-size:11px;color:#9bbdd0}.key{display:inline-grid;place-items:center;border:1px solid #377595;padding:3px 5px;min-width:22px;border-radius:5px;color:#e6ffff;background:#123450;font-weight:800}.controls{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
@@ -23,7 +23,7 @@ header,.toolbar,.footer{display:flex;align-items:center;justify-content:space-be
 .weaponName{font-size:9px;font-weight:900;white-space:nowrap}.weaponLvl{font-size:9px;color:#a6c4ce}.weaponChip.chosen .weaponLvl{color:#fff2b2}
 @media(max-width:1120px){.weaponDock{width:94%}.weaponChip{flex-basis:67px;min-width:67px}}
 
-/* V4: truyền đạt combo và nguy hiểm, không che cảnh chơi */
+/* V4: truyền đạt combo và nguy hiểm */
 .reactionHUD{pointer-events:none;position:absolute;top:48px;left:50%;transform:translateX(-50%);z-index:2;max-width:78%;min-width:240px;padding:8px 14px;background:linear-gradient(90deg,#061528c0,#123956cc,#061528c0);border:1px solid #3c7c99;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 0 22px #007bbb2a;text-align:center;color:#9eefff;font-weight:800;font-size:11px;letter-spacing:.45px;transition:top .25s ease}
 .reactionHUD .reactionSymbol{font-size:18px;color:#f4dc8a}.reactionHUD.combo{border-color:#ffc46e;background:#31200bdc;animation:reactionPulse .3s ease-out}
 .dangerHUD{pointer-events:none;position:absolute;top:103px;left:50%;transform:translateX(-50%);z-index:3;font-size:15px;font-weight:900;letter-spacing:1px;color:#ffb7a2;text-shadow:0 0 15px #ff3d39;white-space:nowrap;opacity:0;transition:opacity .2s,top .25s ease}.dangerHUD.visible{opacity:1}
@@ -37,7 +37,7 @@ header,.toolbar,.footer{display:flex;align-items:center;justify-content:space-be
 #evoBadge .level{color:#ffe6a0;font-size:15px}
 #lootHint{font-size:11px;line-height:1.4;color:#aeeedc;margin-top:9px}
 
-/* V6.1 - TEST LAB: separate QA mode; zero effect on classic runs */
+/* V6.1 - TEST LAB */
 .testSection{border-color:#7752a8;background:linear-gradient(180deg,#211537,#101a30)}
 .testSection summary{cursor:pointer;color:#e9cdff;font-weight:900;letter-spacing:.7px;margin-bottom:8px}
 .testSection label{font-size:11px;color:#b5cfea;display:block;margin-top:9px;margin-bottom:4px}
@@ -50,41 +50,47 @@ header,.toolbar,.footer{display:flex;align-items:center;justify-content:space-be
 #testMsg{font-size:11px;color:#c9eebc;margin-top:8px;min-height:27px}
 @media(max-width:800px){#testModeBadge{top:117px}}
 
-/* === V6.3 MYTHIC BOSS HUD & WARNING BANNER === */
-.bossHud{position:absolute;top:44px;left:50%;transform:translateX(-50%) translateY(-16px);width:min(88%,620px);z-index:5;pointer-events:none;opacity:0;transition:opacity .28s ease,transform .28s cubic-bezier(.2,.9,.3,1);background:linear-gradient(180deg,#081526f2,#050d18f5);border:1px solid var(--boss-color,#ff9e57);border-radius:12px;padding:7px 12px 9px;box-shadow:0 8px 28px #000c,0 0 22px color-mix(in srgb,var(--boss-color,#ff9e57) 35%,transparent)}
+/* === V6.5 PROCEDURAL MYTHIC BOSS HUD & WARNING BANNER === */
+.bossHud{position:absolute;top:40px;left:50%;transform:translateX(-50%) translateY(-16px);width:min(90%,640px);z-index:5;pointer-events:none;opacity:0;transition:opacity .26s ease,transform .26s cubic-bezier(.2,.9,.3,1);background:linear-gradient(180deg,#081526f2,#040b15f6);border:1px solid var(--boss-color,#ff9e57);border-radius:13px;padding:7px 12px 8px;box-shadow:0 8px 28px #000c,0 0 22px color-mix(in srgb,var(--boss-color,#ff9e57) 35%,transparent)}
 .bossHud.on{opacity:1;transform:translateX(-50%) translateY(0)}
-.bossHud.phase2{border-color:#ff4d6d;box-shadow:0 8px 32px #000d,0 0 28px #ff2e5566;animation:bossHudPulse 1.1s infinite alternate}
-@keyframes bossHudPulse{from{filter:drop-shadow(0 0 2px #ff3b5c)}to{filter:drop-shadow(0 0 11px #ff3b5c)}}
-.bossHudTop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
-.bossTitleWrap{display:flex;align-items:center;gap:8px;min-width:0}
-.bossEmblem{width:24px;height:24px;border-radius:7px;border:1px solid var(--boss-color,#ffb36b);background:radial-gradient(circle,color-mix(in srgb,var(--boss-color,#ffb36b) 42%,#091a2b),#06111e);display:grid;place-items:center;font-size:13px;color:#fff;text-shadow:0 0 8px var(--boss-color,#ffb36b);flex-shrink:0}
-.bossName{font-weight:900;font-size:13px;letter-spacing:1.1px;color:#fff;text-shadow:0 0 10px var(--boss-color,#ffb36b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bossHud.phase2{border-color:#ff4d6d;box-shadow:0 8px 30px #000d,0 0 26px #ff2e5577}
+.bossHudTop{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:5px}
+.bossTitleWrap{display:flex;align-items:center;gap:9px;min-width:0}
+.bossAvatarBox{position:relative;width:38px;height:38px;border-radius:10px;border:1.5px solid var(--boss-color,#ffb36b);background:radial-gradient(circle,color-mix(in srgb,var(--boss-color,#ffb36b) 38%,#091a2b),#040c16);display:grid;place-items:center;overflow:hidden;flex-shrink:0}
+.bossAvatarBox svg{width:88%;height:88%;filter:drop-shadow(0 0 4px var(--boss-color,#ffb36b))}
+.bossNameBlock{display:flex;flex-direction:column;min-width:0}
+.bossName{font-weight:900;font-size:13.5px;letter-spacing:1px;color:#fff;text-shadow:0 0 10px var(--boss-color,#ffb36b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bossSkillCast{font-size:10px;font-weight:800;color:#ffd899;letter-spacing:.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bossMeta{display:flex;align-items:center;gap:6px;flex-shrink:0;font-size:10px;font-weight:800}
-.bossPhaseBadge{padding:2px 7px;border-radius:99px;background:#17324a;border:1px solid #4889ad;color:#b8f3ff;letter-spacing:.7px}
+.bossPhaseBadge{padding:2px 7px;border-radius:99px;background:#17324a;border:1px solid #4889ad;color:#b8f3ff;letter-spacing:.6px}
 .bossHud.phase2 .bossPhaseBadge{background:#4d1224;border-color:#ff6b8b;color:#ffd0da}
 .bossHpNumbers{font-variant-numeric:tabular-nums;color:#ffe7c2}
-.bossBarTrack{position:relative;height:12px;border-radius:99px;background:#040a12;border:1px solid #2c536d;overflow:hidden;box-shadow:inset 0 2px 6px #000b}
-.bossBarGhost{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#ffffffaa,#ffd9b8cc);width:100%;transition:width .42s cubic-bezier(.2,.8,.2,1)}
-.bossBarFill{position:relative;height:100%;width:100%;background:linear-gradient(90deg,#ff3b5c,var(--boss-color,#ffa657),#fff2b2);box-shadow:0 0 14px var(--boss-color,#ffa657);transition:width .1s linear}
+.bossBarTrack{position:relative;height:11px;border-radius:99px;background:#040a12;border:1px solid #2c536d;overflow:hidden;box-shadow:inset 0 2px 6px #000b}
+.bossBarGhost{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#ffffffaa,#ffd9b8cc);width:100%;transition:width .38s cubic-bezier(.2,.8,.2,1)}
+.bossBarFill{position:relative;height:100%;width:100%;background:linear-gradient(90deg,#ff3b5c,var(--boss-color,#ffa657),#fff2b2);transition:width .09s linear}
 .bossBarSegments{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(10% - 1px),#040b14b8 calc(10% - 1px),#040b14b8 10%);pointer-events:none}
-.bossSubRow{display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:10px;color:#9ec8dc}
-.bossDebuffs{display:flex;gap:5px;align-items:center}
-.bossTag{padding:1px 6px;border-radius:5px;font-weight:800;font-size:9px;background:#10263a;border:1px solid #316485;color:#bfeaff}
-.bossIntroBanner{position:absolute;top:27%;left:0;right:0;z-index:6;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 10px;background:linear-gradient(90deg,transparent,#2b0714e6 20%,#490b1fe8 50%,#2b0714e6 80%,transparent);border-top:1px solid #ff6a88;border-bottom:1px solid #ff6a88;box-shadow:0 0 35px #ff1e4d55;opacity:0;transform:scaleY(.2);transition:opacity .22s ease,transform .24s cubic-bezier(.18,.9,.3,1)}
+.bossSubRow{display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:10px;color:#9ec8dc;gap:8px}
+.bossSkillGauge{width:100px;height:5px;border-radius:99px;background:#071422;border:1px solid #2d5975;overflow:hidden;flex-shrink:0}
+.bossSkillGauge span{display:block;height:100%;background:linear-gradient(90deg,#5beeff,var(--boss-color,#ffb25c));width:0%}
+.bossDebuffs{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.bossTag{padding:1px 5px;border-radius:5px;font-weight:800;font-size:9px;background:#10263a;border:1px solid #316485;color:#bfeaff}
+.bossIntroBanner{position:absolute;top:24%;left:0;right:0;z-index:6;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:14px;padding:11px 14px;background:linear-gradient(90deg,transparent,#2b0714eb 18%,#490b1ff2 50%,#2b0714eb 82%,transparent);border-top:1px solid #ff6a88;border-bottom:1px solid #ff6a88;box-shadow:0 0 32px #ff1e4d55;opacity:0;transform:scaleY(.2);transition:opacity .22s ease,transform .24s cubic-bezier(.18,.9,.3,1)}
 .bossIntroBanner.on{opacity:1;transform:scaleY(1)}
-.bossIntroWarn{font-size:11px;font-weight:900;letter-spacing:3.5px;color:#ff94ab;text-shadow:0 0 10px #ff2a55}
-.bossIntroTitle{font-size:22px;font-weight:900;letter-spacing:2px;color:#fff5d6;text-shadow:0 0 18px var(--boss-color,#ff9d5c);margin-top:2px;text-align:center}
-.stage.bossActive .reactionHUD{top:114px}
-.stage.bossActive .dangerHUD{top:154px}
+.bossIntroPortrait{width:52px;height:52px;border-radius:12px;border:2px solid var(--boss-color,#ff9d5c);background:#081524;padding:5px;display:grid;place-items:center;box-shadow:0 0 16px var(--boss-color,#ff9d5c);flex-shrink:0}
+.bossIntroPortrait svg{width:100%;height:100%}
+.bossIntroWarn{font-size:10.5px;font-weight:900;letter-spacing:3px;color:#ff94ab;text-shadow:0 0 10px #ff2a55}
+.bossIntroTitle{font-size:20px;font-weight:900;letter-spacing:1.8px;color:#fff5d6;text-shadow:0 0 16px var(--boss-color,#ff9d5c);margin-top:2px}
+.stage.bossActive .reactionHUD{top:118px}
+.stage.bossActive .dangerHUD{top:156px}
 
-/* GALAXY DEFENDER V6.2 • responsive native-like touch game UI */
+/* GALAXY DEFENDER V6.5 • Tối ưu điều khiển cảm ứng Điện Thoại */
 .mobileDock{display:none}
 .mobileIntroHint{display:none;background:#113149;border:1px solid #3486a8;border-radius:10px;color:#c8f8ff;font-size:12px;line-height:1.6;padding:9px;margin:8px 0 12px}
 .mobileOnly{display:none}
 .mobileNav{display:flex;gap:6px;align-items:center}
-.mobileBtn{color:#e9fbff;border:1px solid #3b7894;border-radius:13px;background:linear-gradient(165deg,#1c4761e8,#0b2234ed);min-width:48px;min-height:48px;padding:8px 11px;font:800 13px system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;box-shadow:0 3px 12px #0008,inset 0 1px #7fdff737}
-.mobileBtn:active,.mobileBtn.pressed{transform:scale(.94);background:#227b94;box-shadow:0 0 19px #25d5ff99}
-.mobileBtn.fire{background:radial-gradient(circle at 30% 20%,#ff8a66,#a92939 70%);border:2px solid #ffb190;color:white;box-shadow:0 0 18px #ff4b6048;min-width:86px;min-height:86px;border-radius:100%;font-size:16px}
+.mobileBtn{color:#e9fbff;border:1px solid #3b7894;border-radius:13px;background:linear-gradient(165deg,#1c4761e8,#0b2234ed);min-width:48px;min-height:48px;padding:8px 11px;font:800 13px system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 3px 12px #0008,inset 0 1px #7fdff737}
+.mobileBtn:active,.mobileBtn.pressed{transform:scale(.94);background:#227b94;box-shadow:0 0 16px #25d5ff88}
+.mobileBtn.fire{background:radial-gradient(circle at 30% 20%,#ff8a66,#a92939 70%);border:2px solid #ffb190;color:white;box-shadow:0 0 16px #ff4b6048;min-width:86px;min-height:86px;border-radius:100%;font-size:15px}
 .mobileBtn.dash{background:linear-gradient(160deg,#5538a2,#1b2449);border-color:#a58cff}
 .mobileBtn.skillBtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#ddfaff;min-width:53px;height:49px;font-size:17px;padding:4px 8px}
 .mobileBtn.skillBtn span{font-size:10px;color:#d1edff}
@@ -93,11 +99,11 @@ header,.toolbar,.footer{display:flex;align-items:center;justify-content:space-be
 .mobileTop,.mobileCombat,.mobileElements,.mobileWeaponRow{display:flex;gap:7px;align-items:center;justify-content:space-between}
 .mobileTop{flex-wrap:wrap}.mobileTopStats{flex:1;font-size:11px;min-width:118px;color:#b1e9f5}
 .mobileTopStats strong{color:#fff}
-.mobileCombat{min-height:160px;gap:14px}
-.mobileStick{width:147px;height:147px;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;border-radius:100%;border:2px solid #31718d;background:radial-gradient(circle,#1b506255 7%,#122e4ca6 72%);box-shadow:0 0 22px #38d5ff26,inset 0 0 16px #001d3a8a;touch-action:none;user-select:none}
+.mobileCombat{min-height:154px;gap:12px}
+.mobileStick{width:142px;height:142px;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;border-radius:100%;border:2px solid #31718d;background:radial-gradient(circle,#1b506255 7%,#122e4ca6 72%);box-shadow:inset 0 0 16px #001d3a8a;touch-action:none;user-select:none}
 .mobileStick:before,.mobileStick:after{content:"";position:absolute;background:#55b7d063;pointer-events:none}.mobileStick:before{height:1px;width:85%;top:50%}.mobileStick:after{width:1px;height:85%;left:50%}
-.mobileKnob{position:absolute;width:58px;height:58px;border:2px solid #9aecff;border-radius:100%;background:radial-gradient(circle at 36% 30%,#58d7f2c9,#155478ed);box-shadow:0 0 19px #33d2ff77;display:grid;place-items:center;font-weight:900;font-size:12px;color:#efffff;pointer-events:none;transform:translate(0,0)}
-.mobileActions{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+.mobileKnob{position:absolute;width:56px;height:56px;border:2px solid #9aecff;border-radius:100%;background:radial-gradient(circle at 36% 30%,#58d7f2c9,#155478ed);display:grid;place-items:center;font-weight:900;font-size:11px;color:#efffff;pointer-events:none;transform:translate(0,0)}
+.mobileActions{display:flex;align-items:center;gap:9px;justify-content:flex-end}
 .mobileSkills{display:grid;grid-template-columns:repeat(2,53px);gap:6px}
 .mobileAttack{display:flex;align-items:center;gap:7px}
 .mobileElements{justify-content:center;min-height:46px}
@@ -107,18 +113,18 @@ header,.toolbar,.footer{display:flex;align-items:center;justify-content:space-be
 .mobileHelp{font-size:10px;text-align:center;color:#88b2c6}
 @media (max-width:900px), (pointer:coarse) and (max-width:1200px){
  html,body{height:100%;overscroll-behavior:none;overflow:hidden}
- #app{height:100dvh;max-height:100dvh;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:5px;padding:max(4px,env(safe-area-inset-top)) max(5px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));scrollbar-width:thin}
- header{flex:0 0 auto;min-height:44px;padding:6px 10px}
- header .brand{gap:7px}header .mark{width:29px;height:29px;font-size:18px;border-radius:8px}
- header .brand strong{font-size:15px;letter-spacing:.5px}header .brand small{font-size:9px;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:270px}
+ #app{height:100dvh;max-height:100dvh;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:4px;padding:max(3px,env(safe-area-inset-top)) max(4px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left));scrollbar-width:none}
+ header{flex:0 0 auto;min-height:40px;padding:5px 9px}
+ header .brand{gap:7px}header .mark{width:28px;height:28px;font-size:17px;border-radius:8px}
+ header .brand strong{font-size:14px;letter-spacing:.5px}header .brand small{font-size:9px;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:250px}
  .headerstat{display:none}
- .toolbar{flex:0 0 auto;min-height:42px;padding:4px 6px;gap:6px;overflow-x:auto}
- .toolbar .btn{padding:6px 9px;min-height:34px;font-size:12px}.toolbar .tag{font-size:12px}
- .main{display:flex;flex:1 0 auto;flex-direction:column;gap:6px;min-height:0;overflow:visible}
+ .toolbar{flex:0 0 auto;min-height:38px;padding:3px 6px;gap:5px;overflow-x:auto}
+ .toolbar .btn{padding:5px 8px;min-height:32px;font-size:11.5px}.toolbar .tag{font-size:11px}
+ .main{display:flex;flex:1 0 auto;flex-direction:column;gap:5px;min-height:0;overflow:visible}
  .stage{order:-2;flex:0 0 auto;width:100%;height:auto;aspect-ratio:1100/640;min-height:0;position:relative;overflow:hidden;border-radius:11px}
  .stage canvas{width:100%;height:100%;object-fit:contain;display:block;touch-action:none}
  .mobileIntroHint{display:block}
- .mobileDock{display:flex;order:-1;flex:1 0 auto;justify-content:space-around;flex-direction:column;gap:8px;padding:9px;border-radius:13px;border:1px solid #2e6082;background:linear-gradient(160deg,#112c43e8,#061526f9);box-shadow:0 2px 15px #0009}
+ .mobileDock{display:flex;order:-1;flex:1 0 auto;justify-content:space-around;flex-direction:column;gap:6px;padding:8px;border-radius:12px;border:1px solid #2e6082;background:linear-gradient(160deg,#112c43e8,#061526f9)}
  .mobileOnly{display:block}
  .side{flex:0 0 auto;max-height:none;overflow:visible;display:none}
  .main.mobileInfoOpen .side{display:flex}
@@ -127,65 +133,64 @@ header,.toolbar,.footer{display:flex;align-items:center;justify-content:space-be
  .main.mobileInfoOpen.mobileTestOpen #testPanel{order:-2}
  .main.mobileInfoOpen .side .section{padding:8px}
  .footer{display:none}
- .weaponDock{overflow-x:auto;scrollbar-width:none;max-width:calc(100% - 8px);bottom:6px}
- .weaponChip{min-width:35px}
- .reactionHUD{max-width:80%;font-size:10px}
- #evoBadge{top:5px;right:5px;left:auto;transform:scale(.73);transform-origin:top right}
- .stage .label{font-size:10px;max-width:48%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .weaponDock{overflow-x:auto;scrollbar-width:none;max-width:calc(100% - 8px);bottom:4px;padding:4px}
+ .weaponChip{min-width:34px;min-height:46px}
+ .reactionHUD{max-width:82%;font-size:9.5px;padding:5px 9px}
+ #evoBadge{top:5px;right:5px;left:auto;bottom:auto;transform:scale(.72);transform-origin:top right}
+ .stage .label{font-size:9.5px;max-width:45%;padding:4px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .stage .badge{display:none}
- .stage #dangerHUD{font-size:11px}
- .bossHud{top:38px;width:min(95%,520px);padding:5px 9px 7px}
- .bossName{font-size:11px}.bossBarTrack{height:9px}.bossIntroTitle{font-size:16px}
- .stage.bossActive .reactionHUD{top:98px}
+ .stage #dangerHUD{font-size:10.5px}
+ .bossHud{top:32px;width:min(96%,500px);padding:4px 8px 6px}
+ .bossAvatarBox{width:28px;height:28px;border-radius:7px}
+ .bossName{font-size:11px}.bossSkillCast{font-size:9px}.bossBarTrack{height:8px}.bossIntroTitle{font-size:14px}.bossIntroPortrait{width:40px;height:40px}
+ .stage.bossActive .reactionHUD{top:94px}
  .modalBackdrop{position:fixed;inset:0;z-index:120;padding:calc(env(safe-area-inset-top) + 7px) 8px calc(env(safe-area-inset-bottom) + 7px);align-items:center;justify-content:center;overflow:auto;background:#030815ed}
  .dialog{width:min(100%,600px);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;padding:13px;border-radius:16px}
- .dialog h2{font-size:21px;line-height:1.15}.dialog p{font-size:12px;margin:7px 0 12px}
+ .dialog h2{font-size:20px;line-height:1.15}.dialog p{font-size:12px;margin:7px 0 12px}
  .cards{display:grid;grid-template-columns:1fr;gap:8px}
  .selectCard{min-height:0;padding:10px;text-align:left}.selectCard h4{font-size:14px;margin:4px 0}.selectCard p{font-size:12px;margin:4px 0}.selectCard .glyph{display:none}
  .bankgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.bank{padding:9px}
  .testGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
- .mobileDock .mobileWeaponRow button{min-height:44px}
+ .mobileDock .mobileWeaponRow button{min-height:40px}
  #testPanel details{max-width:100%}
 }
-@media(max-width:430px){.mobileStick{width:123px;height:123px}.mobileKnob{width:53px;height:53px}.mobileCombat{min-height:132px}.mobileAttack{flex-direction:column}.mobileBtn.fire{min-height:67px;min-width:80px}.mobileBtn.dash{min-height:45px}.mobileSkills{gap:5px}.mobileBtn.skillBtn{min-height:45px;height:46px;min-width:48px}}
+@media(max-width:430px){.mobileStick{width:118px;height:118px}.mobileKnob{width:48px;height:48px}.mobileCombat{min-height:126px}.mobileAttack{flex-direction:column}.mobileBtn.fire{min-height:66px;min-width:78px}.mobileBtn.dash{min-height:42px}.mobileSkills{gap:5px}.mobileBtn.skillBtn{min-height:44px;height:44px;min-width:46px}}
 @media (max-width:900px) and (orientation:landscape), (pointer:coarse) and (orientation:landscape) and (max-width:1200px){
  #app{height:100dvh;overflow:hidden;padding:2px max(4px,env(safe-area-inset-right)) 2px max(4px,env(safe-area-inset-left))}
- header{display:none}.toolbar{min-height:36px;max-height:38px;background:#0b1f32e8}
- .toolbar .btn{padding:4px 8px;font-size:11px;min-height:30px}
+ header{display:none}.toolbar{min-height:34px;max-height:36px;background:#0b1f32e8}
+ .toolbar .btn{padding:3px 7px;font-size:10.5px;min-height:28px}
  .main{flex:1;position:relative;min-height:0;overflow:hidden}
  .stage{order:0;width:100%;height:100%;aspect-ratio:auto;flex:1}
  .stage canvas{object-fit:contain}
  .mobileDock{order:0;position:absolute;inset:0;z-index:12;display:block;flex:none;pointer-events:none;border:0;background:transparent;box-shadow:none;padding:3px}
  .mobileDock button,.mobileDock .mobileStick{pointer-events:auto}
  .mobileTop{position:absolute;right:7px;top:5px;gap:4px;max-width:57%;justify-content:flex-end}
- .mobileTopStats{display:none}.mobileTop .mobileBtn{min-width:40px;min-height:37px;padding:4px 7px;font-size:10px}
+ .mobileTopStats{display:none}.mobileTop .mobileBtn{min-width:38px;min-height:34px;padding:3px 6px;font-size:10px}
  .mobileCombat{position:absolute;left:6px;right:6px;bottom:5px;min-height:0;display:flex;justify-content:space-between}
- .mobileStick{width:112px;height:112px}.mobileKnob{width:45px;height:45px}
- .mobileBtn.fire{min-width:72px;min-height:72px;font-size:13px}
- .mobileBtn.skillBtn{min-width:43px;height:41px;min-height:41px;font-size:12px}
- .mobileSkills{grid-template-columns:repeat(2,43px);gap:4px}.mobileActions{gap:5px}
- .mobileElements{position:absolute;bottom:2px;left:50%;width:min(45%,360px);transform:translateX(-50%);gap:3px;min-height:0}
- .mobileElements .mobileBtn{min-height:36px;padding:4px 3px;font-size:12px;border-radius:8px}
+ .mobileStick{width:108px;height:108px;opacity:.88}.mobileKnob{width:44px;height:44px}
+ .mobileBtn.fire{min-width:70px;min-height:70px;font-size:13px;opacity:.92}
+ .mobileBtn.skillBtn{min-width:42px;height:40px;min-height:40px;font-size:12px;opacity:.9}
+ .mobileSkills{grid-template-columns:repeat(2,42px);gap:4px}.mobileActions{gap:5px}
+ .mobileElements{position:absolute;bottom:2px;left:50%;width:min(44%,340px);transform:translateX(-50%);gap:3px;min-height:0}
+ .mobileElements .mobileBtn{min-height:34px;padding:3px 3px;font-size:11.5px;border-radius:8px;opacity:.9}
  .mobileElements small{display:none!important}
- .mobileWeaponRow{position:absolute;top:5px;left:5px;width:35%;justify-content:flex-start;gap:3px}
- .mobileWeaponRow .mobileBtn{min-width:34px;min-height:33px;padding:2px 5px}
- #mobileWeaponName{min-width:0;font-size:10px}
+ .mobileWeaponRow{position:absolute;top:5px;left:5px;width:32%;justify-content:flex-start;gap:3px}
+ .mobileWeaponRow .mobileBtn{min-width:32px;min-height:31px;padding:2px 5px}
+ #mobileWeaponName{min-width:0;font-size:9.5px}
  .mobileHelp{display:none}
  .side{display:none!important}
- .main.mobileInfoOpen .side{display:block!important;position:fixed;inset:40px 8px 8px;z-index:110;max-height:calc(100dvh - 48px);overflow:auto;background:#0b1c2cfb}
+ .main.mobileInfoOpen .side{display:block!important;position:fixed;inset:38px 8px 8px;z-index:110;max-height:calc(100dvh - 46px);overflow:auto;background:#0b1c2cfb}
  .main.mobileInfoOpen .side:last-of-type{display:none!important}
  .main.mobileInfoOpen.mobileTestOpen .side:first-of-type{display:none!important}
  .main.mobileInfoOpen.mobileTestOpen .side:last-of-type{display:block!important}
- .weaponDock{display:none}
- #evoBadge,.reactionHUD{display:none}
- .stage .label{top:5px;left:40%;max-width:28%;font-size:9px}
- .bossHud{top:4px;width:min(54%,400px);padding:4px 8px 5px}
- .bossSubRow{display:none}.bossBarTrack{height:7px}
+ .weaponDock,#evoBadge,.reactionHUD,.stage .label{display:none}
+ .bossHud{top:3px;width:min(50%,390px);padding:3px 8px 4px}
+ .bossAvatarBox{width:24px;height:24px}.bossSubRow{display:none}.bossBarTrack{height:6px}
 }
-@media (max-width:365px){.mobileCombat{gap:6px}.mobileStick{width:102px;height:102px}.mobileKnob{width:46px;height:46px}.mobileBtn.skillBtn{min-width:39px;height:42px;min-height:42px;padding:2px 4px}.mobileSkills{grid-template-columns:repeat(2,39px)}.mobileBtn.fire{min-width:65px;min-height:65px}.mobileActions{gap:5px}.mobileBtn.elementBtn{font-size:13px}}
+@media (max-width:365px){.mobileCombat{gap:6px}.mobileStick{width:100px;height:100px}.mobileKnob{width:44px;height:44px}.mobileBtn.skillBtn{min-width:39px;height:41px;min-height:41px;padding:2px 4px}.mobileSkills{grid-template-columns:repeat(2,39px)}.mobileBtn.fire{min-width:64px;min-height:64px}.mobileActions{gap:5px}.mobileBtn.elementBtn{font-size:13px}}
 @media(prefers-reduced-motion:reduce){.mobileBtn{transition:none!important}}
 </style></head><body>
-<div id="app"><header><div class="brand"><div class="mark">G</div><div><strong>GALAXY CHEM</strong><small>ELEMENTAL ARCADE / GALAXY DEFENDER V6.3 · MYTHIC BOSS UI</small></div></div><div class="headerstat"><div class="statPill">HÀNH TINH <b id="hPlanet">100%</b></div><div class="statPill">ĐỢT <b id="hWave">01</b></div><div class="statPill">ĐIỂM <b id="hScore">0</b></div></div></header>
+<div id="app"><header><div class="brand"><div class="mark">G</div><div><strong>GALAXY CHEM</strong><small>ELEMENTAL ARCADE / GALAXY DEFENDER V6.5 · MYTHIC MECHA BOSS & MOBILE PRO</small></div></div><div class="headerstat"><div class="statPill">HÀNH TINH <b id="hPlanet">100%</b></div><div class="statPill">ĐỢT <b id="hWave">01</b></div><div class="statPill">ĐIỂM <b id="hScore">0</b></div></div></header>
 <div class="toolbar"><span class="tag">🚀 GALAXY DEFENDER</span><button class="btn active" id="tut">★ Làm quen</button><button class="btn" id="endless">∞ Vô cực</button><button class="btn ghost" id="testStart">🧪 Test</button><span class="spacer"></span><button class="btn ghost" id="openBanks">◈ BẢNG NGUYÊN TỐ · TAB</button><button class="btn ghost" id="pause">Ⅱ Dừng</button><button class="btn ghost" id="fullscreen">⛶ Toàn màn hình</button><button class="btn gold" id="restart">↻ Chơi lại</button></div>
 <div class="main">
 <aside class="side">
@@ -199,8 +204,11 @@ header,.toolbar,.footer{display:flex;align-items:center;justify-content:space-be
 <div id="bossHud" class="bossHud" aria-live="polite">
   <div class="bossHudTop">
     <div class="bossTitleWrap">
-      <div class="bossEmblem" id="bossEmblem">♛</div>
-      <div class="bossName" id="bossName">MYTHIC BOSS</div>
+      <div class="bossAvatarBox" id="bossAvatarBox"></div>
+      <div class="bossNameBlock">
+        <div class="bossName" id="bossName">MYTHIC BOSS</div>
+        <div class="bossSkillCast" id="bossSkillCast">⚡ TUYỆT KỸ: ĐANG TỤ NĂNG LƯỢNG</div>
+      </div>
     </div>
     <div class="bossMeta">
       <span class="bossPhaseBadge" id="bossPhaseBadge">PHASE I</span>
@@ -214,15 +222,19 @@ header,.toolbar,.footer{display:flex;align-items:center;justify-content:space-be
   </div>
   <div class="bossSubRow">
     <span id="bossPatternText">KIỂU ĐẠN · MYTHIC</span>
+    <div class="bossSkillGauge" title="Thanh nộ tuyệt kỹ của Boss"><span id="bossSkillBar"></span></div>
     <div class="bossDebuffs" id="bossDebuffs"></div>
   </div>
 </div>
 <div id="bossIntroBanner" class="bossIntroBanner" aria-hidden="true">
-  <div class="bossIntroWarn" id="bossIntroWarn">⚠ WARNING · THỰC THỂ THẦN THOẠI XUẤT HIỆN ⚠</div>
-  <div class="bossIntroTitle" id="bossIntroTitle">RA · VƯƠNG NHẬT DIỆM</div>
+  <div id="bossIntroPortrait" class="bossIntroPortrait"></div>
+  <div>
+    <div class="bossIntroWarn" id="bossIntroWarn">⚠ WARNING · THỰC THỂ THẦN THOẠI XUẤT HIỆN ⚠</div>
+    <div class="bossIntroTitle" id="bossIntroTitle">RA · VƯƠNG NHẬT DIỆM</div>
+  </div>
 </div>
 <div class="weaponDock" id="weaponDock" aria-label="Chọn vũ khí"></div><div class="toast" id="toast"></div><div id="testModeBadge" hidden>🧪 TEST LAB · KỶ LỤC TẮT</div>
-<div class="modalBackdrop on" id="startModal"><div class="dialog"><h2>🚀 GALAXY DEFENDER V6.3 · MYTHIC BOSS UI</h2><p>Bảo vệ hành tinh Galaxy Chem trong đấu trường không gian bán 3D. Bắn hạ tàu địch để nhặt hộp súng, mở 8 kiểu hỏa lực và nâng cấp đạn, đồng thời kết hợp nguyên tố để tạo phản ứng.</p><div class="mobileIntroHint">📱 <b>Điện thoại:</b> dùng joystick bên trái, giữ nút <b>BẮN</b>, chạm kỹ năng E/R/F, chọn nguyên tố 1–4 và đổi súng ◀ ▶. <b>Xoay ngang</b> để có chiến trường rộng hơn; nút ☰ INFO mở Test Lab và chỉ số.</div><div class="cards"><button class="selectCard" data-start="tutorial"><div class="glyph">★</div><h4>Màn 1 · Làm quen</h4><p>Học đổi súng Z/X, nhặt hộp vũ khí, kết hợp nguyên tố và chọn nâng cấp tự động.</p><small>Thử trước, chiến đấu sau →</small></button><button class="selectCard" data-start="endless"><div class="glyph">∞</div><h4>Màn 2 · Vô cực</h4><p>60 giây mỗi khu vực, boss thần thoại ngẫu nhiên với giao diện & hình thái riêng; thắng để sang bản đồ mới.</p><small>Sống sót càng lâu càng tốt →</small></button><button class="selectCard" data-start="test"><div class="glyph">🧪</div><h4>Màn 3 · TEST LAB</h4><p>Chọn boss/map, nhảy khu 5, mở súng LV5, bất tử, tăng tốc và thử ngay trận đánh boss.</p><small>Không lưu kỷ lục · Chế độ kiểm thử →</small></button></div></div></div>
+<div class="modalBackdrop on" id="startModal"><div class="dialog"><h2>🚀 GALAXY DEFENDER V6.5 · MYTHIC BOSS & MOBILE PRO</h2><p>Bảo vệ hành tinh Galaxy Chem trong đấu trường không gian bán 3D. Bắn hạ tàu địch để nhặt hộp súng, mở 8 kiểu hỏa lực và đối đầu 26 Boss Cơ Khí Thần Thoại được thiết kế đa lớp kèm tuyệt kỹ riêng.</p><div class="mobileIntroHint">📱 <b>Tối ưu Điện thoại:</b> dùng Joystick trái để bay, giữ nút <b>BẮN</b> (tự động khóa mục tiêu gần nhất), chạm E/R/F để tung chiêu và nút <b>LƯỚT</b> để né tuyệt kỹ Boss. <b>Xoay ngang màn hình</b> để chiến đấu mượt nhất!</div><div class="cards"><button class="selectCard" data-start="tutorial"><div class="glyph">★</div><h4>Màn 1 · Làm quen</h4><p>Học đổi súng Z/X, nhặt hộp vũ khí, kết hợp nguyên tố và chọn nâng cấp tự động.</p><small>Thử trước, chiến đấu sau →</small></button><button class="selectCard" data-start="endless"><div class="glyph">∞</div><h4>Màn 2 · Vô cực</h4><p>60 giây mỗi khu vực, 26 Boss Cơ Khí Thần Thoại với hình thái & tuyệt kỹ riêng; thắng để sang bản đồ mới.</p><small>Sống sót càng lâu càng tốt →</small></button><button class="selectCard" data-start="test"><div class="glyph">🧪</div><h4>Màn 3 · TEST LAB</h4><p>Chọn bất kỳ Boss nào (kể cả Rồng Vũ Trụ 7 đốt), bấm thử Tuyệt kỹ Boss và mở full súng LV5 ngay lập tức.</p><small>Không lưu kỷ lục · Chế độ kiểm thử →</small></button></div></div></div>
 <div class="modalBackdrop" id="bankModal"><div class="dialog"><h2>◈ BỐN BẢNG NGUYÊN TỐ</h2><p>Chọn một bảng để gán bốn ô nguyên tố cho các phím 1–4. Có thể nạp liên tiếp hai nguyên tố để kết hợp trước khi tung kỹ năng.</p><div class="bankgrid" id="bankGrid"></div><div style="margin-top:14px"><button class="btn" id="closeBank">Đóng · Tab</button></div></div></div>
 <div class="modalBackdrop" id="upgradeModal"><div class="dialog"><h2>⬆ LÊN CẤP · CHỌN NÂNG CẤP</h2><p id="upgradeReason">Thời gian đã dừng. Chọn một thẻ để tiếp tục.</p><div class="cards" id="upgradeCards"></div></div></div>
 <div class="modalBackdrop" id="pauseModal"><div class="dialog"><h2 id="pauseTitle">Ⅱ TẠM DỪNG</h2><p id="pauseText">Bạn có thể tiếp tục, đổi vùng không gian hoặc bắt đầu lại.</p><div id="sectors"></div><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px"><button class="btn active" id="resume">▶ Tiếp tục</button><button class="btn" id="toMenu">↩ Menu</button></div></div></div>
@@ -250,27 +262,28 @@ header,.toolbar,.footer{display:flex;align-items:center;justify-content:space-be
   </div>
   <div class="mobileElements" id="mobileElements" aria-label="Bốn ô nguyên tố"></div>
   <div class="mobileWeaponRow"><button class="mobileBtn" id="mobilePrev" aria-label="Súng trước">◀</button><span id="mobileWeaponName">PHOTON LV1</span><button class="mobileBtn" id="mobileNext" aria-label="Súng sau">▶</button></div>
-  <div class="mobileHelp">Giữ BẮN để bắn liên tục · Joystick lái · Chạm chiến trường để chọn hướng ngắm · Xoay ngang để có không gian chơi lớn hơn</div>
+  <div class="mobileHelp">Giữ BẮN để tự khóa mục tiêu · Joystick lái · Nút LƯỚT để né cột sấm/laser của Boss · Xoay ngang để mở rộng chiến trường</div>
 </div>
 <aside class="side"><div class="section"><h3>🔫 KHO VŨ KHÍ · <span id="weaponCounter">3/8</span></h3><div class="row"><strong id="activeWeapon" style="color:#9df2ff;font-size:16px">PHOTON · LV1</strong></div><div id="weaponHint" class="sub" style="margin-top:7px">Z/X đổi súng · Nhặt hộp súng để tăng cấp</div><div id="lootHint">↓ Vật phẩm rơi thẳng: 🟢 sửa hành tinh · ❤ hồi HP · 🛡 giáp · 🔋 năng lượng · 🔫 đổi súng</div></div><div class="section"><h3>⚡ Kỹ năng đang trang bị</h3><div id="skillGrid" class="skillGrid"></div><div class="sub" style="margin-top:7px">Chuột phải: dùng lại chiêu đang chọn.</div></div><div class="section"><h3>🧪 HỆ NGUYÊN TỐ V5 · 3 VAI TRÒ</h3><div class="sub"><b style="color:#ffd69c">KIM LOẠI • HỒI PHỤC / GIÁP</b><br>Fe tăng giáp · Mg hồi HP · Cu hồi khiên · Au sửa hành tinh · Na phản lực phòng thủ<br><br><b style="color:#8deeff">KHÍ • CHẤT LƯỢNG ĐẠN</b><br>H tăng tầm/xuyên · O tăng nhiệt · N tăng đạn · Cl gây ăn mòn · He tăng tốc · Ne phát sáng · Ar ổn định<br><br><b style="color:#b6d6ff">VẬT LIỆU • KỸ THUẬT</b><br>C tạo khiên · Si xuyên giáp · S tạo bụi cháy</div><div class="sub" style="margin-top:8px;color:#ffe0ab">Fe + O: đạn nhiệt xuyên giáp · Na + Cl: vụ nổ ăn mòn · H + O: Solar Overdrive.<br>Cơ chế hư cấu dành cho trò chơi.</div></div>
 <div class="section testSection" id="testPanel" hidden>
 <details open><summary>🧪 TEST LAB · BẢNG KIỂM THỬ</summary>
-<div class="sub">Chỉ xuất hiện trong chế độ Test. Các công cụ này không làm thay đổi chế độ Vô cực.</div>
+<div class="sub">Chỉ xuất hiện trong chế độ Test. Thử ngay 6 hình thái Boss Cơ Khí Thần Thoại & tuyệt kỹ riêng.</div>
 <label for="testSector">Bản đồ vũ trụ</label><select id="testSector"></select>
 <label for="testStage">Khu vực / cấp độ khó (1–18)</label><input id="testStage" type="number" min="1" max="18" value="1"/>
-<label for="testBoss">Boss (5 mỗi map + Rồng Hư Không)</label><select id="testBoss"></select>
+<label for="testBoss">Chọn Boss (5 mỗi map + Siêu Rồng 7 Đốt)</label><select id="testBoss"></select>
 <label for="testSpeed">Tốc độ game</label><select id="testSpeed"><option value="1">×1 · Bình thường</option><option value="2">×2 · Nhanh</option><option value="4">×4 · Siêu tốc</option></select>
 <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="testGod"/> Bất tử (tàu + hành tinh)</label>
 <div class="testGrid">
 <button class="btn" id="testApply">🌌 Đổi map / khu</button><button class="btn gold" id="testBossNow">⚠ Gọi boss</button>
-<button class="btn" id="testTimer">⏩ Đến mốc 60s</button><button class="btn" id="testKillBoss">⚔ Hạ boss</button>
-<button class="btn" id="testNextMap">🔀 Qua khu mới</button><button class="btn" id="testWave">👾 Gọi 5 quái</button>
-<button class="btn" id="testAllWeapons">🔓 Tất cả súng</button><button class="btn gold" id="testMaxWeapons">💥 8 súng LV5</button>
-<button class="btn" id="testElements">🧪 +99 nguyên tố</button><button class="btn" id="testUpgrade">⬆ Chọn nâng cấp</button>
-<button class="btn" id="testHeal">💚 Hồi đầy HP</button><button class="btn" id="testClear">🧹 Dọn đạn/quái</button>
+<button class="btn gold" id="testBossSkill">🔥 Tung tuyệt kỹ Boss</button><button class="btn" id="testKillBoss">⚔ Hạ boss</button>
+<button class="btn" id="testTimer">⏩ Đến mốc 60s</button><button class="btn" id="testNextMap">🔀 Qua khu mới</button>
+<button class="btn" id="testWave">👾 Gọi 5 quái</button><button class="btn" id="testAllWeapons">🔓 Tất cả súng</button>
+<button class="btn gold" id="testMaxWeapons">💥 8 súng LV5</button><button class="btn" id="testElements">🧪 +99 nguyên tố</button>
+<button class="btn" id="testUpgrade">⬆ Chọn nâng cấp</button><button class="btn" id="testHeal">💚 Hồi đầy HP</button>
+<button class="btn" id="testClear" style="grid-column:span 2">🧹 Dọn đạn/quái & Reset</button>
 </div><div id="testMsg" aria-live="polite">Sẵn sàng kiểm thử.</div>
 </details></div>
-<div class="section"><h3>🌠 Nhịp chiến đấu</h3><div class="sub" id="combatStats">Đang chờ xuất phát...</div></div><div class="section"><h3>🎮 Chế độ chất lượng</h3><div class="seg"><button class="btn active" id="balanced">Cân bằng</button><button class="btn" id="low">Nhẹ</button></div><div class="sub" style="margin-top:6px">Có thể giảm lượng hạt nếu máy yếu.</div></div></aside>
+<div class="section"><h3>🌠 Nhịp chiến đấu</h3><div class="sub" id="combatStats">Đang chờ xuất phát...</div></div><div class="section"><h3>🎮 Chế độ chất lượng</h3><div class="seg"><button class="btn active" id="balanced">Cân bằng</button><button class="btn" id="low">Nhẹ (Mobile)</button></div><div class="sub" style="margin-top:6px">Tự động tối ưu GPU khi chơi trên điện thoại.</div></div></aside>
 </div>
 <div class="footer"><div class="controls"><span class="key">WASD</span> Bay <span class="key">L-CLICK</span> Bắn <span class="key">SHIFT</span> Né <span class="key">Z/X</span> Đổi súng <span class="key">Q E R F</span> Kỹ năng</div><div class="controls"><span class="key">1–4</span> Nguyên tố <span class="key">TAB</span> Đổi bảng <span class="key">P</span> Tạm dừng</div></div></div>
 <script>
@@ -281,14 +294,49 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a),
 const col={H:'#75e9ff',O:'#fff1ab',Fe:'#cfb68e',C:'#93d8f8',Na:'#ffa652',Cl:'#7af59a',Cu:'#dda079',Si:'#cbafff',N:'#b9ccff',S:'#f9de77',Mg:'#e2d7c6',Ar:'#b7a6fa',Au:'#ffdf7c',He:'#ffb9e9',Ne:'#ffa5d7',U:'#b6f777'};
 const banks=[{name:'I · CƠ BẢN',els:['H','O','Fe','C']},{name:'II · PHẢN ỨNG',els:['Na','Cl','Cu','Si']},{name:'III · NĂNG LƯỢNG',els:['N','S','Mg','Ar']},{name:'IV · HIẾM',els:['Au','He','Ne','U']}];
 const sectors=[{name:'Vành đai Sao Thổ',primary:'#66d5ff',secondary:'#162f65',haze:'#0b2a50'},{name:'Tinh vân Orion',primary:'#dd9cff',secondary:'#4c1c79',haze:'#25134f'},{name:'Mưa sao băng Perseid',primary:'#ffbf78',secondary:'#4d273c',haze:'#38243c'},{name:'Thiên hà Tiên Nữ',primary:'#8df4b8',secondary:'#103d49',haze:'#081e33'},{name:'Không gian Liên Thiên Hà',primary:'#ff85cf',secondary:'#481a66',haze:'#150725'}];
+
+// === AVATAR SVG NỘI TẠI CHO TỪNG HỆ BOSS (KHÔNG CẦN TẢI MẠNG, SIÊU NHẸ CHO MOBILE) ===
+function getBossSvgPortrait(pattern,color){
+ const svgs={
+  sun:`<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="6 4"/><polygon points="32,4 39,20 56,14 46,29 60,38 43,42 48,58 32,47 16,58 21,42 4,38 18,29 8,14 25,20" fill="${color}" fill-opacity="0.35" stroke="${color}" stroke-width="2"/><polygon points="32,14 46,32 32,50 18,32" fill="#2b1708" stroke="#fff3b8" stroke-width="2"/><circle cx="32" cy="32" r="7" fill="#fff"/></svg>`,
+  fan:`<svg viewBox="0 0 64 64"><polygon points="8,18 22,12 26,46 12,54" fill="#17304c" stroke="${color}" stroke-width="2"/><polygon points="56,18 42,12 38,46 52,54" fill="#17304c" stroke="${color}" stroke-width="2"/><polygon points="32,6 48,22 42,54 32,60 22,54 16,22" fill="#0e2238" stroke="${color}" stroke-width="2.2"/><polygon points="32,14 40,28 32,46 24,28" fill="${color}" stroke="#fff" stroke-width="1.5"/></svg>`,
+  snipe:`<svg viewBox="0 0 64 64"><polygon points="2,28 26,18 22,42 10,48" fill="#162c46" stroke="${color}" stroke-width="2"/><polygon points="62,28 38,18 42,42 54,48" fill="#162c46" stroke="${color}" stroke-width="2"/><polygon points="32,2 40,24 36,60 32,54 28,60 24,24" fill="#1f3a5c" stroke="#fff" stroke-width="2"/><circle cx="32" cy="28" r="6" fill="${color}"/><line x1="32" y1="2" x2="32" y2="62" stroke="${color}" stroke-width="2"/></svg>`,
+  storm:`<svg viewBox="0 0 64 64"><rect x="14" y="14" width="36" height="36" rx="6" transform="rotate(45 32 32)" fill="#1d183b" stroke="${color}" stroke-width="2.2"/><circle cx="10" cy="32" r="5" fill="${color}"/><circle cx="54" cy="32" r="5" fill="${color}"/><circle cx="32" cy="10" r="5" fill="${color}"/><circle cx="32" cy="54" r="5" fill="${color}"/><polygon points="35,18 24,33 33,33 29,46 40,30 31,30" fill="#fff"/></svg>`,
+  rush:`<svg viewBox="0 0 64 64"><polygon points="6,12 26,22 22,52 8,38" fill="#3d1722" stroke="${color}" stroke-width="2"/><polygon points="58,12 38,22 42,52 56,38" fill="#3d1722" stroke="${color}" stroke-width="2"/><polygon points="18,44 26,60 30,44" fill="#ffd8b8"/><polygon points="46,44 38,60 34,44" fill="#ffd8b8"/><polygon points="32,10 46,28 38,48 26,48 18,28" fill="#2b1019" stroke="${color}" stroke-width="2.2"/><circle cx="32" cy="30" r="6" fill="${color}"/></svg>`,
+  dragon:`<svg viewBox="0 0 64 64"><polygon points="2,14 26,24 20,46 6,36" fill="#35113d" stroke="${color}" stroke-width="2"/><polygon points="62,14 38,24 44,46 58,36" fill="#35113d" stroke="${color}" stroke-width="2"/><polygon points="20,6 28,18 22,22" fill="#ffe3ff"/><polygon points="44,6 36,18 42,22" fill="#ffe3ff"/><polygon points="32,8 44,24 38,56 32,62 26,56 20,24" fill="#22092e" stroke="#ffd8ff" stroke-width="2"/><circle cx="27" cy="26" r="2.5" fill="#fff"/><circle cx="37" cy="26" r="2.5" fill="#fff"/><circle cx="32" cy="38" r="5" fill="${color}"/></svg>`
+ };
+ return svgs[pattern]||svgs.fan;
+}
+
 const mythBosses=[
- [{name:'Ra · Vương Nhật Diệm',color:'#ffd16e',pattern:'sun'},{name:'Anubis · Thẩm Phán',color:'#a5baff',pattern:'fan'},{name:'Horus · Thiên Ưng',color:'#ffe5a1',pattern:'snipe'},{name:'Set · Bão Cát',color:'#ff9565',pattern:'storm'},{name:'Sekhmet · Sư Tử Lửa',color:'#ff6f48',pattern:'rush'}],
- [{name:'Poseidon · Hải Thần',color:'#6ceaff',pattern:'fan'},{name:'Leviathan · Hải Xà',color:'#64baff',pattern:'storm'},{name:'Varuna · Thủy Chủ',color:'#7aeeeb',pattern:'sun'},{name:'Tiamat · Mẫu Long',color:'#b29bff',pattern:'rush'},{name:'Ryujin · Long Vương',color:'#55eecc',pattern:'snipe'}],
- [{name:'Artemis · Nguyệt Thần',color:'#b3edc5',pattern:'snipe'},{name:'Cernunnos · Lâm Thần',color:'#a5df73',pattern:'storm'},{name:'Susanoo · Cuồng Phong',color:'#a1e9ee',pattern:'fan'},{name:'Fenrir · Lang Thần',color:'#e5b7fc',pattern:'rush'},{name:'Nüwa · Tạo Hóa',color:'#fcaccd',pattern:'sun'}],
- [{name:'Zeus · Lôi Đình',color:'#ffdc8d',pattern:'fan'},{name:'Thor · Lôi Thần',color:'#a9daff',pattern:'storm'},{name:'Indra · Thiên Lôi',color:'#b6b9ff',pattern:'snipe'},{name:'Vulcan · Rèn Thần',color:'#ff986a',pattern:'rush'},{name:'Nezha · Hỏa Luân',color:'#ff759c',pattern:'sun'}],
- [{name:'Apep · Hỗn Mang',color:'#ff6eca',pattern:'storm'},{name:'Orochi · Bát Kỳ',color:'#9bffaf',pattern:'fan'},{name:'Jormungandr · Thế Xà',color:'#a4dcff',pattern:'rush'},{name:'Typhon · Hỗn Thần',color:'#ffa079',pattern:'sun'},{name:'Kali · Hủy Diệt',color:'#cdb0ff',pattern:'snipe'}]
+ [{name:'Ra · Vương Nhật Diệm',color:'#ffd16e',pattern:'sun',skillName:'Nhật Thực Cực Quang'},
+  {name:'Anubis · Thẩm Phán',color:'#a5baff',pattern:'fan',skillName:'Cột Phán Quyết Âm Giới'},
+  {name:'Horus · Thiên Ưng',color:'#ffe5a1',pattern:'snipe',skillName:'Thiên Nhãn Xuyên Không'},
+  {name:'Set · Bão Cát',color:'#ff9565',pattern:'storm',skillName:'Cuồng Phong Sa Mạc'},
+  {name:'Sekhmet · Sư Tử Lửa',color:'#ff6f48',pattern:'rush',skillName:'Huyết Trảo Xung Kích'}],
+ [{name:'Poseidon · Hải Thần',color:'#6ceaff',pattern:'fan',skillName:'Đinh Ba Đại Hải Triều'},
+  {name:'Leviathan · Hải Xà',color:'#64baff',pattern:'storm',skillName:'Xoáy Nước Vực Thẳm'},
+  {name:'Varuna · Thủy Chủ',color:'#7aeeeb',pattern:'sun',skillName:'Thủy Cầu Luân Hồi'},
+  {name:'Tiamat · Mẫu Long',color:'#b29bff',pattern:'rush',skillName:'Hồng Thủy Khởi Nguyên'},
+  {name:'Ryujin · Long Vương',color:'#55eecc',pattern:'snipe',skillName:'Long Châu Xạ Kích'}],
+ [{name:'Artemis · Nguyệt Thần',color:'#b3edc5',pattern:'snipe',skillName:'Nguyệt Cung Truy Mệnh'},
+  {name:'Cernunnos · Lâm Thần',color:'#a5df73',pattern:'storm',skillName:'Bão Gai Cổ Thụ'},
+  {name:'Susanoo · Cuồng Phong',color:'#a1e9ee',pattern:'fan',skillName:'Thiên Tùng Vân Kiếm'},
+  {name:'Fenrir · Lang Thần',color:'#e5b7fc',pattern:'rush',skillName:'Nanh Sói Nuốt Trời'},
+  {name:'Nüwa · Tạo Hóa',color:'#fcaccd',pattern:'sun',skillName:'Ngũ Sắc Bổ Thiên Thạch'}],
+ [{name:'Zeus · Lôi Đình',color:'#ffdc8d',pattern:'fan',skillName:'Thiên Lôi Phán Quyết'},
+  {name:'Thor · Lôi Thần',color:'#a9daff',pattern:'storm',skillName:'Búa Sét Mjolnir Giáng Thế'},
+  {name:'Indra · Thiên Lôi',color:'#b6b9ff',pattern:'snipe',skillName:'Kim Cang Chử Xuyên Phá'},
+  {name:'Vulcan · Rèn Thần',color:'#ff986a',pattern:'rush',skillName:'Dung Nham Thiên Hỏa'},
+  {name:'Nezha · Hỏa Luân',color:'#ff759c',pattern:'sun',skillName:'Phong Hỏa Luân Liên Hoàn'}],
+ [{name:'Apep · Hỗn Mang',color:'#ff6eca',pattern:'storm',skillName:'Hắc Ám Thôn Phệ'},
+  {name:'Orochi · Bát Kỳ',color:'#9bffaf',pattern:'fan',skillName:'Bát Đầu Xà Độc Trận'},
+  {name:'Jormungandr · Thế Xà',color:'#a4dcff',pattern:'rush',skillName:'Ragnarok Chấn Động'},
+  {name:'Typhon · Hỗn Thần',color:'#ffa079',pattern:'sun',skillName:'Bách Quỷ Hỏa Bạo'},
+  {name:'Kali · Hủy Diệt',color:'#cdb0ff',pattern:'snipe',skillName:'Vũ Điệu Tuyệt Diệt'}]
 ];
-const ULTIMATE_BOSS={name:'Thiên Long Hư Vô · Aetherion',color:'#ff9ce9',pattern:'dragon'};
+const ULTIMATE_BOSS={name:'Thiên Long Hư Vô · Aetherion',color:'#ff9ce9',pattern:'dragon',skillName:'Long Tức Hư Vô · Đại Tuyệt Diệt'};
+
 const bossPatternMeta={
  sun:{icon:'☀',label:'NHẬT DIỆM TOẢ TRÒN'},
  fan:{icon:'🔱',label:'CUNG ĐẠN LƯỢNG TỬ'},
@@ -303,11 +351,12 @@ let testBossChoice=null,testSpeed=1,testInvincible=false;
 function stagePower(){return Math.pow(1.26,Math.min(12,Math.max(0,s.stage-1)));}
 function selectBoss(){if(s.mode==='test'&&testBossChoice!==null&&testBossChoice!=='ultimate')return mythBosses[s.sector][Number(testBossChoice)]||mythBosses[s.sector][0];const pool=mythBosses[s.sector];return pool[Math.floor(Math.random()*pool.length)];}
 
-function triggerBossBanner(title,sub='⚠ WARNING · THỰC THỂ THẦN THOẠI XUẤT HIỆN ⚠',color='#ff9e57'){
- const b=$('bossIntroBanner');if(!b)return;
+function triggerBossBanner(title,sub='⚠ WARNING · THỰC THỂ THẦN THOẠI XUẤT HIỆN ⚠',color='#ff9e57',pattern='fan'){
+ const b=$('bossIntroBanner'),p=$('bossIntroPortrait');if(!b)return;
  b.style.setProperty('--boss-color',color);
  $('bossIntroWarn').textContent=sub;
  $('bossIntroTitle').textContent=title.toUpperCase();
+ if(p)p.innerHTML=getBossSvgPortrait(pattern,color);
  b.classList.add('on');
  clearTimeout(b._timer);
  b._timer=setTimeout(()=>b.classList.remove('on'),2600);
@@ -317,12 +366,69 @@ function announceBoss(){
  if(s.bossAlive||s.bossDefeated)return;
  s.bossAlive=true;s.bossStarted=true;s.enemies=s.enemies.filter(e=>e.type==='boss');
  const profile=(s.mode==='test'&&testBossChoice==='ultimate')||(s.stage>=6&&s.stage%6===0)?ULTIMATE_BOSS:selectBoss();
- const boss=spawn('boss');boss.profile=profile;boss.color=profile.color;boss.phase2=false;boss.shotTimer=2.3;boss.ghostHp=boss.maxHp;
+ const boss=spawn('boss');
+ boss.profile=profile;boss.color=profile.color;boss.phase2=false;
+ boss.shotTimer=2.0;boss.skillCd=4.6;boss.skillMaxCd=4.6;boss.ghostHp=boss.maxHp;boss.chargeVx=0;
  s.dangerT=4.5;$('dangerHUD').textContent='⚠ '+profile.name+' · BOSS KHU VỰC '+s.stage;
- triggerBossBanner(profile.name,'⚠ WARNING · BOSS KHU VỰC '+s.stage+' XUẤT HIỆN ⚠',profile.color);
+ triggerBossBanner(profile.name,'⚠ WARNING · BOSS KHU VỰC '+s.stage+' XUẤT HIỆN ⚠',profile.color,profile.pattern);
  s.effects.push({type:'nova',x:W/2,y:190,t:0,life:.95,r:290,color:profile.color});
  note('⚠ BOSS XUẤT HIỆN: '+profile.name,4);
  updateBossHUD();
+}
+
+// === HỆ THỐNG TUYỆT KỸ RIÊNG CHO TỪNG BOSS ===
+function executeBossSkill(boss){
+ if(!boss||boss.hp<=0)return;
+ const q=worldEnemy(boss),p=s.player,prof=boss.profile||ULTIMATE_BOSS,pat=prof.pattern||'fan',c=prof.color||'#ff9e57';
+ const dmgBase=10+Math.min(18,s.stage*2.2);
+ boss.skillMaxCd=boss.phase2?4.2:5.8;
+ boss.skillCd=boss.skillMaxCd;
+ s.shake=Math.min(quality==='low'?3.5:7,s.shake+2.2);
+ note('🔥 '+prof.name.split(' · ')[0].toUpperCase()+' TUNG TUYỆT KỸ: '+(prof.skillName||'THẦN NỘ'),2.1);
+
+ if(pat==='sun'){
+  s.effects.push({type:'bossSolarRing',x:q.x,y:q.y,t:0,life:1.15,r:340,color:c});
+  const count=boss.phase2?(quality==='low'?12:16):(quality==='low'?9:12);
+  for(let i=0;i<count;i++){
+   let a=i*TAU/count+s.time;
+   s.shots.push({enemy:true,bossStyle:'sun',x:q.x,y:q.y,vx:Math.cos(a)*215,vy:Math.sin(a)*215,damage:dmgBase,life:3.5,color:c,radius:8,trail:[],r:{}});
+  }
+ }else if(pat==='fan'){
+  const pillars=boss.phase2?3:2;
+  for(let i=0;i<pillars;i++){
+   const px=clamp(p.x+(i-(pillars-1)/2)*135+rnd(-25,25),90,W-90);
+   s.effects.push({type:'bossPillarStrike',x:px,y:p.y,t:0,life:1.25,r:46,color:c,damage:dmgBase*1.35,triggered:false});
+  }
+ }else if(pat==='snipe'){
+  s.effects.push({type:'bossLaserLock',boss,x1:q.x,y1:q.y,x2:p.x,y2:p.y,t:0,life:.95,color:c,damage:dmgBase*1.4,fired:false});
+ }else if(pat==='storm'){
+  s.effects.push({type:'bossStormField',x:q.x,y:q.y,t:0,life:1.35,r:240,color:c});
+  const bolts=boss.phase2?(quality==='low'?7:10):(quality==='low'?5:7);
+  for(let i=0;i<bolts;i++){
+   let rx=rnd(95,W-95);
+   s.shots.push({enemy:true,bossStyle:'storm',x:rx,y:120,vx:rnd(-35,35),vy:240+rnd(0,70),damage:dmgBase,life:3.2,color:c,radius:7,trail:[],r:{}});
+  }
+ }else if(pat==='rush'){
+  boss.chargeVx=(p.x>q.x?1:-1)*520;
+  s.effects.push({type:'bossRushAfterimage',x:q.x,y:q.y,t:0,life:.65,r:75,color:c});
+  const fangs=boss.phase2?8:6;
+  const baseA=Math.atan2(p.y-q.y,p.x-q.x);
+  for(let i=0;i<fangs;i++){
+   let a=baseA+(i-(fangs-1)/2)*.14;
+   s.shots.push({enemy:true,bossStyle:'rush',x:q.x,y:q.y,vx:Math.cos(a)*310,vy:Math.sin(a)*310,damage:dmgBase*1.1,life:3,color:c,radius:7,trail:[],r:{}});
+  }
+ }else if(pat==='dragon'){
+  s.effects.push({type:'bossSolarRing',x:q.x,y:q.y,t:0,life:1.3,r:420,color:'#ff85f2'});
+  const n=quality==='low'?10:14;
+  for(let i=0;i<n;i++){
+   let a=i*TAU/n+s.time;
+   s.shots.push({enemy:true,bossStyle:'dragon',x:q.x,y:q.y,vx:Math.cos(a)*235,vy:Math.sin(a)*235,damage:dmgBase*1.2,life:3.6,color:'#ff85f2',radius:8,trail:[],r:{}});
+  }
+  for(let side of [-1,0,1]){
+   const px=clamp(p.x+side*155,90,W-90);
+   s.effects.push({type:'bossPillarStrike',x:px,y:p.y,t:0,life:1.25,r:50,color:'#ff75ec',damage:dmgBase*1.45,triggered:false});
+  }
+ }
 }
 
 function updateBossHUD(){
@@ -334,7 +440,7 @@ function updateBossHUD(){
   return;
  }
  stageEl.classList.add('bossActive');
- const prof=boss.profile||{name:'Mythic Boss',color:'#ffab62',pattern:'fan'};
+ const prof=boss.profile||{name:'Mythic Boss',color:'#ffab62',pattern:'fan',skillName:'Thần Nộ'};
  const meta=bossPatternMeta[prof.pattern]||bossPatternMeta.fan;
  const ratio=clamp(boss.hp/boss.maxHp,0,1);
  boss.ghostHp=lerp(boss.ghostHp??boss.hp,boss.hp,.18);
@@ -342,8 +448,18 @@ function updateBossHUD(){
  hud.style.setProperty('--boss-color',prof.color);
  hud.classList.add('on');
  hud.classList.toggle('phase2',!!boss.phase2);
- $('bossEmblem').textContent=meta.icon;
+
+ const avatarBox=$('bossAvatarBox');
+ const sig=prof.pattern+'|'+prof.color;
+ if(avatarBox.dataset.sig!==sig){
+  avatarBox.dataset.sig=sig;
+  avatarBox.innerHTML=getBossSvgPortrait(prof.pattern,prof.color);
+ }
+
  $('bossName').textContent=prof.name.toUpperCase();
+ const skillReady=1-clamp((boss.skillCd||0)/(boss.skillMaxCd||5),0,1);
+ $('bossSkillCast').textContent=(boss.skillCd<1.1?'⚠ SẮP TUNG CHIÊU: ':'⚡ TUYỆT KỸ: ')+(prof.skillName||meta.label).toUpperCase();
+ $('bossSkillBar').style.width=(skillReady*100).toFixed(0)+'%';
  $('bossPhaseBadge').textContent=boss.phase2?'PHASE II · CUỒNG NỘ':'PHASE I';
  $('bossHpNumbers').textContent=Math.ceil(boss.hp)+' / '+Math.round(boss.maxHp)+' ('+Math.round(ratio*100)+'%)';
  $('bossBarFill').style.width=(ratio*100).toFixed(1)+'%';
@@ -406,7 +522,7 @@ const upgrades=[
  {glyph:'Cl',name:'Corrosive Nova',desc:'Cl tăng sát thương độc theo thời gian.',apply:p=>p.m.Cl++},
  {glyph:'✦',name:'Tăng nhịp phản ứng',desc:'Giảm hồi chiêu tất cả kỹ năng 12%.',apply:p=>p.cdr*=.88}
 ];
-const enemySpec={rock:{hp:38,speed:.14,damage:12,r:18,drop:'Fe',color:'#a4a7b4',xp:16},scout:{hp:31,speed:.18,damage:13,r:17,drop:'H',color:'#fd738e',xp:16},drone:{hp:48,speed:.17,damage:15,r:18,drop:'Cu',color:'#7ee8ff',xp:20},frigate:{hp:90,speed:.12,damage:22,r:24,drop:'Cl',color:'#be92ff',xp:27},boss:{hp:650,speed:.10,damage:37,r:48,drop:'Au',color:'#ffab62',xp:130}};
+const enemySpec={rock:{hp:38,speed:.14,damage:12,r:18,drop:'Fe',color:'#a4a7b4',xp:16},scout:{hp:31,speed:.18,damage:13,r:17,drop:'H',color:'#fd738e',xp:16},drone:{hp:48,speed:.17,damage:15,r:18,drop:'Cu',color:'#7ee8ff',xp:20},frigate:{hp:90,speed:.12,damage:22,r:24,drop:'Cl',color:'#be92ff',xp:27},boss:{hp:650,speed:.10,damage:37,r:52,drop:'Au',color:'#ffab62',xp:130}};
 let s=null,keys=new Set(),mouse={x:W/2,y:340,down:false},last=0,stars=[],dust=[],quality='balanced';
 for(let i=0;i<220;i++) stars.push({x:rnd(0,W),y:rnd(0,H),d:rnd(.2,1.4),phase:rnd(0,TAU)});
 for(let i=0;i<65;i++) dust.push({x:rnd(0,W),y:rnd(0,H),phase:rnd(0,TAU)});
@@ -416,10 +532,10 @@ function init(){let p={x:W/2,y:H-115,tilt:0,hp:140,maxHp:140,planet:100,maxPlane
 s=init();
 const show=id=>{['startModal','bankModal','upgradeModal','pauseModal'].forEach(x=>$(x).classList.toggle('on',x===id));s.overlay=id||null;s.paused=!!id;mouse.down=false;keys.clear();};
 function note(t,sec=2){s.message=t;s.messageFor=sec;$('toast').textContent=t;$('toast').classList.add('show');}
-function reset(mode){infoAutoPause=false;resetMobileInput();document.querySelector('.main').classList.remove('mobileInfoOpen','mobileTestOpen');$('mobileInfo').textContent='☰ INFO';s=init();s.mode=mode;s.run=true;s.paused=false;s.wave=1;s.spawnTime=.6;spawn('rock');show(null);setComboHUD([]);$('testPanel').hidden=mode!=='test';$('testModeBadge').hidden=mode!=='test';$('testStart').classList.toggle('active',mode==='test');testBossChoice=null;testSpeed=1;testInvincible=false;$('testSpeed').value='1';$('testGod').checked=false;$('bossIntroBanner')?.classList.remove('on');drawPanels();if(mode==='test')initTestUI();note(mode==='tutorial'?'⭐ HUẤN LUYỆN: HẠ 12 ĐỊCH · NHẶT 3 NGUYÊN TỐ':mode==='test'?'🧪 TEST LAB: CHỌN MAP, BOSS, SÚNG VÀ ĐỘ KHÓ Ở BẢNG PHẢI':'∞ VÔ CỰC · 60 GIÂY MỖI KHU VỰC · HẠ BOSS ĐỂ CHUYỂN MAP',3);can.focus();}
+function reset(mode){infoAutoPause=false;resetMobileInput();document.querySelector('.main').classList.remove('mobileInfoOpen','mobileTestOpen');$('mobileInfo').textContent='☰ INFO';s=init();s.mode=mode;s.run=true;s.paused=false;s.wave=1;s.spawnTime=.6;spawn('rock');show(null);setComboHUD([]);$('testPanel').hidden=mode!=='test';$('testModeBadge').hidden=mode!=='test';$('testStart').classList.toggle('active',mode==='test');testBossChoice=null;testSpeed=1;testInvincible=false;$('testSpeed').value='1';$('testGod').checked=false;$('bossIntroBanner')?.classList.remove('on');drawPanels();if(mode==='test')initTestUI();note(mode==='tutorial'?'⭐ HUẤN LUYỆN: HẠ 12 ĐỊCH · NHẶT 3 NGUYÊN TỐ':mode==='test'?'🧪 TEST LAB: CHỌN MAP, BOSS VÀ TUYỆT KỸ Ở BẢNG PHẢI':'∞ VÔ CỰC · 60 GIÂY MỖI KHU VỰC · HẠ BOSS ĐỂ CHUYỂN MAP',3);can.focus();}
 function worldEnemy(e){let z=clamp(e.z,0,1.2),k=.34+.87*z;return{x:W/2+e.x*(.38+.65*z),y:145+z*485+Math.sin(e.phase)*3*k,scale:k};}
 function spawn(type){const names=['rock','scout','drone','frigate'];type=type||names[(s.wave>3&&Math.random()<.26)?3:Math.floor(rnd(0,3))];let a=enemySpec[type],factor=(s.mode==='tutorial'?.68:1)*stagePower()*(1+Math.min(1.2,s.stageTime/60)*.12),enemy={type,x:rnd(-450,450),z:rnd(-.07,.05),phase:rnd(0,TAU),spd:a.speed*(s.mode==='tutorial'?.72:1)*(1+Math.min(.23,(s.stage-1)*.035)),hp:a.hp*factor,maxHp:a.hp*factor,armor:type==='frigate'?.25:type==='boss'?.35:0,damage:a.damage*(s.mode==='tutorial'?.54:1)*Math.pow(1.15,Math.min(12,s.stage-1)),r:a.r,color:a.color,drop:a.drop,xp:a.xp,hit:0,burn:0,poison:0,slow:0,shotTimer:rnd(2,4)};
- if(type==='boss'){enemy.x=rnd(-140,140);enemy.z=.03;enemy.hp=a.hp*factor;enemy.maxHp=enemy.hp;enemy.spd=.057;enemy.hp*=1.30;enemy.maxHp=enemy.hp;enemy.ghostHp=enemy.maxHp;}
+ if(type==='boss'){enemy.x=rnd(-140,140);enemy.z=.03;enemy.hp=a.hp*factor;enemy.maxHp=enemy.hp;enemy.spd=.057;enemy.hp*=1.30;enemy.maxHp=enemy.hp;enemy.ghostHp=enemy.maxHp;enemy.skillCd=4.6;enemy.skillMaxCd=4.6;enemy.chargeVx=0;enemy.trailHistory=[];}
  s.enemies.push(enemy);return enemy;}
 function aim(){if(mobileActive())mobileAim();let dx=mouse.x-s.player.x,dy=mouse.y-s.player.y,mag=hypot(dx,dy)||1;return{dx:dx/mag,dy:dy/mag}};
 function loadElement(i){if(s.paused)return;let p=s.player,el=banks[p.bank].els[i];if(!el)return;if(!p.inventory[el]){note('Thiếu nguyên tố '+el+' · Hạ quái để thu thập');return;}if(p.queue.length===2)p.queue.shift();p.queue.push(el);setComboHUD(p.queue);note('NẠP '+p.queue.join(' + ')+' → Q / E / R / F',1);drawPanels()}
@@ -468,14 +584,26 @@ function activateSupport(r){if(!r.els.length)return;let p=s.player;
  if(r.quality){p.bulletQuality=Math.min(2,(p.bulletQuality||0)+r.quality);p.bulletQualityTime=Math.max(p.bulletQualityTime,6.5);}
  if(r.regenHp||r.regenPlanet||r.regenShield||r.armorTime)s.effects.push({type:'supportAura',x:p.x,y:p.y,t:0,life:.55,r:72,color:r.color});
 }
-function combatFloating(x,y,value,color){if(s.damageTexts.length<70)s.damageTexts.push({x,y,v:-36,life:1.05,max:1.05,value,color});}
+function combatFloating(x,y,value,color){if(s.damageTexts.length<60)s.damageTexts.push({x,y,v:-36,life:1.05,max:1.05,value,color});}
 function repairFlash(){s.effects.push({type:'planetRepair',x:W/2,y:177,t:0,life:1.15,r:130,color:'#71ffb2'});}
 
+function hitPlayer(rawDmg){
+ const p=s.player;
+ if(p.inv>0)return;
+ let dmg=rawDmg*(1-clamp(p.armor+(p.feArmorTime>0?.18:0),0,.65));
+ let absorb=Math.min(p.shield,dmg);
+ p.shield-=absorb;
+ p.hp-=dmg-absorb;
+ p.inv=.48;
+ s.shake=Math.min(quality==='low'?3.5:7,s.shake+2.5);
+ s.effects.push({type:'hit',x:p.x,y:p.y,t:0,life:.38,r:48,color:'#ff8f9f'});
+}
+
 function damageEnemy(e,dmg,r){if(e.hp<=0)return;let dealt=dmg*(1-clamp(e.armor,0,.75));e.hp-=dealt;e.hit=.14;if(r?.slow)e.slow=Math.max(e.slow,r.slow);
- if(dealt>=3 && (s.damageTexts.length<65)){let wp=worldEnemy(e);s.damageTexts.push({x:wp.x+rnd(-9,9),y:wp.y-rnd(8,18),v:-32,life:.65,max:.65,value:Math.round(dealt),color:r?.variant==='fracture'?'#ffcb96':r?.els?.includes('Cl')?'#83ffb0':'#e9faff'});}
+ if(dealt>=3 && (s.damageTexts.length<(quality==='low'?30:65))){let wp=worldEnemy(e);s.damageTexts.push({x:wp.x+rnd(-9,9),y:wp.y-rnd(8,18),v:-32,life:.65,max:.65,value:Math.round(dealt),color:r?.variant==='fracture'?'#ffcb96':r?.els?.includes('Cl')?'#83ffb0':'#e9faff'});}
  if(r?.corrode)e.armor=Math.max(0,e.armor-r.corrode);if(r?.burn){if(r.els.includes('Cl')){e.poison=Math.max(e.poison,2.5+.18*r.burn);e.poisonDps=Math.max(e.poisonDps||0,8+r.burn*.65);}
- else {e.burn=Math.max(e.burn,2.1+.12*r.burn);e.burnDps=Math.max(e.burnDps||0,9+r.burn*.6);} }s.shake=Math.min(quality==='low'?2:5,s.shake+.7);
- for(let i=0;i<(quality==='low'?2:5)&&s.particles.length<(quality==='low'?120:280);i++)s.particles.push({x:worldEnemy(e).x,y:worldEnemy(e).y,vx:rnd(-110,110),vy:rnd(-100,100),life:rnd(.18,.42),max:.42,color:r?.color||'#e2f5ff',radius:rnd(1.5,4)});
+ else {e.burn=Math.max(e.burn,2.1+.12*r.burn);e.burnDps=Math.max(e.burnDps||0,9+r.burn*.6);} }s.shake=Math.min(quality==='low'?2:5,s.shake+.6);
+ for(let i=0;i<(quality==='low'?2:5)&&s.particles.length<(quality==='low'?90:260);i++)s.particles.push({x:worldEnemy(e).x,y:worldEnemy(e).y,vx:rnd(-110,110),vy:rnd(-100,100),life:rnd(.18,.42),max:.42,color:r?.color||'#e2f5ff',radius:rnd(1.5,4)});
  if(r?.electric){let origin=worldEnemy(e),near=s.enemies.filter(z=>z!==e&&z.hp>0).map(z=>({enemy:z,wp:worldEnemy(z)})).sort((a,b)=>hypot(a.wp.x-origin.x,a.wp.y-origin.y)-hypot(b.wp.x-origin.x,b.wp.y-origin.y))[0];
    if(near&&hypot(near.wp.x-origin.x,near.wp.y-origin.y)<180){s.effects.push({type:'arcBeam',segments:[[origin.x,origin.y,near.wp.x,near.wp.y]],t:0,life:.3,color:'#89ffff'});damageEnemy(near.enemy,dealt*.38,{...r,electric:0,burn:0,corrode:0,slow:0});}}
  if(e.hp<=0)kill(e);}
@@ -536,7 +664,7 @@ function shoot(){let p=s.player;if(!s.run||s.paused||p.cd.q>0)return;
  let r=reaction('q',consume());activateSupport(r);if(r.els.length){setComboHUD(r.els,true);s.effects.push({type:'elementSigil',x:p.x,y:p.y-44,t:0,life:.55,r:36,color:r.color,variant:r.variant});}else if(s.comboT<=0)setComboHUD([]);
  let base=p.damage*w.mult*p.bulletBonus*(1+.22*(lv-1)+.1*(p.bulletQuality||0));
  let dir=aim(),angle=Math.atan2(dir.dy,dir.dx),ox=p.x,oy=p.y-32;
- p.cd.q=Math.max(.085,w.rate*p.fireRate*p.cdr*(1-.045*(lv-1))); if(lv>=4)s.shake=Math.min(3.2,s.shake+.25); 
+ p.cd.q=Math.max(.085,w.rate*p.fireRate*p.cdr*(1-.045*(lv-1))); if(lv>=4)s.shake=Math.min(quality==='low'?1.8:3.2,s.shake+.25); 
  if(w.id==='photon'){
   for(let i=0;i<1+Math.floor(lv/3);i++)fireProjectile('photon',ox+(i-(Math.floor(lv/3))/2)*13,oy,angle,940,base*r.power/p.damage,r,{radius:5});
  }else if(w.id==='twin'){
@@ -566,12 +694,12 @@ function shoot(){let p=s.player;if(!s.run||s.paused||p.cd.q>0)return;
  s.effects.push({type:'muzzle',x:p.x,y:p.y-35,t:0,life:.13,color:r.els.length?r.color:w.color});if(r.els.length)drawPanels();
 }
 
-function cast(k){if(s.paused||!s.run)return;let p=s.player;if(k==='q'){shoot();return;}if(p.cd[k]>0)return;let r=reaction(k,p.queue),cost=defs[k].cost;if(p.energy<cost){note('Thiếu năng lượng cho '+defs[k].name);return;}p.energy-=cost;p.cd[k]=defs[k].cd*p.cdr;consume();activateSupport(r);if(r.els.length){setComboHUD(r.els,true);s.effects.push({type:'elementSigil',x:p.x,y:p.y-44,t:0,life:.68,r:46,color:r.color,variant:r.variant});}let dir=aim();p.skill=k;
+function cast(k){if(s.paused||!s.run)return;let p=s.player;if(k==='q'){shoot();return;}if(p.cd[k]>0)return;let r=reaction(k,p.queue),cost=defs[k].cost;if(p.energy<cost){note('Thiếu năng lượng cho '+defs[k].name);return;}p.energy-=cost;p.cd[k]=defs[k].cd*p.cdr;consume();activateSupport(r);if(r.els.length){setComboHUD(r.els,true);s.effects.push({type:'elementSigil',x:p.x,y:p.y-44,t:0,life:.68,r:46,color:r.color,variant:r.variant});}p.skill=k;
  if(k==='e'){let count=3+(r.chains>0?2:0);for(let i=0;i<count;i++){let target=s.enemies[i%s.enemies.length]||null;s.missiles.push({x:p.x+(i-count/2)*9,y:p.y-21,vx:(i-count/2)*65,vy:-210,target,life:2.8+r.range*.45,r});}note(r.title+' · ×'+count+' tên lửa',1.2);}
  if(k==='r'){p.shield=Math.min(150,p.shield+42+r.shield);p.shieldTime=4.5+(r.shield>0?1.8:0);if(r.els.includes('Fe')){p.feArmorTime=Math.max(p.feArmorTime,6.4);s.effects.push({type:'iron',x:p.x,y:p.y,t:0,life:.7,r:85,color:'#e3cba9'});}else s.effects.push({type:'shield',x:p.x,y:p.y,t:0,life:.65,r:90,color:r.color});note(r.els.includes('Fe')?'IRON FORTRESS · giảm sát thương':'CARBON MATRIX · tăng khiên',1.5);}
  if(k==='f'){let x=mouse.x,y=mouse.y;if(r.els.includes('Cl')){s.effects.push({type:'cloud',x,y,t:0,life:3.5,r:155+r.blast,color:'#72ec9a',rct:r});note('CORROSIVE NOVA · vùng ăn mòn');}else {s.effects.push({type:'nova',x,y,t:0,life:.85,r:225+r.blast,color:r.color});area(x,y,235+r.blast,r.power*3.4,r);note(r.title.toUpperCase()+' · ĐẠI PHÁO');}}
  drawPanels();}
-function dash(){let p=s.player;if(s.paused||!s.run||p.dash>0)return;let dx=clamp((keys.has('d')?1:0)-(keys.has('a')?1:0)+touchMove.x,-1,1),dy=clamp((keys.has('s')?1:0)-(keys.has('w')?1:0)+touchMove.y,-1,1);if(!dx&&!dy){let a=aim();dx=a.dx;dy=a.dy;}let m=hypot(dx,dy)||1;p.x=clamp(p.x+dx/m*92,75,W-75);p.y=clamp(p.y+dy/m*58,H*.54,H-55);p.inv=.36;p.dash=1.4*p.dashRecover;s.effects.push({type:'warp',x:p.x,y:p.y,t:0,life:.42,r:60,color:'#79eaff'});}
+function dash(){let p=s.player;if(s.paused||!s.run||p.dash>0)return;let dx=clamp((keys.has('d')?1:0)-(keys.has('a')?1:0)+touchMove.x,-1,1),dy=clamp((keys.has('s')?1:0)-(keys.has('w')?1:0)+touchMove.y,-1,1);if(!dx&&!dy){dx=p.x<W/2?1:-1;dy=0;}let m=hypot(dx,dy)||1;p.x=clamp(p.x+dx/m*105,75,W-75);p.y=clamp(p.y+dy/m*62,H*.54,H-55);p.inv=.42;p.dash=1.35*p.dashRecover;s.effects.push({type:'warp',x:p.x,y:p.y,t:0,life:.42,r:60,color:'#79eaff'});}
 function bankOpen(){if(!s.run||s.over||s.overlay==='upgradeModal')return;let g=$('bankGrid');g.replaceChildren();banks.forEach((bank,i)=>{let b=document.createElement('button');b.className='bank'+(s.player.bank===i?' active':'');b.innerHTML='<b>'+bank.name+'</b><div class="tokens">'+bank.els.map((el,j)=>`<span class="token" style="color:${col[el]}">${j+1} · ${el}</span>`).join('')+'</div>';b.onclick=()=>{s.player.bank=i;show(null);can.focus();note('ĐÃ CHỌN '+bank.name);drawPanels()};g.appendChild(b)});show('bankModal');}
 function offerUpgrade(reason){if(!s.run||s.over)return;let p=s.player,list=upgrades.filter(u=>!(u.glyph==='🔫'&&(p.weaponLevels[p.weapon]||1)>=5)).slice(),picks=[];for(let i=0;i<3;i++)picks.push(list.splice(Math.floor(rnd(0,list.length)),1)[0]);$('upgradeReason').textContent=reason+' · Đã tạm dừng trận chiến. Chọn một nâng cấp.';let box=$('upgradeCards');box.replaceChildren();for(let u of picks){let b=document.createElement('button');b.className='selectCard';b.innerHTML=`<div class="glyph">${u.glyph}</div><h4>${u.name}</h4><p>${u.desc}</p><small>NHẬN NÂNG CẤP →</small>`;b.onclick=()=>{u.apply(p);s.upgrades++;show(null);can.focus();note('⬆ '+u.name,1.5);drawPanels();if(p.xp>=p.xpNeed){p.xp-=p.xpNeed;levelUp();}};box.appendChild(b)}show('upgradeModal');}
 function levelUp(){let p=s.player;p.level++;p.xpNeed=Math.round(p.xpNeed*1.3+18);p.energy=Math.min(p.maxEnergy,p.energy+15);offerUpgrade('CẤP '+p.level);}
@@ -596,8 +724,10 @@ function drawPanels(){s.uiBuilds++;updateUI();let p=s.player,g=$('elementSlots')
  });
  let skills=$('skillGrid');if(!skills.childElementCount){Object.keys(defs).forEach(k=>{let b=document.createElement('button');b.className='skill';b.dataset.skill=k;b.innerHTML=`<strong>${defs[k].name}</strong><small>${defs[k].info}</small><span class="clock"></span>`;b.onclick=()=>{p.skill=k;cast(k)};skills.appendChild(b)})}for(const b of skills.children){let k=b.dataset.skill;b.classList.toggle('current',p.skill===k);if(k==='q'){b.querySelector('strong').textContent='Q · '+weaponById[p.weapon].short;b.querySelector('small').textContent=weaponById[p.weapon].desc;}b.querySelector('.clock').textContent=p.cd[k]>.05?'Hồi '+p.cd[k].toFixed(1)+'s':'Sẵn sàng'} }
 function step(dt){let p=s.player;if(s.mode==='test'&&testInvincible){p.inv=Math.max(p.inv,dt+0.15);p.planet=p.maxPlanet;}s.time+=dt;s.waveTime+=dt;if(isCampaign())s.stageTime+=dt;s.spawnTime-=dt;s.messageFor=Math.max(0,s.messageFor-dt);if(s.messageFor===0)$('toast').classList.remove('show');s.shake=Math.max(0,s.shake-dt*14);
- if(s.effects.length>(quality==='low'?135:260))s.effects.splice(0,s.effects.length-(quality==='low'?135:260));
- if(s.shots.length>320)s.shots.splice(0,s.shots.length-320);s.comboT=Math.max(0,s.comboT-dt);s.dangerT=Math.max(0,s.dangerT-dt);
+ const maxEff=quality==='low'?110:250,maxShots=quality==='low'?220:340;
+ if(s.effects.length>maxEff)s.effects.splice(0,s.effects.length-maxEff);
+ if(s.shots.length>maxShots)s.shots.splice(0,s.shots.length-maxShots);
+ s.comboT=Math.max(0,s.comboT-dt);s.dangerT=Math.max(0,s.dangerT-dt);
  if(s.comboT<=0&&$('reactionHUD').classList.contains('combo'))setComboHUD(p.queue,false);
  $('dangerHUD').classList.toggle('visible',s.dangerT>0);
  for(const t of s.damageTexts){t.life-=dt;t.y+=t.v*dt;}s.damageTexts=s.damageTexts.filter(t=>t.life>0);
@@ -606,7 +736,8 @@ function step(dt){let p=s.player;if(s.mode==='test'&&testInvincible){p.inv=Math.
  if(mouse.down&&p.cd.q<=0)shoot();
  if(isCampaign()&&s.stageTime>=STAGE_SECONDS&&!s.bossStarted)announceBoss();
  if(s.spawnTime<=0&&!s.bossAlive){let cap=s.mode==='tutorial'?5:Math.min(19,4+s.stage*2);if(s.enemies.length<cap)spawn();s.spawnTime=s.mode==='tutorial'?3.3:Math.max(.85,2.5*Math.pow(.88,s.stage-1));}
- for(const b of s.shots.slice()){b.trail=b.trail||[];b.trail.push({x:b.x,y:b.y});if(b.trail.length>8)b.trail.shift();if(b.type==='spiral'){
+ const maxTrail=quality==='low'?5:8;
+ for(const b of s.shots.slice()){b.trail=b.trail||[];b.trail.push({x:b.x,y:b.y});if(b.trail.length>maxTrail)b.trail.shift();if(b.type==='spiral'){
    b.angle+=b.turn*dt;
    let speed=hypot(b.vx,b.vy);
    b.vx=Math.cos(b.angle)*speed;b.vy=Math.sin(b.angle)*speed;
@@ -614,7 +745,7 @@ function step(dt){let p=s.player;if(s.mode==='test'&&testInvincible){p.inv=Math.
   b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
   for(const e of (b.enemy?[]:s.enemies.slice())){let q=worldEnemy(e);if(hypot(q.x-b.x,q.y-b.y)<e.r*q.scale+(b.radius||7)&&!b.hitIds?.has(e)){
    b.hitIds?.add(e);damageEnemy(e,b.damage,b.r);
-   s.effects.push({type:'hit',x:b.x,y:b.y,t:0,life:.25,r:15+7*(b.tier||1),color:b.color});if((b.tier||1)>=4)s.effects.push({type:'bulletImpact',x:b.x,y:b.y,t:0,life:.32,r:26+5*b.tier,color:weaponTiers[b.tier-1].glow});
+   s.effects.push({type:'hit',x:b.x,y:b.y,t:0,life:.25,r:15+7*(b.tier||1),color:b.color});if((b.tier||1)>=4&&quality!=='low')s.effects.push({type:'bulletImpact',x:b.x,y:b.y,t:0,life:.32,r:26+5*b.tier,color:weaponTiers[b.tier-1].glow});
    if(b.blast||b.r?.blast){
     let rad=(b.blast||0)+(b.r?.blast||0);
     s.effects.push({type:'explosion',x:b.x,y:b.y,t:0,life:.42,r:rad+20,color:b.color});
@@ -630,16 +761,53 @@ function step(dt){let p=s.player;if(s.mode==='test'&&testInvincible){p.inv=Math.
    s.shots.splice(s.shots.indexOf(b),1);
   }}
  for(const m of s.missiles.slice()){m.life-=dt;if(!m.target||!s.enemies.includes(m.target)){m.target=s.enemies.slice().sort((a,b)=>worldEnemy(b).y-worldEnemy(a).y)[0]||null;}
-  const q=m.target?worldEnemy(m.target):{x:m.x,y:-30};let dx=q.x-m.x,dy=q.y-m.y,d=hypot(dx,dy)||1;m.vx=lerp(m.vx,dx/d*440,Math.min(1,dt*4));m.vy=lerp(m.vy,dy/d*440,Math.min(1,dt*4));m.x+=m.vx*dt;m.y+=m.vy*dt;m.trail=m.trail||[];m.trail.push({x:m.x,y:m.y});if(m.trail.length>13)m.trail.shift();if(d<(m.target?m.target.r*worldEnemy(m.target).scale+17:12)||m.life<=0){s.effects.push({type:'explosion',x:m.x,y:m.y,t:0,life:.42,r:45+m.r.blast,color:m.r.color});area(m.x,m.y,55+m.r.blast,m.r.power*1.65,m.r);s.missiles.splice(s.missiles.indexOf(m),1);}}
- for(const e of s.enemies.slice()){e.phase+=dt*1.5;e.z+=e.spd*dt*(1-(e.slow||0));if(e.type==='boss')e.z=Math.min(.60,e.z);e.x+=Math.sin(e.phase*.8)*dt*(e.type==='scout'?35:10);e.hit=Math.max(0,e.hit-dt);e.shotTimer-=dt;if(e.type==='boss'&&e.hp<e.maxHp*.5&&!e.phase2){e.phase2=true;e.shotTimer=.35;s.dangerT=3;$('dangerHUD').textContent='⚠ '+(e.profile?.name||'BOSS')+' · GIAI ĐOẠN II';triggerBossBanner(e.profile?.name||'BOSS','⚡ PHASE II · THỨC TỈNH CUỒNG NỘ ⚡','#ff4d6d');note('⚡ BOSS CHUYỂN GIAI ĐOẠN · ĐẠN DÀY HƠN',3);if(s.stage>=3){spawn('drone');spawn('scout');}}e.slow=Math.max(0,(e.slow||0)-dt*.4);let q=worldEnemy(e);if(e.burn>0){e.burn-=dt;e.hp-=(e.burnDps||11)*dt;}if(e.poison>0){e.poison-=dt;e.hp-=(e.poisonDps||13)*dt;e.armor=Math.max(0,e.armor-dt*.01);}if(e.hp<=0){kill(e);continue;}
-  if(e.type!=='rock'&&e.z>.35&&e.shotTimer<=0){e.shotTimer=e.type==='boss'?Math.max(.72,1.8-(s.stage-1)*.10):rnd(2.4,4.5);let dx=p.x-q.x,dy=p.y-q.y,v=hypot(dx,dy)||1,a=Math.atan2(dy,dx),count=e.type==='boss'?(e.hp<e.maxHp*.5?Math.min(11,7+Math.floor(s.stage/3)):5):e.type==='frigate'?3:1;
- for(let i=0;i<count;i++){let spread=(i-(count-1)/2)*(e.type==='boss'?.18:.16),dir=a+spread;if(e.type==='boss'){const pattern=e.profile?.pattern||'fan';if(pattern==='snipe')dir=a+spread*.28;if(pattern==='storm')dir+=Math.sin(s.time*2)*.48;if(pattern==='sun')dir=e.phase+i*TAU/count;if(pattern==='rush')dir=a+spread*.6+Math.sin(s.time*5)*.08;if(pattern==='dragon')dir=e.phase*2+i*TAU/count;}
- s.shots.push({enemy:true,x:q.x,y:q.y,vx:Math.cos(dir)*(e.type==='scout'?315:205),vy:Math.sin(dir)*(e.type==='scout'?315:205),damage:e.type==='boss'?(8+Math.min(16,s.stage*2)):6+Math.min(5,s.stage),life:3,color:e.type==='boss'?(e.profile?.color||'#ff994c'):e.type==='drone'?'#99c9ff':'#ff7fa1',trail:[],r:{}});}
- s.effects.push({type:'warning',x:q.x,y:q.y,t:0,life:.24,r:Math.max(24,q.scale*35),color:e.color});}
+  const q=m.target?worldEnemy(m.target):{x:m.x,y:-30};let dx=q.x-m.x,dy=q.y-m.y,d=hypot(dx,dy)||1;m.vx=lerp(m.vx,dx/d*440,Math.min(1,dt*4));m.vy=lerp(m.vy,dy/d*440,Math.min(1,dt*4));m.x+=m.vx*dt;m.y+=m.vy*dt;m.trail=m.trail||[];m.trail.push({x:m.x,y:m.y});if(m.trail.length>(quality==='low'?8:13))m.trail.shift();if(d<(m.target?m.target.r*worldEnemy(m.target).scale+17:12)||m.life<=0){s.effects.push({type:'explosion',x:m.x,y:m.y,t:0,life:.42,r:45+m.r.blast,color:m.r.color});area(m.x,m.y,55+m.r.blast,m.r.power*1.65,m.r);s.missiles.splice(s.missiles.indexOf(m),1);}}
+ for(const e of s.enemies.slice()){
+  e.phase+=dt*1.5;e.z+=e.spd*dt*(1-(e.slow||0));
+  if(e.type==='boss'){
+   e.z=Math.min(.58,e.z);
+   if(e.chargeVx){e.x=clamp(e.x+e.chargeVx*dt,-380,380);e.chargeVx*=Math.pow(.08,dt);if(Math.abs(e.chargeVx)<12)e.chargeVx=0;}
+   e.skillCd=Math.max(0,(e.skillCd??5)-dt*(1-(e.slow||0)*.5));
+   if(e.z>.32&&e.skillCd<=0)executeBossSkill(e);
+  }
+  e.x=clamp(e.x+Math.sin(e.phase*.8)*dt*(e.type==='scout'?35:16),-440,440);
+  e.hit=Math.max(0,e.hit-dt);e.shotTimer-=dt;
+  if(e.type==='boss'&&e.hp<e.maxHp*.5&&!e.phase2){
+   e.phase2=true;e.shotTimer=.35;e.skillCd=.6;s.dangerT=3;
+   $('dangerHUD').textContent='⚠ '+(e.profile?.name||'BOSS')+' · GIAI ĐOẠN II';
+   triggerBossBanner(e.profile?.name||'BOSS','⚡ PHASE II · THỨC TỈNH CUỒNG NỘ ⚡','#ff4d6d',e.profile?.pattern);
+   note('⚡ BOSS CHUYỂN GIAI ĐOẠN · TUYỆT KỸ MẠNH HƠN',3);
+   if(s.stage>=3){spawn('drone');spawn('scout');}
+  }
+  e.slow=Math.max(0,(e.slow||0)-dt*.4);let q=worldEnemy(e);
+  if(e.type==='boss'){
+   e.trailHistory=e.trailHistory||[];
+   e.trailHistory.unshift({x:q.x,y:q.y});
+   if(e.trailHistory.length>24)e.trailHistory.pop();
+  }
+  if(e.burn>0){e.burn-=dt;e.hp-=(e.burnDps||11)*dt;}if(e.poison>0){e.poison-=dt;e.hp-=(e.poisonDps||13)*dt;e.armor=Math.max(0,e.armor-dt*.01);}if(e.hp<=0){kill(e);continue;}
+  if(e.type!=='rock'&&e.z>.35&&e.shotTimer<=0){
+   e.shotTimer=e.type==='boss'?Math.max(.75,1.8-(s.stage-1)*.10):rnd(2.4,4.5);
+   let dx=p.x-q.x,dy=p.y-q.y,a=Math.atan2(dy,dx),count=e.type==='boss'?(e.hp<e.maxHp*.5?Math.min(10,6+Math.floor(s.stage/3)):5):e.type==='frigate'?3:1;
+   const pattern=e.profile?.pattern||'fan';
+   for(let i=0;i<count;i++){
+    let spread=(i-(count-1)/2)*(e.type==='boss'?.18:.16),dir=a+spread;
+    if(e.type==='boss'){
+     if(pattern==='snipe')dir=a+spread*.25;
+     if(pattern==='storm')dir+=Math.sin(s.time*2)*.48;
+     if(pattern==='sun')dir=e.phase+i*TAU/count;
+     if(pattern==='rush')dir=a+spread*.6+Math.sin(s.time*5)*.08;
+     if(pattern==='dragon')dir=e.phase*2+i*TAU/count;
+    }
+    const spd=e.type==='boss'?(pattern==='snipe'?340:225):(e.type==='scout'?315:205);
+    s.shots.push({enemy:true,bossStyle:e.type==='boss'?pattern:null,x:q.x,y:q.y,vx:Math.cos(dir)*spd,vy:Math.sin(dir)*spd,damage:e.type==='boss'?(8+Math.min(16,s.stage*2)):6+Math.min(5,s.stage),life:3.2,color:e.type==='boss'?(e.profile?.color||'#ff994c'):e.type==='drone'?'#99c9ff':'#ff7fa1',radius:e.type==='boss'?6.5:4.5,trail:[],r:{}});
+   }
+   s.effects.push({type:'warning',x:q.x,y:q.y,t:0,life:.24,r:Math.max(24,q.scale*35),color:e.color});
+  }
   if(e.z>=1.02){p.planet=Math.max(0,p.planet-e.damage);s.enemies.splice(s.enemies.indexOf(e),1);s.effects.push({type:'hit',x:q.x,y:H-30,t:0,life:.35,r:70,color:'#ff6f6f'});s.dangerT=2.1;$('dangerHUD').textContent='⚠ HÀNH TINH BỊ TẤN CÔNG';note('⚠ HÀNH TINH BỊ TẤN CÔNG',1.2);continue;}
-  if(e.z>.70&&hypot(q.x-p.x,q.y-p.y)<e.r*q.scale+29&&p.inv<=0){let damage=e.damage*(1-clamp(p.armor+(p.feArmorTime>0?.18:0),0,.65));if(p.shield>0){let block=Math.min(p.shield,damage);p.shield-=block;damage-=block;}p.hp-=damage;p.inv=.75;e.hp-=Math.max(12,p.damage*.7);s.effects.push({type:'hit',x:p.x,y:p.y,t:0,life:.42,r:58,color:'#ff8787'});s.shake=7;if(e.hp<=0)kill(e);}
+  if(e.z>.70&&hypot(q.x-p.x,q.y-p.y)<e.r*q.scale+29&&p.inv<=0){hitPlayer(e.damage);e.hp-=Math.max(12,p.damage*.7);if(e.hp<=0)kill(e);}
  }
- for(const b of s.shots.slice()){if(!b.enemy)continue;if(hypot(b.x-p.x,b.y-p.y)<26&&p.inv<=0){let dmg=b.damage*(1-clamp(p.armor+(p.feArmorTime>0?.18:0),0,.65)),absorb=Math.min(p.shield,dmg);p.shield-=absorb;p.hp-=dmg-absorb;p.inv=.45;b.life=-1;s.effects.push({type:'hit',x:p.x,y:p.y,t:0,life:.35,r:44,color:'#ff9f9f'});}}
+ for(const b of s.shots.slice()){if(!b.enemy)continue;if(hypot(b.x-p.x,b.y-p.y)<22+(b.radius||4)&&p.inv<=0){hitPlayer(b.damage);b.life=-1;}}
  for(const d of s.weaponDrops.slice()){
   d.ttl-=dt;d.y+=d.vy*dt;
   if(hypot(p.x-d.x,p.y-d.y)<45){collectWeapon(d.id);s.weaponDrops.splice(s.weaponDrops.indexOf(d),1);}
@@ -655,112 +823,212 @@ function step(dt){let p=s.player;if(s.mode==='test'&&testInvincible){p.inv=Math.
   if(hypot(p.x-d.x,p.y-d.y)<43){collectPowerup(d);s.powerups.splice(s.powerups.indexOf(d),1);}
   else if(d.y>H+32||d.ttl<=0)s.powerups.splice(s.powerups.indexOf(d),1);
  }
- for(const ef of s.effects.slice()){ef.t+=dt;if(ef.type==='cloud'&&ef.t<ef.life){
-  ef.tick=(ef.tick||0)+dt;
-  if(ef.tick>=.18){let tick=ef.tick;ef.tick=0;
-    for(const e of s.enemies.slice()){const q=worldEnemy(e);if(hypot(q.x-ef.x,q.y-ef.y)<ef.r){
-      damageEnemy(e,6*tick,ef.rct);
-    }}
+ for(const ef of s.effects.slice()){
+  ef.t+=dt;
+  if(ef.type==='cloud'&&ef.t<ef.life){
+   ef.tick=(ef.tick||0)+dt;
+   if(ef.tick>=.18){let tick=ef.tick;ef.tick=0;
+    for(const e of s.enemies.slice()){const q=worldEnemy(e);if(hypot(q.x-ef.x,q.y-ef.y)<ef.r)damageEnemy(e,6*tick,ef.rct);}
+   }
   }
- }if(ef.t>=ef.life)s.effects.splice(s.effects.indexOf(ef),1)}
+  if(ef.type==='bossPillarStrike'&&!ef.triggered&&ef.t>=ef.life*.64){
+   ef.triggered=true;s.shake=Math.min(quality==='low'?3:6,s.shake+2);
+   if(Math.abs(p.x-ef.x)<ef.r+18)hitPlayer(ef.damage||18);
+  }
+  if(ef.type==='bossLaserLock'){
+   if(ef.boss&&s.enemies.includes(ef.boss)){const bq=worldEnemy(ef.boss);ef.x1=bq.x;ef.y1=bq.y;}
+   if(ef.t<ef.life*.68){ef.x2=lerp(ef.x2,p.x,dt*7);ef.y2=lerp(ef.y2,p.y,dt*7);}
+   else if(!ef.fired){
+    ef.fired=true;s.shake=Math.min(quality==='low'?3:6,s.shake+2.2);
+    const a=Math.atan2(ef.y2-ef.y1,ef.x2-ef.x1);
+    for(let k=-1;k<=1;k++){
+     s.shots.push({enemy:true,bossStyle:'snipe',x:ef.x1,y:ef.y1,vx:Math.cos(a+k*.055)*520,vy:Math.sin(a+k*.055)*520,damage:ef.damage||20,life:2.2,color:ef.color,radius:8,trail:[],r:{}});
+    }
+   }
+  }
+  if(ef.t>=ef.life)s.effects.splice(s.effects.indexOf(ef),1);
+ }
  for(const a of s.particles.slice()){a.x+=a.vx*dt;a.y+=a.vy*dt;a.life-=dt;if(a.life<=0)s.particles.splice(s.particles.indexOf(a),1)}
  if(s.mode==='test'&&testInvincible){p.hp=p.maxHp;p.planet=p.maxPlanet;}if(p.hp<=0||p.planet<=0){endGame(false);return;}if(s.mode==='tutorial'&&s.kills>=12&&s.picked>=3&&s.upgrades>=1){endGame(true);return;}if(p.xp>=p.xpNeed){p.xp-=p.xpNeed;levelUp();return;}
  if(s.bossAlive)updateBossHUD();
  if(Math.floor(s.time*5)!==Math.floor((s.time-dt)*5))updateUI();}
 function circle(x,y,r,fill){ctx.beginPath();ctx.arc(x,y,Math.max(0,r),0,TAU);ctx.fillStyle=fill;ctx.fill()}
-function strokeCircle(x,y,r,color,width=2){ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.lineWidth=width;ctx.strokeStyle=color;ctx.stroke()}
-function poly(points,fill,stroke){ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}}
-function line(points,c,w=2,glow=0){ctx.save();ctx.strokeStyle=c;ctx.lineWidth=w;ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowBlur=glow;ctx.shadowColor=c;ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();ctx.restore();}
+function strokeCircle(x,y,r,color,width=2){ctx.beginPath();ctx.arc(x,y,Math.max(0,r),0,TAU);ctx.lineWidth=width;ctx.strokeStyle=color;ctx.stroke()}
+function poly(points,fill,stroke,lw=2){ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}}
+function line(points,c,w=2,glow=0){ctx.save();ctx.strokeStyle=c;ctx.lineWidth=w;ctx.lineCap='round';ctx.lineJoin='round';if(glow&&quality!=='low'){ctx.shadowBlur=glow;ctx.shadowColor=c;}ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();ctx.restore();}
 function backdrop(){let sector=sectors[s.sector];let grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'#020713');grad.addColorStop(.52,sector.haze);grad.addColorStop(1,'#040c18');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
- for(let j=0;j<3;j++){let x=(s.sector===1?820:300)+j*210,y=100+j*82,r=260-j*42;const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,sector.secondary+'a8');g.addColorStop(.54,sector.haze+'66');g.addColorStop(1,sector.haze+'00');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2)}
- for(let i=0;i<(quality==='low'?95:stars.length);i++){let a=stars[i],y=(a.y+(s.time*13*a.d))%H,x=a.x+Math.sin(a.phase+s.time*.12*a.d)*5,light=.35+.55*(.5+.5*Math.sin(s.time*2*a.d+a.phase));ctx.fillStyle='rgba(194,233,255,'+light+')';ctx.fillRect(x|0,y|0,Math.max(1,Math.ceil(a.d*1.8)),Math.max(1,Math.ceil(a.d*1.8)));}
+ for(let j=0;j<(quality==='low'?2:3);j++){let x=(s.sector===1?820:300)+j*210,y=100+j*82,r=260-j*42;const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,sector.secondary+'a8');g.addColorStop(.54,sector.haze+'66');g.addColorStop(1,sector.haze+'00');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2)}
+ for(let i=0;i<(quality==='low'?85:stars.length);i++){let a=stars[i],y=(a.y+(s.time*13*a.d))%H,x=a.x+Math.sin(a.phase+s.time*.12*a.d)*5,light=.35+.55*(.5+.5*Math.sin(s.time*2*a.d+a.phase));ctx.fillStyle='rgba(194,233,255,'+light+')';ctx.fillRect(x|0,y|0,Math.max(1,Math.ceil(a.d*1.8)),Math.max(1,Math.ceil(a.d*1.8)));}
  ctx.save();ctx.globalAlpha=.25;ctx.strokeStyle=sector.primary;for(let i=0;i<8;i++){ctx.beginPath();ctx.moveTo(W/2+(i-4)*80,155);ctx.lineTo(W/2+(i-4)*180,H);ctx.stroke();}for(let z=0;z<=6;z++){let y=160+z*z*13;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}ctx.restore();}
 function planetVisual(){let x=W/2,y=177,r=88,t=s.time,p=s.player;
- ctx.save();ctx.shadowColor='#25ccff';ctx.shadowBlur=29;let g=ctx.createRadialGradient(x-38,y-38,6,x+5,y+4,r);g.addColorStop(0,'#b1f7ff');g.addColorStop(.27,'#3b9de1');g.addColorStop(.7,'#145086');g.addColorStop(1,'#0a2147');circle(x,y,r,g);ctx.restore();
+ ctx.save();if(quality!=='low'){ctx.shadowColor='#25ccff';ctx.shadowBlur=26;}let g=ctx.createRadialGradient(x-38,y-38,6,x+5,y+4,r);g.addColorStop(0,'#b1f7ff');g.addColorStop(.27,'#3b9de1');g.addColorStop(.7,'#145086');g.addColorStop(1,'#0a2147');circle(x,y,r,g);ctx.restore();
  ctx.save();ctx.beginPath();ctx.arc(x,y,r-3,0,TAU);ctx.clip();ctx.translate(x,y);ctx.rotate(t*.014);for(let j=0;j<7;j++){let xx=Math.sin(j*8)*51,yy=Math.cos(j*4)*53;poly([[xx-17,yy-22],[xx+13,yy-17],[xx+26,yy],[xx+6,yy+17],[xx-13,yy+12],[xx-24,yy-5]],j%2?'#1bcdad88':'#6bcfd888');}for(let i=0;i<8;i++)line([[-r,i*22-r/2],[r,i*22-r/2]],'#9ceeff26',2);ctx.restore();
- ctx.save();ctx.translate(x,y);ctx.strokeStyle='#72e5ffb5';ctx.shadowBlur=15;ctx.shadowColor='#6debff';ctx.lineWidth=2;for(let j=0;j<3;j++){ctx.beginPath();ctx.ellipse(0,0,r+18+j*17,25+j*6,t*.1+j*.9,0,TAU);ctx.stroke();}ctx.restore();
+ ctx.save();ctx.translate(x,y);ctx.strokeStyle='#72e5ffb5';ctx.lineWidth=2;for(let j=0;j<3;j++){ctx.beginPath();ctx.ellipse(0,0,r+18+j*17,25+j*6,t*.1+j*.9,0,TAU);ctx.stroke();}ctx.restore();
  let value=clamp(p.planet/p.maxPlanet,0,1);ctx.save();ctx.strokeStyle=value<.3?'#ff6c65':'#7cf7d6';ctx.lineWidth=5;ctx.beginPath();ctx.arc(x,y,r+11,-Math.PI/2,-Math.PI/2+TAU*value);ctx.stroke();ctx.restore();
  ctx.textAlign='center';ctx.fillStyle='#9eefff';ctx.font='bold 12px monospace';ctx.fillText('GALAXY CHEM • HOME WORLD',x,y+123);}
-function drawAsteroid(e,q){let k=q.scale,r=e.r*k;ctx.save();ctx.translate(q.x,q.y);ctx.shadowColor='#7787b9';ctx.shadowBlur=8;let grad=ctx.createLinearGradient(-r,-r,r,r);grad.addColorStop(0,e.hit>0?'#fff':'#d6d7df');grad.addColorStop(.42,'#7a7d8f');grad.addColorStop(1,'#242738');let pts=[];for(let i=0;i<9;i++){let a=i*TAU/9+e.phase*.1,rr=r*(.85+.17*Math.sin(i*7+e.phase));pts.push([rr*Math.cos(a),rr*Math.sin(a)])}poly(pts,grad,'#b8c4d59a');circle(-r*.2,-r*.18,r*.14,'#505468');circle(r*.3,r*.15,r*.2,'#494c60');ctx.restore();}
+function drawAsteroid(e,q){let k=q.scale,r=e.r*k;ctx.save();ctx.translate(q.x,q.y);let grad=ctx.createLinearGradient(-r,-r,r,r);grad.addColorStop(0,e.hit>0?'#fff':'#d6d7df');grad.addColorStop(.42,'#7a7d8f');grad.addColorStop(1,'#242738');let pts=[];for(let i=0;i<9;i++){let a=i*TAU/9+e.phase*.1,rr=r*(.85+.17*Math.sin(i*7+e.phase));pts.push([rr*Math.cos(a),rr*Math.sin(a)])}poly(pts,grad,'#b8c4d59a');circle(-r*.2,-r*.18,r*.14,'#505468');circle(r*.3,r*.15,r*.2,'#494c60');ctx.restore();}
 
+// === THIẾT KẾ LẠI 6 HÌNH THÁI BOSS CƠ KHÍ THẦN THOẠI ĐA LỚP (PROCEDURAL MECHA-BOSS ART) ===
 function drawBossEntity(e,q){
- const c=e.hit>0?'#ffffff':(e.profile?.color||e.color),pat=e.profile?.pattern||'fan',t=s.time;
- ctx.save();ctx.translate(q.x,q.y);ctx.scale(q.scale,q.scale);
- // Vòng cổ ngữ xoay ngược chiều dưới thân Boss
- ctx.save();
- ctx.rotate(t*(e.phase2?1.1:.55));
- ctx.strokeStyle=c+'66';ctx.lineWidth=2;
- ctx.beginPath();ctx.arc(0,0,72,0,TAU);ctx.stroke();
- for(let i=0;i<8;i++){
-  let a=i*TAU/8;
-  line([[Math.cos(a)*58,Math.sin(a)*58],[Math.cos(a)*74,Math.sin(a)*74]],c+'aa',2,6);
- }
- ctx.restore();
- if(e.phase2){
-  ctx.save();ctx.rotate(-t*1.4);
-  strokeCircle(0,0,82+Math.sin(t*9)*4,'#ff4d6daa',2.5);
-  for(let i=0;i<6;i++){
-   let a=i*TAU/6+t*3;
-   line([[Math.cos(a)*46,Math.sin(a)*46],[Math.cos(a)*84,Math.sin(a)*84]],'#ff7b9c',2,10);
+ const rawColor=e.profile?.color||e.color,c=e.hit>0?'#ffffff':rawColor,pat=e.profile?.pattern||'fan',t=s.time;
+ const low=quality==='low';
+
+ // Nếu là Siêu Boss Rồng: vẽ thân và đuôi 7 đốt uốn lượn phía sau trước khi vẽ đầu/thân chính
+ if(pat==='dragon'){
+  ctx.save();
+  for(let seg=7;seg>=1;seg--){
+   const hist=e.trailHistory?.[seg*2]||{x:q.x,y:q.y};
+   const sx=lerp(q.x,hist.x,.65)+Math.sin(t*5-seg*.75)*(14+seg*4)*q.scale;
+   const sy=q.y-seg*15*q.scale+Math.cos(t*4-seg*.6)*5*q.scale;
+   const sr=(32-seg*2.8)*q.scale;
+   ctx.save();ctx.translate(sx,sy);
+   poly([[0,-sr],[sr*1.25,0],[0,sr],[-sr*1.25,0]],'#220a30',c,1.8);
+   if(seg%2===0){
+    for(let side of [-1,1])poly([[side*sr,0],[side*sr*1.9,-sr*.7],[side*sr*1.4,sr*.6]],c+'88','#ffd6ff',1.2);
+   }
+   circle(0,0,sr*.38,seg%2?'#ff9ce9':'#ffffff');
+   ctx.restore();
   }
   ctx.restore();
  }
- // Giáp cơ khí thần thoại theo từng hệ
- ctx.rotate(Math.sin(e.phase*1.2)*.05);
- ctx.shadowColor=c;ctx.shadowBlur=e.phase2?24:15;
- if(pat==='sun'){
-  for(let i=0;i<10;i++){
-   let a=i*TAU/10+t*.6,r1=44,r2=68+Math.sin(t*6+i)*5;
-   poly([[Math.cos(a-.12)*r1,Math.sin(a-.12)*r1],[Math.cos(a)*r2,Math.sin(a)*r2],[Math.cos(a+.12)*r1,Math.sin(a+.12)*r1]],c+'cc','#fff6c2');
-  }
-  poly([[0,-52],[38,-22],[46,24],[0,48],[-46,24],[-38,-22]],'#3a2218',c);
- }else if(pat==='snipe'){
-  for(let side of [-1,1]){
-   poly([[side*14,-18],[side*86,-36],[side*64,6],[side*26,22]],'#1c2d48',c);
-   poly([[side*24,-6],[side*72,-16],[side*48,18]],c+'88','#e6fbff');
-  }
-  poly([[0,-64],[20,-18],[14,44],[0,56],[-14,44],[-20,-18]],'#243b5e','#ffffff');
- }else if(pat==='storm'){
-  for(let i=0;i<4;i++){
-   let a=t*1.8+i*TAU/4,px=Math.cos(a)*58,py=Math.sin(a)*42;
-   poly([[px,py-14],[px+12,py],[px,py+14],[px-12,py]],'#25395c',c);
-   line([[0,0],[px,py]],c+'88',2,8);
-  }
-  poly([[0,-50],[44,-16],[34,36],[-34,36],[-44,-16]],'#291f46',c);
- }else if(pat==='rush'){
-  for(let side of [-1,1]){
-   poly([[side*18,-42],[side*66,-14],[side*52,44],[side*22,20]],'#471c28',c);
-   poly([[side*10,-58],[side*28,-26],[side*6,-18]],'#ffd2b8',c);
-  }
-  poly([[0,-48],[32,-10],[22,46],[0,34],[-22,46],[-32,-10]],'#2e1420','#ffdcba');
- }else if(pat==='dragon'){
-  let wing=Math.sin(t*5)*8;
-  for(let side of [-1,1]){
-   poly([[side*18,-18],[side*96,-44+wing],[side*82,12+wing],[side*46,34],[side*18,14]],'#38153f',c);
-   line([[side*20,-10],[side*88,-34+wing],[side*74,10+wing]],'#ffd6ff',2.5,12);
-  }
-  poly([[0,-68],[24,-30],[32,18],[0,56],[-32,18],[-24,-30]],'#240d30','#ffe3ff');
- }else{
-  for(let side of [-1,1])poly([[side*24,-22],[side*74,-28],[side*56,22],[side*26,12]],'#213854',c);
-  poly([[0,-56],[30,-36],[54,-10],[44,30],[0,46],[-44,30],[-54,-10],[-30,-36]],'#1f2d46',c);
+
+ ctx.save();ctx.translate(q.x,q.y);ctx.scale(q.scale,q.scale);
+
+ // 1. Hào quang nền & Vòng cổ ngữ xoay ngược chiều dưới đáy Boss
+ circle(0,0,84,rawColor+'1f');
+ ctx.save();
+ ctx.rotate(t*(e.phase2?1.1:.5));
+ strokeCircle(0,0,75,rawColor+'77',2);
+ strokeCircle(0,0,62,rawColor+'44',1.5);
+ const runeCount=low?6:8;
+ for(let i=0;i<runeCount;i++){
+  let a=i*TAU/runeCount;
+  line([[Math.cos(a)*61,Math.sin(a)*61],[Math.cos(a)*76,Math.sin(a)*76]],c+'bb',2.2);
  }
- // Lõi năng lượng trung tâm đập theo nhịp
- let pulse=1+.12*Math.sin(t*7);
- poly([[0,-28*pulse],[22*pulse,0],[0,24*pulse],[-22*pulse,0]],c,'#ffffff');
- circle(0,0,9*pulse,'#ffffff');
- circle(-14,-12,3.5,'#ffffff');circle(14,-12,3.5,'#ffffff');
  ctx.restore();
 
- if(e.shotTimer<.45){
-  let charge=1-clamp(e.shotTimer/.45,0,1);
-  strokeCircle(q.x,q.y,(e.r*q.scale)*(1.45-.35*charge),c,2+charge*3);
+ // Vòng gai đỏ cuồng nộ khi vào Phase II
+ if(e.phase2){
+  ctx.save();ctx.rotate(-t*1.35);
+  strokeCircle(0,0,86+Math.sin(t*9)*4,'#ff4d6dbb',2.5);
+  for(let i=0;i<6;i++){
+   let a=i*TAU/6+t*2.5;
+   line([[Math.cos(a)*48,Math.sin(a)*48],[Math.cos(a)*88,Math.sin(a)*88]],'#ff7b9c',2.2);
+  }
+  ctx.restore();
+ }
+
+ // 2. Vẽ Khung Giáp Cơ Khí Thần Thoại riêng biệt theo từng hệ
+ ctx.rotate(Math.sin(e.phase*1.2)*.05);
+ if(!low){ctx.shadowColor=c;ctx.shadowBlur=e.phase2?20:12;}
+
+ if(pat==='sun'){
+  // THIÊN SỨ NHẬT LUÂN (SOLAR SERAPH): 12 cánh ánh sáng + Giáp Hoàng Kim
+  const wingN=low?8:12;
+  for(let i=0;i<wingN;i++){
+   let a=i*TAU/wingN+t*.55,r1=38,r2=74+Math.sin(t*6+i)*7;
+   poly([[Math.cos(a-.13)*r1,Math.sin(a-.13)*r1],[Math.cos(a)*r2,Math.sin(a)*r2],[Math.cos(a+.13)*r1,Math.sin(a+.13)*r1]],rawColor+'bb','#fff7c2',1.5);
+  }
+  for(let side of [-1,1]){
+   poly([[side*22,-28],[side*82,-18+Math.sin(t*4)*6],[side*64,26],[side*24,18]],'#3f2212',c,2);
+  }
+  poly([[0,-58],[36,-26],[44,22],[0,50],[-44,22],[-36,-26]],'#29150b',c,2.5);
+  poly([[0,-42],[24,-14],[20,24],[0,36],[-20,24],[-24,-14]],'#4d2914','#fff2b2',1.8);
+ }
+ else if(pat==='fan'){
+  // CHIẾN GIÁP HẢI VƯƠNG / PHÁN QUYẾT: Vương miện + 2 Pháo Đài Đinh Ba Lơ Lửng
+  const podBob=Math.sin(t*4.5)*7;
+  for(let side of [-1,1]){
+   // Đôi cánh giáp chủ lực
+   poly([[side*20,-24],[side*68,-36],[side*76,8],[side*48,34],[side*20,18]],'#132942',c,2.2);
+   poly([[side*28,-12],[side*60,-20],[side*54,16],[side*30,10]],rawColor+'55','#d9faff',1.5);
+   // 2 Pháo đài Đinh Ba tách rời lơ lửng 2 bên
+   const px=side*88,py=podBob;
+   poly([[px-10,py-22],[px,py-36],[px+10,py-22],[px+8,py+18],[px,py+28],[px-8,py+18]],'#1a3a5c',c,2);
+   circle(px,py,5,'#ffffff');
+  }
+  // Vương miện sừng thần thoại
+  poly([[-22,-40],[-34,-68],[-10,-48],[0,-64],[10,-48],[34,-68],[22,-40]],'#1b3858',c,2);
+  poly([[0,-52],[34,-26],[40,24],[0,50],[-40,24],[-34,-26]],'#0e1f33',c,2.5);
+ }
+ else if(pat==='snipe'){
+  // CHIM SĂN MỒI CƠ KHÍ (VALKYRIE RAIL-HAWK): Sải cánh lưỡi kiếm + Nòng Railgun dài
+  const sweep=Math.sin(t*3.5)*4;
+  for(let side of [-1,1]){
+   poly([[side*14,-22],[side*104,-42+sweep],[side*82,2+sweep],[side*26,20]],'#142840',c,2.2);
+   poly([[side*22,-4],[side*86,-16+sweep],[side*58,24],[side*20,28]],rawColor+'66','#e8fbff',1.5);
+   // Lưỡi kiếm năng lượng phụ
+   poly([[side*36,16],[side*70,38],[side*42,42]],'#213d5e',c,1.6);
+  }
+  // Nòng súng bắn tỉa trung tâm
+  poly([[-12,-28],[-7,-76],[0,-90],[7,-76],[12,-28]],'#243e5e','#ffffff',2);
+  line([[0,-86],[0,32]],c,3.5);
+  poly([[0,-54],[26,-16],[20,42],[0,58],[-20,42],[-26,-16]],'#182c46',c,2.4);
+ }
+ else if(pat==='storm'){
+  // LÕI THẦN SẤM (TESLA MONOLITH): Giáp lục giác nặng + 4 Vệ tinh phóng hồ quang
+  poly([[0,-56],[48,-26],[48,26],[0,56],[-48,26],[-48,-26]],'#1c1738',c,2.6);
+  poly([[0,-40],[34,-18],[34,18],[0,40],[-34,18],[-34,-18]],'#2a2250','#e3e8ff',1.8);
+  for(let i=0;i<4;i++){
+   let a=t*2.1+i*TAU/4,px=Math.cos(a)*78,py=Math.sin(a)*56;
+   // Tia hồ quang nối từ vệ tinh vào lõi Boss
+   let midX=px*.5+Math.sin(t*22+i)*9,midY=py*.5-Math.cos(t*22+i)*9;
+   line([[0,0],[midX,midY],[px,py]],'#b8ffff',2.2);
+   poly([[px,py-15],[px+14,py],[px,py+15],[px-14,py]],'#25395c',c,2);
+   circle(px,py,4.5,'#ffffff');
+  }
+ }
+ else if(pat==='rush'){
+  // THÚ SĂN MỒI HẠNG NẶNG (BEHEMOTH CRUSHER): Hàm nanh cơ khí đóng mở + Động cơ lửa
+  const jaw=Math.sin(t*7)*6;
+  // Lửa phản lực sau lưng
+  for(let side of [-1,1]){
+   poly([[side*22,-44],[side*34,-44],[side*28,-68-Math.sin(t*25)*10]],'#ff944d');
+   // Giáp vai gai nhọn
+   poly([[side*18,-40],[side*76,-16],[side*64,38],[side*24,22]],'#3f1722',c,2.4);
+   poly([[side*66,-6],[side*92,-22],[side*78,14]],'#ffd2b8',c,1.8);
+   // Cặp nanh cơ khí kẹp phía trước
+   poly([[side*(14+jaw),30],[side*(36+jaw),68],[side*(8+jaw),52]],'#ffe6d1',c,2);
+  }
+  poly([[0,-48],[38,-14],[28,42],[0,32],[-28,42],[-38,-14]],'#280e16','#ffd8ba',2.4);
+ }
+ else if(pat==='dragon'){
+  // SIÊU BOSS RỒNG CƠ KHÍ VŨ TRỤ (AETHERION): Đôi cánh rồng vỗ nhịp nhàng + Đầu rồng có sừng
+  const flap=Math.sin(t*4.8)*12;
+  for(let side of [-1,1]){
+   // Cánh lớn
+   poly([[side*18,-16],[side*112,-52+flap],[side*98,10+flap],[side*64,34],[side*20,16]],'#34113d',c,2.4);
+   // Xương cánh phát sáng
+   line([[side*20,-10],[side*104,-42+flap],[side*90,8+flap]],'#ffd8ff',2.5);
+   line([[side*20,-4],[side*76,16+flap*.6]],c,2);
+   // Sừng rồng hoàng kim
+   poly([[side*14,-38],[side*38,-78],[side*24,-30]],'#ffe6ff',c,2);
+  }
+  // Đầu và giáp ngực Rồng
+  poly([[0,-64],[30,-28],[36,18],[18,54],[0,64],[-18,54],[-36,18],[-30,-28]],'#21092b','#ffe3ff',2.5);
+  poly([[0,-46],[18,-16],[14,34],[0,46],[-14,34],[-18,-16]],rawColor+'66','#ffffff',1.6);
+ }
+
+ // 3. Lõi Phản Ứng Thần Lực trung tâm & Mắt Cơ Khí
+ let pulse=1+.14*Math.sin(t*7.5);
+ poly([[0,-24*pulse],[19*pulse,0],[0,22*pulse],[-19*pulse,0]],c,'#ffffff',1.8);
+ circle(0,0,8*pulse,'#ffffff');
+ // Đôi mắt phát sáng
+ poly([[-18,-12],[-8,-8],[-14,-4]],'#ffffff');
+ poly([[18,-12],[8,-8],[14,-4]],'#ffffff');
+ ctx.restore();
+
+ // Vòng tụ lực cảnh báo khi Boss sắp bắn hoặc sắp tung Tuyệt Kỹ
+ if(e.shotTimer<.45||e.skillCd<.95){
+  let charge=e.skillCd<.95?(1-clamp(e.skillCd/.95,0,1)):(1-clamp(e.shotTimer/.45,0,1));
+  strokeCircle(q.x,q.y,(e.r*q.scale)*(1.48-.35*charge),e.skillCd<.95?'#ff4d6d':c,2+charge*3.5);
  }
 }
 
 function drawFoe(e){let q=worldEnemy(e),r=e.r*q.scale;if(q.y<-40||q.y>H+60)return;
  if(e.type==='boss'){drawBossEntity(e,q);return;}
  if(e.type==='rock'){drawAsteroid(e,q);}else {ctx.save();ctx.translate(q.x,q.y);ctx.scale(q.scale,q.scale);ctx.rotate(Math.sin(e.phase*1.4)*.06);
- let c=e.hit>0?'#fff':e.color;ctx.shadowColor=c;ctx.shadowBlur=10;
+ let c=e.hit>0?'#fff':e.color;if(quality!=='low'){ctx.shadowColor=c;ctx.shadowBlur=9;}
  if(e.type==='scout'){poly([[0,-22],[30,17],[6,10],[0,18],[-6,10],[-30,17]],'#142940',c);poly([[0,-15],[10,7],[0,4],[-10,7]],c,'#c2f0ff');}
  else if(e.type==='drone'){poly([[-25,-10],[-9,-20],[9,-20],[25,-10],[25,12],[0,22],[-25,12]],'#163c58',c);circle(0,0,10,c);}
  else if(e.type==='frigate'){poly([[0,-30],[18,-16],[32,0],[20,21],[-20,21],[-32,0],[-18,-16]],'#31324d',c);poly([[0,-22],[11,-6],[0,11],[-11,-6]],'#874ca0','#ffcaf2');}
@@ -769,7 +1037,7 @@ function drawFoe(e){let q=worldEnemy(e),r=e.r*q.scale;if(q.y<-40||q.y>H+60)retur
 function drawShip(){let p=s.player,t=s.time,w=weaponById[p.weapon],lv=p.weaponLevels[p.weapon]||1,tier=weaponTiers[lv-1];
  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.tilt);ctx.globalAlpha=p.inv>0?.68+.23*Math.sin(t*35):1;
  let flame=22+Math.sin(t*35)*10;poly([[-22,28],[-10,29],[-6,33+flame],[0,23],[6,33+flame],[10,29],[22,28]],'#33baff88');poly([[-12,27],[0,23],[12,27],[0,36+flame*.8]],tier.glow);
- ctx.shadowBlur=17+lv*3;ctx.shadowColor=w.color;poly([[0,-44],[17,-9],[43,19],[20,17],[12,31],[0,22],[-12,31],[-20,17],[-43,19],[-17,-9]],'#b4d5ec',w.color);
+ if(quality!=='low'){ctx.shadowBlur=14+lv*3;ctx.shadowColor=w.color;}poly([[0,-44],[17,-9],[43,19],[20,17],[12,31],[0,22],[-12,31],[-20,17],[-43,19],[-17,-9]],'#b4d5ec',w.color);
  poly([[0,-35],[11,-5],[0,12],[-11,-5]],'#123b73','#ecfdff');poly([[-43,19],[-19,13],[-11,5],[-16,23]],'#2560a5','#8ee0ff');poly([[43,19],[19,13],[11,5],[16,23]],'#2560a5','#8ee0ff');circle(0,0,5,tier.glow);
  if(w.id==='photon'){poly([[-6,-47],[0,-66-lv*2],[6,-47]],tier.glow,'#ffffff');line([[0,-57],[0,-30]],'#9fffff',3+lv*.5,12);}
  if(w.id==='twin'){for(let side of [-1,1]){poly([[side*28,5],[side*38,-14],[side*51,-18],[side*49,21],[side*31,26]],'#356ba0',tier.glow);poly([[side*39,-13],[side*45,-35-lv*2],[side*51,-12]],'#8bd7ff',tier.glow);}
@@ -784,32 +1052,55 @@ function drawShip(){let p=s.player,t=s.time,w=weaponById[p.weapon],lv=p.weaponLe
  if(lv>=3){for(let side of [-1,1])line([[side*20,15],[side*(42+lv*3),22]],tier.glow,1.5+lv*.35,7);}
  if(lv>=5){ctx.save();ctx.globalAlpha=.65+.25*Math.sin(t*8);strokeCircle(0,2,53+Math.sin(t*4)*3,tier.glow,3);for(let i=0;i<6;i++){let a=t*2+i*TAU/6;circle(Math.cos(a)*55,2+Math.sin(a)*47,3,tier.glow);}ctx.restore();}
  ctx.shadowBlur=0;
- if(p.shield>1){let alpha=clamp(p.shield/80,.15,.8);ctx.globalAlpha=alpha;ctx.strokeStyle='#8aedff';ctx.lineWidth=2;ctx.shadowBlur=17;ctx.shadowColor='#5dffff';ctx.beginPath();ctx.ellipse(0,0,50,44,0,0,TAU);ctx.stroke();for(let i=0;i<7;i++){let a=i*TAU/7,x=Math.cos(a)*45,y=Math.sin(a)*39;poly([[x-4,y-6],[x+4,y-6],[x+8,y],[x+4,y+6],[x-4,y+6],[x-8,y]],null,'#8aefff');}}
+ if(p.shield>1){let alpha=clamp(p.shield/80,.15,.8);ctx.globalAlpha=alpha;ctx.strokeStyle='#8aedff';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,50,44,0,0,TAU);ctx.stroke();for(let i=0;i<7;i++){let a=i*TAU/7,x=Math.cos(a)*45,y=Math.sin(a)*39;poly([[x-4,y-6],[x+4,y-6],[x+8,y],[x+4,y+6],[x-4,y+6],[x-8,y]],null,'#8aefff');}}
  if(p.feArmorTime>0){ctx.globalAlpha=.7;for(let side of [-1,1])poly([[side*25,-14],[side*52,0],[side*40,22],[side*25,14]],'#b8ad91','#fce6bc');}
  ctx.restore();
 }
 
-function drawProjectiles(){for(const b of s.shots){let tier=weaponTiers[clamp((b.tier||1)-1,0,4)],boost=1+(b.qualityBonus||0)*.25;
- let color=b.enemy?(b.color||'#ff879d'):(b.r?.els?.length?b.color:tier.glow),type=b.type||'photon',rr=(b.radius||5)*tier.scale*boost;
- ctx.save();ctx.shadowColor=color;ctx.shadowBlur=quality==='low'?5:12+5*(b.tier||1);
- if(b.trail.length>1){let path=b.trail.map(p=>[p.x,p.y]);line(path,color+'aa',b.enemy?2:(type==='rail'?7:Math.max(2,rr*.55))*tier.trail,quality==='low'?3:13);if((b.tier||1)>=3&&!b.enemy)line(path,'#ffffff88',Math.max(1,rr*.17),6);}
- if((b.tier||1)>=4&&!b.enemy){for(let i=0;i<4;i++){let a=s.time*5+i*TAU/4;circle(b.x+Math.cos(a)*rr*1.7,b.y+Math.sin(a)*rr*1.7,1.5+(b.tier-3),color);}}
- if(b.enemy){circle(b.x,b.y,4.5,color);circle(b.x,b.y,2,'#fff');}
- else if(type==='photon'){line([[b.x-b.vx*.02,b.y-b.vy*.02],[b.x,b.y]],'#efffff',3+tier.scale*2,10);circle(b.x,b.y,rr,color);circle(b.x,b.y,Math.max(2,rr*.33),'#fff');}
- else if(type==='twin'){circle(b.x,b.y,rr,color);circle(b.x,b.y,rr*.42,'#fff');if((b.tier||1)>2)strokeCircle(b.x,b.y,rr*1.5,color,2);}
- else if(type==='scatter'){ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vy,b.vx));poly([[rr*1.8,0],[-rr,-rr*.9],[-rr*.25,0],[-rr,rr*.9]],color,'#fffc');}
- else if(type==='rail'){line([[b.x-b.vx*.065,b.y-b.vy*.065],[b.x,b.y]],color,9*tier.scale,22);line([[b.x-b.vx*.072,b.y-b.vy*.072],[b.x,b.y]],'#fff',2+lvFromTier(b.tier),11);if((b.tier||1)>=4)strokeCircle(b.x,b.y,rr*1.5,'#fffb',3);}
- else if(type==='plasma'){circle(b.x,b.y,rr,'#7546be');strokeCircle(b.x,b.y,rr+4,color,3+((b.tier||1)-1));for(let i=0;i<6;i++){let a=i*TAU/6+s.time*4;circle(b.x+Math.cos(a)*(rr+3),b.y+Math.sin(a)*(rr+3),2+(b.tier||1)*.5,'#fff');}}
- else if(type==='spiral'){circle(b.x,b.y,rr,color);strokeCircle(b.x,b.y,rr*1.65,'#fff8',2);}
- else if(type==='flak'){ctx.translate(b.x,b.y);ctx.rotate(s.time*7+b.phase);poly([[0,-rr*1.5],[rr,0],[0,rr*1.5],[-rr,0]],color,'#ffeacc');}
- else circle(b.x,b.y,rr,color);
- ctx.restore();}
- for(const m of s.missiles){if(m.trail&&m.trail.length>1){line(m.trail.map(z=>[z.x,z.y]),'#ff9f5c7e',5,11);line(m.trail.map(z=>[z.x,z.y]),'#ffec9e',2,5);}ctx.save();ctx.translate(m.x,m.y);ctx.rotate(Math.atan2(m.vy,m.vx)+Math.PI/2);poly([[0,-15],[7,6],[0,2],[-7,6]],'#e5e3e3','#ffab6e');ctx.restore();}}
+function drawProjectiles(){
+ const low=quality==='low';
+ for(const b of s.shots){
+  let tier=weaponTiers[clamp((b.tier||1)-1,0,4)],boost=1+(b.qualityBonus||0)*.25;
+  let color=b.enemy?(b.color||'#ff879d'):(b.r?.els?.length?b.color:tier.glow),type=b.type||'photon',rr=(b.radius||5)*tier.scale*boost;
+  ctx.save();
+  if(!low){ctx.shadowColor=color;ctx.shadowBlur=8+4*(b.tier||1);}
+  if(b.trail.length>1){let path=b.trail.map(p=>[p.x,p.y]);line(path,color+'aa',b.enemy?(b.bossStyle?3.2:2):(type==='rail'?7:Math.max(2,rr*.55))*tier.trail,low?0:10);if((b.tier||1)>=3&&!b.enemy&&!low)line(path,'#ffffff88',Math.max(1,rr*.17),4);}
+  if((b.tier||1)>=4&&!b.enemy&&!low){for(let i=0;i<4;i++){let a=s.time*5+i*TAU/4;circle(b.x+Math.cos(a)*rr*1.7,b.y+Math.sin(a)*rr*1.7,1.5+(b.tier-3),color);}}
+  if(b.enemy){
+   const bs=b.bossStyle,br=b.radius||5.5;
+   if(bs==='sun'){
+    circle(b.x,b.y,br*1.25,color);strokeCircle(b.x,b.y,br*1.65,'#fff6b0',1.6);circle(b.x,b.y,br*.5,'#fff');
+   }else if(bs==='snipe'){
+    ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vy,b.vx));
+    poly([[br*2.5,0],[-br*1.3,-br*.85],[-br*.5,0],[-br*1.3,br*.85]],color,'#ffffff',1.5);
+   }else if(bs==='storm'){
+    ctx.translate(b.x,b.y);ctx.rotate(s.time*9);
+    poly([[0,-br*1.55],[br*1.55,0],[0,br*1.55],[-br*1.55,0]],color,'#e2ffff',1.5);
+   }else if(bs==='rush'){
+    ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vy,b.vx));
+    poly([[br*2.1,0],[-br,-br*1.2],[-br*.3,0],[-br,br*1.2]],color,'#ffd8b8',1.5);
+   }else if(bs==='dragon'){
+    circle(b.x,b.y,br*1.25,'#4a0e4e');strokeCircle(b.x,b.y,br*1.55,color,2.2);circle(b.x,b.y,br*.55,'#fff');
+   }else{
+    circle(b.x,b.y,br,color);circle(b.x,b.y,2,'#fff');
+   }
+  }
+  else if(type==='photon'){line([[b.x-b.vx*.02,b.y-b.vy*.02],[b.x,b.y]],'#efffff',3+tier.scale*2,low?0:8);circle(b.x,b.y,rr,color);circle(b.x,b.y,Math.max(2,rr*.33),'#fff');}
+  else if(type==='twin'){circle(b.x,b.y,rr,color);circle(b.x,b.y,rr*.42,'#fff');if((b.tier||1)>2)strokeCircle(b.x,b.y,rr*1.5,color,2);}
+  else if(type==='scatter'){ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vy,b.vx));poly([[rr*1.8,0],[-rr,-rr*.9],[-rr*.25,0],[-rr,rr*.9]],color,'#fffc');}
+  else if(type==='rail'){line([[b.x-b.vx*.065,b.y-b.vy*.065],[b.x,b.y]],color,9*tier.scale,low?0:16);line([[b.x-b.vx*.072,b.y-b.vy*.072],[b.x,b.y]],'#fff',2+lvFromTier(b.tier),low?0:8);}
+  else if(type==='plasma'){circle(b.x,b.y,rr,'#7546be');strokeCircle(b.x,b.y,rr+4,color,3+((b.tier||1)-1));}
+  else if(type==='spiral'){circle(b.x,b.y,rr,color);strokeCircle(b.x,b.y,rr*1.65,'#fff8',2);}
+  else if(type==='flak'){ctx.translate(b.x,b.y);ctx.rotate(s.time*7+b.phase);poly([[0,-rr*1.5],[rr,0],[0,rr*1.5],[-rr,0]],color,'#ffeacc');}
+  else circle(b.x,b.y,rr,color);
+  ctx.restore();
+ }
+ for(const m of s.missiles){if(m.trail&&m.trail.length>1){line(m.trail.map(z=>[z.x,z.y]),'#ff9f5c7e',5,low?0:9);line(m.trail.map(z=>[z.x,z.y]),'#ffec9e',2,0);}ctx.save();ctx.translate(m.x,m.y);ctx.rotate(Math.atan2(m.vy,m.vx)+Math.PI/2);poly([[0,-15],[7,6],[0,2],[-7,6]],'#e5e3e3','#ffab6e');ctx.restore();}}
 function lvFromTier(t){return .65*(t||1);}
 
 function drawWeaponDrops(){for(const d of s.weaponDrops){
  let color=weaponById[d.id].color,y=d.y;
- ctx.save();ctx.shadowColor=color;ctx.shadowBlur=18;
+ ctx.save();if(quality!=='low'){ctx.shadowColor=color;ctx.shadowBlur=14;}
  ctx.fillStyle='#082034';ctx.strokeStyle=color;ctx.lineWidth=3;
  ctx.beginPath();ctx.roundRect(d.x-19,y-17,38,34,7);ctx.fill();ctx.stroke();
  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=color;
@@ -821,9 +1112,56 @@ function drawWeaponDrops(){for(const d of s.weaponDrops){
 function drawEffects(){for(const e of s.effects){let t=clamp(e.t/e.life,0,1),fade=1-t;ctx.save();ctx.globalAlpha=fade;
  if(e.type==='elementSigil'){
  let r=e.r*(.75+t*.28);strokeCircle(e.x,e.y,r,e.color,4*fade+1);for(let i=0;i<8;i++){let a=i*TAU/8+s.time*2;let x=e.x+Math.cos(a)*r,y=e.y+Math.sin(a)*r*.75;circle(x,y,3+2*fade,e.color);}
- if(e.variant==='solar'){for(let i=0;i<10;i++){let a=i*TAU/10+t*.8;line([[e.x+Math.cos(a)*r*.8,e.y+Math.sin(a)*r*.8],[e.x+Math.cos(a)*(r+20),e.y+Math.sin(a)*(r+20)]],'#fff0ab',3,12);}}
+ if(e.variant==='solar'){for(let i=0;i<10;i++){let a=i*TAU/10+t*.8;line([[e.x+Math.cos(a)*r*.8,e.y+Math.sin(a)*r*.8],[e.x+Math.cos(a)*(r+20),e.y+Math.sin(a)*(r+20)]],'#fff0ab',3,8);}}
  if(e.variant==='corrosive'){for(let i=0;i<12;i++){let a=i*TAU/12+s.time*.5;circle(e.x+Math.cos(a)*r*.6,e.y+Math.sin(a)*r*.5,3+(i%3), '#70ff9c88');}}
- if(e.variant==='fracture'){for(let i=0;i<6;i++){let x=e.x+(i-3)*15;line([[x,e.y+8],[x-5,e.y-12-25*t]],'#ffc18d',4,6);}}
+ if(e.variant==='fracture'){for(let i=0;i<6;i++){let x=e.x+(i-3)*15;line([[x,e.y+8],[x-5,e.y-12-25*t]],'#ffc18d',4,4);}}
+ }
+ else if(e.type==='bossSolarRing'){
+  let rr=e.r*t;
+  strokeCircle(e.x,e.y,rr,e.color,10*fade+2);
+  strokeCircle(e.x,e.y,rr*.65,'#fff4b8',4*fade+1);
+  for(let i=0;i<12;i++){
+   let a=i*TAU/12+t*2;
+   line([[e.x+Math.cos(a)*rr*.75,e.y+Math.sin(a)*rr*.75],[e.x+Math.cos(a)*(rr+26),e.y+Math.sin(a)*(rr+26)]],e.color,3,8);
+  }
+ }
+ else if(e.type==='bossPillarStrike'){
+  ctx.globalAlpha=1;
+  if(t<.64){
+   const warnAlpha=.35+.35*Math.sin(s.time*28);
+   ctx.fillStyle=e.color+'30';
+   ctx.fillRect(e.x-e.r,120,e.r*2,H-120);
+   line([[e.x,120],[e.x,H]],e.color,2+warnAlpha*3,6);
+   strokeCircle(e.x,e.y,e.r*(1.2-t*.4),e.color,2.5);
+  }else{
+   const beamFade=1-(t-.64)/.36;
+   ctx.globalAlpha=beamFade;
+   ctx.fillStyle=e.color+'88';
+   ctx.fillRect(e.x-e.r,100,e.r*2,H-100);
+   ctx.fillStyle='#ffffffcc';
+   ctx.fillRect(e.x-e.r*.38,100,e.r*.76,H-100);
+   strokeCircle(e.x,e.y,e.r*1.5,'#ffffff',4);
+  }
+ }
+ else if(e.type==='bossLaserLock'){
+  ctx.globalAlpha=1;
+  const flash=.4+.5*Math.sin(s.time*35);
+  line([[e.x1,e.y1],[e.x2,e.y2]],e.fired?'#ffffff':e.color,e.fired?9:2.5+flash*2,10);
+  strokeCircle(e.x2,e.y2,26*(1-t*.4),'#ff4d6d',2.5);
+  line([[e.x2-32,e.y2],[e.x2+32,e.y2]],'#ff4d6d',2,0);
+  line([[e.x2,e.y2-32],[e.x2,e.y2+32]],'#ff4d6d',2,0);
+ }
+ else if(e.type==='bossStormField'){
+  let rr=e.r*(.4+.6*t);
+  strokeCircle(e.x,e.y,rr,e.color,5*fade+1);
+  for(let i=0;i<8;i++){
+   let a=i*TAU/8+s.time*5;
+   line([[e.x,e.y],[e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr]],'#d8ffff',2.5*fade,8);
+  }
+ }
+ else if(e.type==='bossRushAfterimage'){
+  strokeCircle(e.x,e.y,e.r*(1+t*.5),e.color,6*fade);
+  poly([[e.x,e.y-50],[e.x+45,e.y+25],[e.x-45,e.y+25]],e.color+'55','#ffffff');
  }
  else if(e.type==='warning'){strokeCircle(e.x,e.y,e.r*(.75+t*.3),'#ffb09b',3*fade+1);}
  else if(e.type==='arcBeam'){
@@ -831,38 +1169,45 @@ function drawEffects(){for(const e of s.effects){let t=clamp(e.t/e.life,0,1),fad
    let pts=[[x1,y1]],n=7;
    for(let i=1;i<n;i++){let t=i/n,off=Math.sin(i*29+s.time*61)*12;
     pts.push([lerp(x1,x2,t)+off,lerp(y1,y2,t)-off]);}
-   pts.push([x2,y2]);line(pts,'#55f5e8',9*fade+2,16);line(pts,'#ffffff',2.2*fade+1,8);
+   pts.push([x2,y2]);line(pts,'#55f5e8',9*fade+2,12);line(pts,'#ffffff',2.2*fade+1,4);
   }
  }
  else if(e.type==='muzzle'){strokeCircle(e.x,e.y,10+t*20,e.color,4);circle(e.x,e.y,11*fade,'#ecfaff');}
- else if(e.type==='nova'){strokeCircle(e.x,e.y,e.r*t,e.color,12*fade+2);strokeCircle(e.x,e.y,e.r*(t*.55+.08),'#fff0d7',3);for(let i=0;i<22;i++){let a=i*TAU/22+t*.9,rr=e.r*t;line([[e.x+Math.cos(a)*rr*.7,e.y+Math.sin(a)*rr*.7],[e.x+Math.cos(a)*(rr+35*fade),e.y+Math.sin(a)*(rr+35*fade)]],e.color,3,10);}}
- else if(e.type==='cloud'){for(let i=0;i<(quality==='low'?11:27);i++){let a=i*TAU/27+s.time*.21,rr=e.r*(.22+.5*((i%6)/6)),x=e.x+Math.cos(a)*rr,y=e.y+Math.sin(a)*rr*.66;let r=22+17*Math.sin(i*5+e.t*3)**2;circle(x,y,r,'#5de78b44');strokeCircle(x,y,r*.6,'#8bffa35b',1);}strokeCircle(e.x,e.y,e.r,'#62f5a369',2);}
+ else if(e.type==='nova'){strokeCircle(e.x,e.y,e.r*t,e.color,12*fade+2);strokeCircle(e.x,e.y,e.r*(t*.55+.08),'#fff0d7',3);for(let i=0;i<(quality==='low'?12:22);i++){let a=i*TAU/(quality==='low'?12:22)+t*.9,rr=e.r*t;line([[e.x+Math.cos(a)*rr*.7,e.y+Math.sin(a)*rr*.7],[e.x+Math.cos(a)*(rr+35*fade),e.y+Math.sin(a)*(rr+35*fade)]],e.color,3,8);}}
+ else if(e.type==='cloud'){for(let i=0;i<(quality==='low'?11:24);i++){let a=i*TAU/24+s.time*.21,rr=e.r*(.22+.5*((i%6)/6)),x=e.x+Math.cos(a)*rr,y=e.y+Math.sin(a)*rr*.66;let r=22+17*Math.sin(i*5+e.t*3)**2;circle(x,y,r,'#5de78b44');strokeCircle(x,y,r*.6,'#8bffa35b',1);}strokeCircle(e.x,e.y,e.r,'#62f5a369',2);}
  else if(e.type==='shield'){strokeCircle(e.x,e.y,e.r*(.7+t*.3),e.color,5);for(let i=0;i<6;i++){let a=i*TAU/6;poly([[e.x+Math.cos(a)*e.r*.8-7,e.y+Math.sin(a)*e.r*.5],[e.x+Math.cos(a)*e.r*.8,e.y+Math.sin(a)*e.r*.5-9],[e.x+Math.cos(a)*e.r*.8+7,e.y+Math.sin(a)*e.r*.5]],null,e.color);}}
  else if(e.type==='iron'){for(let i=-3;i<=3;i++){let x=e.x+i*19,h=30+Math.sin(i*9)**2*35;poly([[x-8,e.y+35],[x-8,e.y+35-h*t*2],[x,e.y+14-h*t*2],[x+8,e.y+35-h*t*2],[x+8,e.y+35]],'#586576','#c4dbec');}}
- else if(e.type==='explosion'){let r=e.r*t;circle(e.x,e.y,r*.5,e.color+'77');strokeCircle(e.x,e.y,r,e.color,7*fade+1);for(let i=0;i<11;i++){let a=i*TAU/11,rr=r*.7;line([[e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr],[e.x+Math.cos(a)*(rr+25*fade),e.y+Math.sin(a)*(rr+25*fade)]],e.color,3,10);}}
- else if(e.type==='hit'||e.type==='warp'||e.type==='bulletImpact'){strokeCircle(e.x,e.y,e.r*t,e.color,4*fade+1);strokeCircle(e.x,e.y,e.r*t*.58,'#efffff',2*fade);if(e.type==='bulletImpact')for(let i=0;i<8;i++){let a=i*TAU/8;line([[e.x+Math.cos(a)*e.r*t*.6,e.y+Math.sin(a)*e.r*t*.6],[e.x+Math.cos(a)*e.r*t*1.5,e.y+Math.sin(a)*e.r*t*1.5]],e.color,2,7);}}
+ else if(e.type==='explosion'){let r=e.r*t;circle(e.x,e.y,r*.5,e.color+'77');strokeCircle(e.x,e.y,r,e.color,7*fade+1);for(let i=0;i<(quality==='low'?7:11);i++){let a=i*TAU/(quality==='low'?7:11),rr=r*.7;line([[e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr],[e.x+Math.cos(a)*(rr+25*fade),e.y+Math.sin(a)*(rr+25*fade)]],e.color,3,6);}}
+ else if(e.type==='hit'||e.type==='warp'||e.type==='bulletImpact'){strokeCircle(e.x,e.y,e.r*t,e.color,4*fade+1);strokeCircle(e.x,e.y,e.r*t*.58,'#efffff',2*fade);}
  else if(e.type==='planetRepair'){strokeCircle(e.x,e.y,e.r*(.7+t*.5),e.color,9*fade+1);strokeCircle(e.x,e.y,e.r*(.25+t*.7),'#e1ffef',4*fade+1);}
  else if(e.type==='supportAura'||e.type==='pickupFlash'){strokeCircle(e.x,e.y,e.r*(.5+t),e.color,7*fade+1);}
  ctx.restore();}}
-function drawDrops(){for(const d of s.drops){let c=col[d.el]||'#fff';ctx.save();ctx.translate(d.x,d.y);ctx.shadowColor=c;ctx.shadowBlur=13;poly([[0,-12],[10,0],[0,12],[-10,0]],c,'#fff8');ctx.fillStyle='#071d31';ctx.textAlign='center';ctx.font='bold 11px monospace';ctx.fillText(d.el,0,4);ctx.restore();}}
-function drawPowerups(){for(const d of s.powerups){let type=powerupStyles[d.kind];if(!type)continue;ctx.save();ctx.translate(d.x,d.y);ctx.shadowColor=type.color;ctx.shadowBlur=18;let pulse=1+.08*Math.sin(s.time*8+d.phase);ctx.scale(pulse,pulse);poly([[0,-21],[18,-10],[18,10],[0,21],[-18,10],[-18,-10]],'#0b2635',type.color);circle(0,0,11,type.color+'44');ctx.fillStyle=type.color;ctx.font='bold 21px monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(type.icon,0,1);ctx.restore();}}
+function drawDrops(){for(const d of s.drops){let c=col[d.el]||'#fff';ctx.save();ctx.translate(d.x,d.y);poly([[0,-12],[10,0],[0,12],[-10,0]],c,'#fff8');ctx.fillStyle='#071d31';ctx.textAlign='center';ctx.font='bold 11px monospace';ctx.fillText(d.el,0,4);ctx.restore();}}
+function drawPowerups(){for(const d of s.powerups){let type=powerupStyles[d.kind];if(!type)continue;ctx.save();ctx.translate(d.x,d.y);let pulse=1+.08*Math.sin(s.time*8+d.phase);ctx.scale(pulse,pulse);poly([[0,-21],[18,-10],[18,10],[0,21],[-18,10],[-18,-10]],'#0b2635',type.color);circle(0,0,11,type.color+'44');ctx.fillStyle=type.color;ctx.font='bold 21px monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(type.icon,0,1);ctx.restore();}}
 
 function render(){ctx.save();if(s.shake>0&&!s.paused)ctx.translate(rnd(-s.shake,s.shake),rnd(-s.shake,s.shake));backdrop();planetVisual();for(const e of s.enemies.slice().sort((a,b)=>a.z-b.z))drawFoe(e);drawDrops();drawWeaponDrops();drawPowerups();drawProjectiles();drawShip();drawEffects();for(const a of s.particles){ctx.globalAlpha=clamp(a.life/a.max,0,1);circle(a.x,a.y,a.radius,a.color);ctx.globalAlpha=1;}ctx.restore();
  ctx.save();ctx.font='bold 17px monospace';ctx.textAlign='center';for(const v of s.damageTexts){ctx.globalAlpha=clamp(v.life/v.max,0,1);ctx.fillStyle='#031423';ctx.fillText(String(v.value),v.x+1,v.y+2);ctx.fillStyle=v.color;ctx.fillText(String(v.value),v.x,v.y);}ctx.restore();
  if(s.player.planet/s.player.maxPlanet<.36){let g=ctx.createRadialGradient(W/2,H/2,H*.3,W/2,H/2,W*.7);g.addColorStop(0,'#ff444400');g.addColorStop(1,'#ff2c293b');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
  ctx.save();ctx.strokeStyle='#b1faffcc';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(mouse.x,mouse.y,12,0,TAU);ctx.moveTo(mouse.x-19,mouse.y);ctx.lineTo(mouse.x-6,mouse.y);ctx.moveTo(mouse.x+6,mouse.y);ctx.lineTo(mouse.x+19,mouse.y);ctx.moveTo(mouse.x,mouse.y-19);ctx.lineTo(mouse.x,mouse.y-6);ctx.moveTo(mouse.x,mouse.y+6);ctx.lineTo(mouse.x,mouse.y+19);ctx.stroke();ctx.restore();}
-function loop(now){if(mobileActive()&&now-mobileLastFrame<22){requestAnimationFrame(loop);return;}if(mobileActive())mobileLastFrame=now;let dt=Math.min(.034,(now-last)/1000||0);last=now;if(s.run&&!s.paused)step(dt*(s.mode==='test'?testSpeed:1));if(mobileActive()){mobileHudTimer+=dt;if(mobileHudTimer>.16){mobileHudTimer=0;updateMobileUI();}}render();requestAnimationFrame(loop);}
+function loop(now){let dt=Math.min(.034,(now-last)/1000||0);last=now;if(s.run&&!s.paused)step(dt*(s.mode==='test'?testSpeed:1));if(mobileActive()){mobileHudTimer+=dt;if(mobileHudTimer>.15){mobileHudTimer=0;updateMobileUI();}}render();requestAnimationFrame(loop);}
 function pointer(e){let r=can.getBoundingClientRect();mouse.x=clamp((e.clientX-r.left)*W/r.width,0,W);mouse.y=clamp((e.clientY-r.top)*H/r.height,0,H);}
 function handleKey(e,pressed){if(['INPUT','TEXTAREA','SELECT'].includes(e.target?.tagName)||e.ctrlKey||e.metaKey)return;let k=e.key.toLowerCase();if(['tab',' ','arrowup','arrowdown','arrowleft','arrowright','backspace'].includes(k))e.preventDefault();if(!pressed){keys.delete(k);return;}if(k==='tab'&&e.repeat)return;if(k==='tab'){if(s.overlay==='bankModal'){show(null);can.focus()}else bankOpen();return;}if(k==='escape'||k==='p'){if(s.overlay==='bankModal'){show(null);can.focus()}else pause();return;}if(s.paused)return;keys.add(k);if(k==='shift'&&!e.repeat)dash();if((k==='z'||k==='x')&&!e.repeat){cycleWeapon(k==='x'?1:-1);return;}if(k==='backspace'){s.player.queue=[];setComboHUD([]);drawPanels();return;}if(['1','2','3','4'].includes(k)&&!e.repeat){loadElement(Number(k)-1);return;}if(['q','e','r','f'].includes(k)&&!e.repeat){cast(k);return;}if(k===' '&&!e.repeat)shoot();}
 window.addEventListener('keydown',e=>handleKey(e,true),true);window.addEventListener('keyup',e=>handleKey(e,false),true);window.addEventListener('blur',()=>{keys.clear();mouse.down=false;if(s.run&&!s.paused)pause()});can.addEventListener('pointermove',pointer);can.addEventListener('pointerdown',e=>{pointer(e);can.focus();if(s.paused)return;e.preventDefault();if(e.button===0){mouse.down=true;shoot()}else if(e.button===2)cast(s.player.skill)});can.addEventListener('pointerup',e=>{if(e.button===0)mouse.down=false});can.addEventListener('pointerleave',()=>mouse.down=false);can.addEventListener('contextmenu',e=>e.preventDefault());
 
 function testAllowed(){return s.mode==='test'&&s.run&&!s.over;}
 function testMessage(msg){$('testMsg').textContent=msg;note('🧪 '+msg,2.1);}
-function testBossOptions(){const chosen=Number($('testSector').value)||0;const box=$('testBoss');box.replaceChildren();let random=document.createElement('option');random.value='random';random.textContent='🎲 Boss ngẫu nhiên trong map';box.append(random);for(let i=0;i<mythBosses[chosen].length;i++){let op=document.createElement('option');op.value=String(i);op.textContent=(i+1)+'. '+mythBosses[chosen][i].name;box.append(op);}let dragon=document.createElement('option');dragon.value='ultimate';dragon.textContent='🐉 '+ULTIMATE_BOSS.name;box.append(dragon);}
+function testBossOptions(){const chosen=Number($('testSector').value)||0;const box=$('testBoss');box.replaceChildren();let random=document.createElement('option');random.value='random';random.textContent='🎲 Boss ngẫu nhiên trong map';box.append(random);for(let i=0;i<mythBosses[chosen].length;i++){let op=document.createElement('option');op.value=String(i);op.textContent=(i+1)+'. '+mythBosses[chosen][i].name+' ('+mythBosses[chosen][i].skillName+')';box.append(op);}let dragon=document.createElement('option');dragon.value='ultimate';dragon.textContent='🐉 '+ULTIMATE_BOSS.name;box.append(dragon);}
 function initTestUI(){let box=$('testSector');box.replaceChildren();sectors.forEach((sector,i)=>{let option=document.createElement('option');option.value=String(i);option.textContent=(i+1)+'. '+sector.name;box.append(option);});syncTestUI();}
 function syncTestUI(){$('testSector').value=String(s.sector);$('testStage').value=String(s.stage);testBossOptions();const bossChoice=testBossChoice===null?'random':String(testBossChoice);$('testBoss').value=bossChoice;}
 function testApplyMap(){if(!testAllowed())return;const i=clamp(Number($('testSector').value)||0,0,sectors.length-1),stage=clamp(Math.floor(Number($('testStage').value)||1),1,18);s.sector=i;s.stage=stage;s.stageTime=0;s.wave=stage;s.bossAlive=false;s.bossStarted=false;s.bossDefeated=false;s.enemies.length=0;s.shots=s.shots.filter(b=>!b.enemy);s.missiles.length=0;s.spawnTime=1.5;testBossChoice=null;$('sectorName').textContent=sectors[i].name;$('stageLabel').textContent='✦ '+sectors[i].name+' · TEST LAB';drawPanels();syncTestUI();testMessage('Khu '+stage+' · '+sectors[i].name+' · sức mạnh ×'+stagePower().toFixed(2));}
-function testCallBoss(){if(!testAllowed())return;if(s.bossAlive){testMessage('Boss đang hoạt động; hạ hoặc dọn boss trước.');return;}const choice=$('testBoss').value;testBossChoice=choice==='random'?null:choice;s.bossDefeated=false;s.bossStarted=false;s.stageTime=STAGE_SECONDS;announceBoss();drawPanels();testMessage('Đã gọi '+(s.enemies.find(x=>x.type==='boss')?.profile?.name||'boss ngẫu nhiên'));}
+function testCallBoss(){if(!testAllowed())return;
+ const existing=s.enemies.find(x=>x.type==='boss');
+ if(existing)s.enemies.splice(s.enemies.indexOf(existing),1);
+ s.bossAlive=false;s.bossDefeated=false;s.bossStarted=false;
+ const choice=$('testBoss').value;testBossChoice=choice==='random'?null:choice;
+ s.stageTime=STAGE_SECONDS;announceBoss();drawPanels();
+ testMessage('Đã gọi '+(s.enemies.find(x=>x.type==='boss')?.profile?.name||'boss'));
+}
 function testKillBoss(){if(!testAllowed())return;const boss=s.enemies.find(x=>x.type==='boss');if(!boss){testMessage('Chưa có boss; hãy nhấn Gọi boss.');return;}kill(boss);drawPanels();testMessage('Đã hạ boss → bản đồ mới.');}
 function testGrantWeapons(maxLevel){if(!testAllowed())return;let p=s.player;p.unlocked=weapons.map(w=>w.id);for(const w of weapons)p.weaponLevels[w.id]=maxLevel?5:Math.max(1,p.weaponLevels[w.id]||1);if(!weaponById[p.weapon])p.weapon='photon';drawPanels();testMessage(maxLevel?'Tất cả 8 súng LV5 OVERDRIVE':'Đã mở khóa tất cả 8 súng');}
 function testGrantElements(){if(!testAllowed())return;for(const b of banks)for(const el of b.els)s.player.inventory[el]=99;drawPanels();testMessage('Tất cả nguyên tố có 99 đơn vị');}
@@ -870,6 +1215,12 @@ function testHeal(){if(!testAllowed())return;const p=s.player;p.hp=p.maxHp;p.pla
 function bindTest(id,fn){$(id).onclick=()=>{if(!testAllowed())return;fn();};}
 bindTest('testApply',testApplyMap);
 bindTest('testBossNow',testCallBoss);
+bindTest('testBossSkill',()=>{
+ const boss=s.enemies.find(x=>x.type==='boss'&&x.hp>0);
+ if(!boss){testCallBoss();}
+ const activeBoss=s.enemies.find(x=>x.type==='boss'&&x.hp>0);
+ if(activeBoss){activeBoss.z=Math.max(.38,activeBoss.z);executeBossSkill(activeBoss);updateBossHUD();}
+});
 bindTest('testTimer',()=>{if(s.bossAlive){testMessage('Boss đã xuất hiện.');return;}s.stageTime=STAGE_SECONDS;announceBoss();drawPanels();testMessage('Tăng thời gian khu vực đến 60 giây.');});
 bindTest('testKillBoss',testKillBoss);
 bindTest('testNextMap',()=>{transitionStage();drawPanels();testMessage('Đã nhảy sang khu '+s.stage);});
@@ -885,8 +1236,9 @@ $('testSpeed').onchange=()=>{if(!testAllowed())return;testSpeed=clamp(Number($('
 $('testGod').onchange=()=>{if(!testAllowed())return;testInvincible=$('testGod').checked;testMessage('Bất tử '+(testInvincible?'BẬT':'TẮT'));};
 $('tut').onclick=()=>{reset('tutorial');$('tut').classList.add('active');$('endless').classList.remove('active')};$('testStart').onclick=()=>{reset('test');$('tut').classList.remove('active');$('endless').classList.remove('active')};$('endless').onclick=()=>{reset('endless');$('endless').classList.add('active');$('tut').classList.remove('active')};document.querySelectorAll('[data-start]').forEach(n=>n.onclick=()=>{reset(n.dataset.start);$('tut').classList.toggle('active',n.dataset.start==='tutorial');$('endless').classList.toggle('active',n.dataset.start==='endless')});$('pause').onclick=pause;$('openBanks').onclick=bankOpen;$('closeBank').onclick=()=>{show(null);can.focus()};$('clearQueue').onclick=()=>{s.player.queue=[];drawPanels()};$('restart').onclick=()=>reset(s.mode);$('resume').onclick=()=>{if(s.over){reset(s.mode);return}show(null);can.focus()};$('toMenu').onclick=()=>{s.run=false;s.over=false;show('startModal')};$('fullscreen').onclick=()=>{document.fullscreenElement?document.exitFullscreen():$('stage').requestFullscreen?.()};$('balanced').onclick=()=>{quality='balanced';$('balanced').classList.add('active');$('low').classList.remove('active')};$('low').onclick=()=>{quality='low';$('low').classList.add('active');$('balanced').classList.remove('active')};
 
+// === BỘ ĐIỀU KHIỂN CẢM ỨNG MOBILE ĐƯỢC TỐI ƯU HÓA ===
 const mobileQuery=window.matchMedia('(pointer:coarse), (max-width:900px)');
-let touchMove={x:0,y:0},touchPointer=null,touchAimUntil=0,mobileLock=true,mobileHudTimer=0,infoAutoPause=false,mobileLastFrame=0;
+let touchMove={x:0,y:0},touchPointer=null,touchAimUntil=0,mobileLock=true,mobileHudTimer=0,infoAutoPause=false;
 function mobileActive(){return mobileQuery.matches || window.innerWidth<=900;}
 function resetMobileInput(){touchMove.x=0;touchMove.y=0;touchPointer=null;mouse.down=false;mobileLock=true;let knob=$('mobileKnob');if(knob)knob.style.transform='translate(0px,0px)';}
 function mobileAim(){
@@ -895,12 +1247,12 @@ function mobileAim(){
  const foes=s.enemies.filter(e=>e.hp>0);
  if(!foes.length){mouse.x=s.player.x;mouse.y=s.player.y-350;return;}
  let best=null,bestCost=Infinity;
- for(const e of foes){let pos=worldEnemy(e);let cost=hypot(pos.x-s.player.x,pos.y-s.player.y)*0.65-(e.type==='boss'?120:0);if(cost<bestCost){bestCost=cost;best=pos;}}
+ for(const e of foes){let pos=worldEnemy(e);let cost=hypot(pos.x-s.player.x,pos.y-s.player.y)*0.65-(e.type==='boss'?140:0);if(cost<bestCost){bestCost=cost;best=pos;}}
  if(best){mouse.x=best.x;mouse.y=best.y;}
 }
 function joystickMove(event){
  const area=$('mobileStick').getBoundingClientRect();const cx=area.left+area.width/2,cy=area.top+area.height/2;
- const max=Math.max(16,area.width*.33),dx=event.clientX-cx,dy=event.clientY-cy,mag=Math.hypot(dx,dy)||1;
+ const max=Math.max(16,area.width*.34),dx=event.clientX-cx,dy=event.clientY-cy,mag=Math.hypot(dx,dy)||1;
  const ratio=Math.min(1,mag/max);touchMove.x=dx/mag*ratio;touchMove.y=dy/mag*ratio;
  $('mobileKnob').style.transform='translate('+(touchMove.x*max)+'px,'+(touchMove.y*max)+'px)';
 }
@@ -917,7 +1269,8 @@ for(const key of ['e','r','f']){
  b.addEventListener('pointerup',()=>b.classList.remove('pressed'));
  b.addEventListener('pointercancel',()=>b.classList.remove('pressed'));
 }
-$('mobileDash').addEventListener('click',()=>{if(!s.paused)dash();});
+const dashBtn=$('mobileDash');
+dashBtn.addEventListener('pointerdown',e=>{e.preventDefault();if(!s.paused)dash();});
 $('mobilePrev').addEventListener('click',()=>cycleWeapon(-1));
 $('mobileNext').addEventListener('click',()=>cycleWeapon(1));
 $('mobilePause').addEventListener('click',pause);
@@ -940,6 +1293,8 @@ function updateMobileUI(){
  const p=s.player;
  $('mobileTopStats').innerHTML='🪐 <strong>'+Math.round(100*p.planet/p.maxPlanet)+'%</strong> · 🚀 <strong>'+Math.round(100*Math.max(0,p.hp)/p.maxHp)+'%</strong> · KHU <strong>'+s.stage+'</strong>';
  $('mobileWeaponName').textContent=weaponById[p.weapon].short+' · LV'+(p.weaponLevels[p.weapon]||1);
+ dashBtn.style.opacity=p.dash>0?'.55':'1';
+ dashBtn.textContent=p.dash>0?p.dash.toFixed(1)+'s':'LƯỚT';
  const root=$('mobileElements');
  const bank=banks[p.bank];const sig=bank.name+'|'+bank.els.map(x=>x+':'+p.inventory[x]).join(',')+'|'+p.queue.join(',');
  if(root.dataset.sig!==sig){root.dataset.sig=sig;root.replaceChildren();bank.els.forEach((name,i)=>{
@@ -956,7 +1311,7 @@ window.addEventListener('pointerup',e=>{if(mobileActive()&&e.pointerType!=='mous
 window.addEventListener('blur',resetMobileInput);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){resetMobileInput();if(s.run&&!s.paused)pause();}});
 window.addEventListener('resize',()=>{resetMobileInput();});
-if(mobileActive())quality='low';
+if(mobileActive()){quality='low';$('low').classList.add('active');$('balanced').classList.remove('active');}
 
 s.player.cdr=1;s.player.armor=0;s.player.shield=0;s.player.kills=0;drawPanels();show('startModal');requestAnimationFrame(loop);
 })();
