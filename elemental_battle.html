@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Galaxy Chem - Elemental Battle V9.0 • Bespoke Mythic Bosses</title>
+<title>Galaxy Chem - Elemental Battle V10 • Mythic Ascension</title>
 <style>
 :root{
   --bg:#05060b; --panel:#120e1c; --line:#463559; --accent:#ff6b4a; --gold:#ffd166; --text:#f5efe6; --muted:#a89bb8;
@@ -158,6 +158,15 @@ button,select{font:inherit;color:var(--text)}
   .grid3{grid-template-columns:1fr}
   .bankTabs{grid-template-columns:repeat(2,1fr)}
 }
+
+/* Mythic Ascension — compact cinematic encounter interface */
+.bossHUD{top:46px;width:min(540px,calc(100% - 500px));border:1px solid #84735b;border-top:2px solid var(--bacc);border-radius:3px;background:linear-gradient(110deg,#0b111eea,#21172beF,#0a111eea);padding:10px 15px 8px;box-shadow:0 10px 35px #0008}
+.bossHUD:before,.bossHUD:after{content:'';position:absolute;top:-3px;width:20px;height:7px;background:var(--bacc);clip-path:polygon(0 0,100% 0,70% 100%,0 100%)}.bossHUD:before{left:0}.bossHUD:after{right:0;transform:scaleX(-1)}
+.bossHead{gap:10px}.bossEmblem{width:38px;height:38px;border-radius:50%;border-width:1px;background:#0e1624}.bossEmblem svg{width:26px;height:26px}.bossTitle{font-size:12px;letter-spacing:1px}.bossTrait{font-size:9px;max-width:100%;line-height:1.4}.bossOriginBadge{font-size:8px;border:0;background:#ffffff0c;padding:3px 5px}.bossBarWrap{height:16px;border:1px solid #665f59;border-radius:1px;background:#050b13;margin-top:8px}.bossBarFill{background:linear-gradient(90deg,#71363f,var(--bcol),var(--bacc));box-shadow:inset 0 1px 1px #fff8}.bossHpNumbers{font-size:8px}.bossIntent{display:flex;gap:7px;font-size:9px;color:#d7d8e0;letter-spacing:.6px;align-items:center;margin-top:7px}.intentTime{margin-left:auto;color:var(--bacc)}.phaseGem{color:#92bdca}.phaseGem.rage{color:#ff8e65}.castTrack{height:2px;background:#263142;margin-top:5px}.castTrack span{display:block;height:100%;transition:width .1s linear}
+#bossEntrance{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);z-index:8;text-align:center;pointer-events:none;opacity:0;transition:opacity .25s;width:60%;padding:15px 0;background:linear-gradient(90deg,transparent,#07101de8,transparent)}#bossEntrance.show{opacity:1}#bossEntrance small{display:block;font-size:9px;letter-spacing:5px;color:#b8c7d2;margin-bottom:8px}#bossEntrance strong{display:block;font-size:26px;letter-spacing:4px;color:var(--arrival,#ecd4a3);text-shadow:0 2px 12px #000}#bossEntrance em{display:block;font-size:10px;letter-spacing:2px;color:#b7c5ce;margin-top:7px;font-style:normal}
+#labTools{top:165px;font-size:10px}.bossHUD:empty:before,.bossHUD:empty:after{display:none}
+@media(max-width:1150px){.bossHUD{width:calc(100% - 540px)}.bossOriginBadge{display:none}.bossTitle{font-size:10px}.bossTrait{font-size:8px}.bossEmblem{width:30px;height:30px}.bossHUD{padding:8px 10px}#labTools{top:160px}}
+@media(max-width:850px){.bossHUD{width:calc(100% - 32px);top:182px}#labTools{top:282px;max-width:calc(100% - 32px);width:70%}.bossTrait{display:none}.bossTitle{font-size:9px}.bossIntent{font-size:8px}.bossHpNumbers{font-size:7px}.bossEmblem{display:none}#bossEntrance strong{font-size:18px}}
 </style>
 </head>
 <body>
@@ -168,7 +177,7 @@ button,select{font:inherit;color:var(--text)}
       <div class="logo">G</div>
       <div>
         <h1>GALAXY CHEM <span>BESPOKE MYTHS</span></h1>
-        <small>21 Hand-Crafted 3D Mythic Bosses • V9.0</small>
+        <small>21 Mythic Bosses • 2.5D Ascension • V12.0</small>
       </div>
     </div>
     <div class="topstats">
@@ -191,7 +200,7 @@ button,select{font:inherit;color:var(--text)}
     <canvas id="game" width="960" height="540" tabindex="0"></canvas>
     <div class="overlayLabel" id="missionLabel">Màn T1 • Cầm cự 60s để triệu hồi Boss Thần Thoại</div>
     <div class="envBanner" id="envPassiveBanner">🌆 Thành Phố: Các tòa nhà 3D là VẬT CẢN CỨNG chặn đường đi & đạn bắn • Chỉ số cân bằng</div>
-    <div class="bossHUD" id="bossHUD"></div>
+    <div class="bossHUD" id="bossHUD"></div><div id="bossEntrance" aria-live="polite"></div>
 
     <!-- Lab Mode Toolbar -->
     <div id="labTools" hidden>
@@ -308,7 +317,7 @@ button,select{font:inherit;color:var(--text)}
 <!-- START MODAL -->
 <div class="modalWrap show" id="startModal">
   <div class="modal">
-    <div class="secTitle">GALAXY CHEM / BESPOKE MYTHIC BOSSES V9.0</div>
+    <div class="secTitle">GALAXY CHEM / MYTHIC SIGNATURES V10</div>
     <h2 class="heroTitle">21 MYTHIC GODS & <span>BESPOKE 3D ART.</span></h2>
     <p>Mỗi vị thần và quái thú thần thoại Âu - Á giờ đây sở hữu <strong>Tạo Hình 3D Thủ Công & Pháp Bảo Độc Nhất</strong> cùng <strong>Giao Diện Boss Hoàng Kim</strong>:<br>
     • <strong>☀ Sa mạc:</strong> <em>Anubis</em> (Đầu Chó Rừng Đen, Trượng Was), <em>Thần Ra</em> (Đầu Chim Ưng, Đĩa Mặt Trời, Cánh Vàng), <em>Tôn Ngộ Không</em> (Kim Cô, Lông Vũ Phượng Hoàng, Như Ý Kim Cô Bổng), <em>Sphinx</em> (Mũ Nemes Ai Cập, Cánh Sư Tử), <em>Cự Linh Thần</em> (Song Tuyên Phủ Khổng Lồ).<br>
@@ -352,6 +361,12 @@ button,select{font:inherit;color:var(--text)}
 </div>
 
 <div class="toast" id="toast"></div>
+
+
+<style>
+#bestiary{background:#0b1220;color:#e4e8f0;border:1px solid #8a765a;border-radius:12px;max-width:960px;width:90vw;max-height:88vh;padding:24px;box-shadow:0 30px 100px #000b}#bestiary::backdrop{background:#030710cc}#bestiary header{display:flex;justify-content:space-between;align-items:center;gap:20px}#bestiary h2{font-size:21px;margin:0;color:#f3d29b}#bossCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:20px}.bossCard{background:#131e30;border:1px solid #30425b;border-top:3px solid var(--accent);padding:16px;border-radius:8px}.bossCard h3{font-size:13px;line-height:1.6;color:var(--accent);margin:0 0 8px}.bossCard p,.bossCard li{font-size:11px;line-height:1.7}.bossCard ol{padding-left:18px}.bossCard a{font-size:11px;color:#81c9e4}.bossCard button,#closeBestiary,#openBestiary{background:#25344c;color:#f4dfb7;border:1px solid #637487;border-radius:5px;padding:6px 10px;cursor:pointer}.bossCard button{display:block;margin-top:12px}#openBestiary{position:absolute;right:16px;top:212px;font-size:10px;z-index:5}#bestiary p{color:#b5c1d0}
+</style>
+<button id="openBestiary">✧ Hồ sơ 21 boss</button><dialog id="bestiary"><header><div><h2>MYTHIC CODEX</h2><p>Tạo hình · 105 tên chiêu · Nguồn tham khảo</p></div><button id="closeBestiary">Đóng ×</button></header><p>Biểu tượng, vệt đạn và hiệu ứng thi triển được dựng riêng theo từng boss. Năm cơ chế nền: đạn quạt, đánh dấu mặt đất, lao tới, đạn vòng và tổ hợp. Các chiêu mở dần theo màn. Phòng thử mở đủ năm chiêu; bấm ▶ để thử riêng từng chiêu.</p><div id="bossCards"></div></dialog>
 
 <script>
 (()=>{
@@ -414,7 +429,7 @@ const mythicBossPools={
   coast:[
     {id:'poseidon', biome:'coast', name:'POSEIDON • Chúa Tể Đại Dương', origin:'Thần Thoại Hy Lạp', weapon:'Đinh Ba Hoàng Kim Khuấy Đảo Biển Khơi', trait:'Vương Miện 3 Chạc • Râu Biển Xanh • Giáp Vảy Hải Vương', color:'#00bbf9', accent:'#ffd166'},
     {id:'kraken', biome:'coast', name:'KRAKEN • Thủy Quái Vực Thẳm', origin:'Thần Thoại Bắc Âu', weapon:'8 Xúc Tu Khổng Lồ Quất Sóng', trait:'Đầu Bạch Tuộc Vực Thẳm • Mắt Đỏ Dữ Tợn • Xúc Tu Uốn Lượn', color:'#10b981', accent:'#a7f3d0'},
-    {id:'longvuong', biome:'coast', name:'ĐÔNG HẢI LONG VƯƠNG • Ngao Quảng', origin:'Thần Thoại Á Đông', weapon:'Định Hải Thần Châu & Long Đào', trait:'Sừng Rồng San Hô • Râu Rồng Bay Lượn • Long Bào Ngọc Bích', color:'#38bdf8', accent:'#ffd166'},
+    {id:'longvuong', biome:'coast', name:'ĐÔNG HẢI LONG VƯƠNG • Ngao Quảng', origin:'Thần Thoại Á Đông', weapon:'Định Hải Thần Châu & Long Đào', trait:'Chân Long Ngọc Bích • Sừng Phân Nhánh • Vảy Bạc & Râu Dài', color:'#38bdf8', accent:'#ffd166'},
     {id:'leviathan', biome:'coast', name:'LEVIATHAN • Xà Thần Biển Sâu', origin:'Thần Thoại Cổ Đại', weapon:'Hơi Thở Xoáy Nước Áp Suất Cao', trait:'Thân Rắn Biển Nhiều Đốt Uốn Lượn • Vây Lưng Phát Sáng', color:'#4361ee', accent:'#4cc9f0'},
     {id:'thuytinh', biome:'coast', name:'THỦY TINH • Vũ Đế Sóng Thần', origin:'Thần Thoại Việt Nam', weapon:'Pháp Luân Thủy Triều & Phong Vũ Kỳ', trait:'Vòng Xoáy Nước Sau Lưng • Mũ Miện Thủy Tộc • Hô Mưa Gọi Gió', color:'#00f5d4', accent:'#ffffff'}
   ],
@@ -433,7 +448,7 @@ const mythicBossPools={
     {id:'loicong', biome:'city', name:'LÔI CÔNG • Thiên Đình Chưởng Lôi', origin:'Thần Thoại Á Đông', weapon:'Chùy Sét & Đục Lôi Đình', trait:'Đôi Cánh Dơi Sấm Sét • Khuôn Mặt Chim Ưng • Trống Lôi Đình', color:'#a855f7', accent:'#ffd166'}
   ],
   space:[
-    {id:'cosmic_dragon', biome:'space', name:'NIDHOGG-LONG VƯƠNG • Hắc Long Vũ Trụ', origin:'Chung Cực Âu - Á', weapon:'Hơi Thở Hố Đen & Mưa Thiên Thạch Tinh Vân', trait:'Sải Cánh Rồng Tinh Vân • Sừng Hoàng Kim • Thân Rồng 6 Đốt', color:'#f72585', accent:'#4cc9f0', ultimate:true}
+    {id:'cosmic_dragon', biome:'space', name:'NIDHOGG-LONG VƯƠNG • Hắc Long Vũ Trụ', origin:'Chung Cực Âu - Á', weapon:'Hơi Thở Hố Đen & Mưa Thiên Thạch Tinh Vân', trait:'Cánh Màng Tinh Vân • Giáp Vảy • Long Trảo & Hàm Nanh', color:'#f72585', accent:'#4cc9f0', ultimate:true}
   ]
 };
 
@@ -662,7 +677,7 @@ function spawnMythicBoss(forceDragon=false, specificBossId=null){
 
   const mult = getStageMultiplier(state.stage);
   const isDragon = !!template.ultimate || forceDragon;
-  const unlockedSkills = isDragon ? 5 : clamp(1 + state.stage, 2, 5);
+  const unlockedSkills = (isDragon || state.mode==='lab') ? 5 : clamp(1 + state.stage, 2, 5);
   const baseHp = isDragon ? 480 : 220;
   const bossHp = Math.round(baseHp * mult);
   const bossDmg = Math.round((isDragon ? 26 : 18) * Math.pow(mult, 0.85));
@@ -694,7 +709,7 @@ function spawnMythicBoss(forceDragon=false, specificBossId=null){
   };
   resolveObstacleCollisions(boss, boss.r);
   state.enemies.push(boss);
-  state.bossActive = true;
+  state.bossActive = true;state.bossIntro={name:template.name.split(' • ')[0],sub:template.origin,color:template.accent,until:state.time+2.3};
 
   shake = Math.max(shake, isDragon ? 14 : 8);
   screenFlash = 0.42; screenFlashCol = template.color;
@@ -706,16 +721,17 @@ function spawnMythicBoss(forceDragon=false, specificBossId=null){
 
 function executeBossSkill(b){
   const p=state.player;
-  const dir=norm(p.x-b.x, p.y-b.y);
+  const target=b.castTarget||p;const dir=norm(target.x-b.x,target.y-b.y);
   const baseAngle=Math.atan2(dir.y, dir.x);
-  const skillIdx = Math.floor(Math.random() * b.unlockedSkills);
+  const skillIdx = b.pendingSkill??Math.floor(Math.random()*b.unlockedSkills);b.attackPose=.45;
+  pushEffect({type:'mythicCast',bossId:b.bossId,move:skillIdx,x:b.x,y:b.y,t:0,life:.7,r:b.r*1.8,color:b.color,accent:b.accent});
 
   if(skillIdx===0){
     const count = b.ultimate ? 9 : (3 + Math.min(4, state.stage));
     for(let i=0;i<count;i++){
       const ang = baseAngle + (i-(count-1)/2)*0.18;
       state.projectiles.push({
-        owner:'enemy', kind:'bossOrb',
+        owner:'enemy', kind:'bossOrb', bossId:b.bossId, move:skillIdx,
         x:b.x, y:b.y,
         vx:Math.cos(ang)*275, vy:Math.sin(ang)*275,
         life:2.2, r:b.ultimate?8:6,
@@ -730,8 +746,8 @@ function executeBossSkill(b){
       const ox = i===0 ? 0 : rand(-95,95);
       const oy = i===0 ? 0 : rand(-95,95);
       pushEffect({
-        type:'bossTelegraph',
-        x:clamp(p.x+ox,-430,430), y:clamp(p.y+oy,-300,300),
+        type:'bossTelegraph',bossId:b.bossId,move:skillIdx,
+        x:clamp(target.x+ox,-430,430), y:clamp(target.y+oy,-300,300),
         t:0, life:0.75, r:b.ultimate?68:52,
         dmg:b.dmg*1.15, color:b.color, accent:b.accent
       });
@@ -748,7 +764,7 @@ function executeBossSkill(b){
     for(let i=0;i<bolts;i++){
       const ang = (i/bolts)*TAU + state.time;
       state.projectiles.push({
-        owner:'enemy', kind:'bossOrb',
+        owner:'enemy', kind:'bossOrb', bossId:b.bossId, move:skillIdx,
         x:b.x, y:b.y,
         vx:Math.cos(ang)*230, vy:Math.sin(ang)*230,
         life:2.5, r:6,
@@ -760,10 +776,10 @@ function executeBossSkill(b){
   }
   else {
     for(let w=0;w<3;w++){
-      const tx = clamp(p.x + rand(-130,130), -420, 420);
-      const ty = clamp(p.y + rand(-110,110), -290, 290);
+      const tx = clamp(target.x + rand(-130,130), -420, 420);
+      const ty = clamp(target.y + rand(-110,110), -290, 290);
       pushEffect({
-        type:'bossTelegraph',
+        type:'bossTelegraph',bossId:b.bossId,move:skillIdx,
         x:tx, y:ty, t:0, life:0.65+w*0.15, r:72,
         dmg:b.dmg*1.3, color:b.color, accent:b.accent
       });
@@ -771,7 +787,7 @@ function executeBossSkill(b){
     for(let i=-3;i<=3;i++){
       const ang = baseAngle + i*0.12;
       state.projectiles.push({
-        owner:'enemy', kind:'bossOrb',
+        owner:'enemy', kind:'bossOrb', bossId:b.bossId, move:skillIdx,
         x:b.x, y:b.y,
         vx:Math.cos(ang)*320, vy:Math.sin(ang)*320,
         life:2.2, r:8,
@@ -1314,23 +1330,11 @@ function update(dt){
     }
 
     if(e.type==='boss'){
-      if(e.dashTime > 0){
-        e.dashTime -= dt;
-        e.x = clamp(e.x + e.dashVelX*dt, -430, 430);
-        e.y = clamp(e.y + e.dashVelY*dt, -300, 300);
-      } else {
-        e.x += dx/d*e.speed*slow*dt;
-        e.y += dy/d*e.speed*slow*dt;
-      }
-      e.skillCd -= dt * slow;
-      if(e.skillCd <= 0){
-        executeBossSkill(e);
-        const enrage = e.hp < e.maxHp*0.5 ? 0.72 : 1.0;
-        e.skillCd = Math.max(1.25, (3.2 - state.stage*0.25) * enrage);
-      }
-    } else {
-      e.x+=dx/d*e.speed*slow*dt; e.y+=dy/d*e.speed*slow*dt;
-    }
+      e.attackPose=Math.max(0,(e.attackPose||0)-dt);
+      if(e.windup>0){e.windup=Math.max(0,e.windup-dt);if(e.windup===0){executeBossSkill(e);e.pendingSkill=null;e.castTarget=null;const rage=e.hp<e.maxHp*.5?.72:1;e.skillCd=Math.max(1.25,(3.2-state.stage*.25)*rage);}}
+      else if(e.dashTime>0){e.dashTime-=dt;e.x=clamp(e.x+e.dashVelX*dt,-430,430);e.y=clamp(e.y+e.dashVelY*dt,-300,300);}
+      else{e.x+=dx/d*e.speed*slow*dt;e.y+=dy/d*e.speed*slow*dt;e.skillCd-=dt*slow;if(e.skillCd<=0){e.pendingSkill=Math.floor(Math.random()*e.unlockedSkills);e.castTarget={x:p.x,y:p.y};e.windupMax=e.ultimate?.85:.7;e.windup=e.windupMax;}}
+    }else{e.x+=dx/d*e.speed*slow*dt;e.y+=dy/d*e.speed*slow*dt;}
     resolveObstacleCollisions(e, e.r);
 
     if(e.burn>0){
@@ -1388,6 +1392,7 @@ function update(dt){
 
     if(!hit){
       if(pr.owner==='enemy'){
+      if(pr.bossId){const v=norm(pr.vx-pr.vy,(pr.vx+pr.vy)*.5);ctx.strokeStyle=pr.color;ctx.lineWidth=3;ctx.globalAlpha=.4;ctx.beginPath();ctx.moveTo(p.x-v.x*23,p.y-18-v.y*23);ctx.lineTo(p.x,p.y-18);ctx.stroke();ctx.globalAlpha=1;mythicGlyph(pr.bossId,p.x,p.y-18,pr.r+5,state.time,pr.color,pr.accent);ctx.restore();continue;}
         if(Math.hypot(p.x-pr.x, p.y-pr.y) < 13 + pr.r){
           damagePlayer(pr.dmg || 15);
           hit=true;
@@ -1435,7 +1440,7 @@ function update(dt){
     }
     if(e.t>=e.life){
       if(e.type==='bossTelegraph'){
-        pushEffect({type:'burst',x:e.x,y:e.y,t:0,life:.45,r:e.r,color:e.color});
+        pushEffect({type:e.bossId?'mythicCast':'burst',bossId:e.bossId,move:e.move,impact:true,x:e.x,y:e.y,t:0,life:.65,r:e.r,color:e.color,accent:e.accent});
         emit(e.x,e.y,e.color,28,110);
         if(Math.hypot(p.x-e.x, p.y-e.y) <= e.r + 12){
           damagePlayer(e.dmg || 20);
@@ -1512,11 +1517,14 @@ function drawDiamond(x,y,w,h,fill,stroke,lineWidth=1.5){
   if(fill){ctx.fillStyle=fill; ctx.fill();}
   if(stroke){ctx.strokeStyle=stroke; ctx.lineWidth=lineWidth; ctx.stroke();}
 }
+let materialMode=false;
 function poly(points,fill,stroke,lineWidth=1.4){
-  ctx.beginPath(); points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath();
-  if(fill){ctx.fillStyle=fill;ctx.fill();}
-  if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lineWidth;ctx.stroke();}
+ ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();
+ if(fill){if(materialMode&&/^#[0-9a-f]{6}$/i.test(fill)){let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;for(const p of points){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1]);}const g=ctx.createLinearGradient(minX,minY,maxX+1,maxY+1);g.addColorStop(0,tone(fill,1.38,18));g.addColorStop(.38,tone(fill,1.05));g.addColorStop(1,tone(fill,.43));ctx.fillStyle=g;}else ctx.fillStyle=fill;ctx.fill();}
+ if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=materialMode?Math.min(lineWidth,1.25):lineWidth;ctx.stroke();}
+ if(materialMode&&fill&&/^#[0-9a-f]{6}$/i.test(fill)&&points.length>2){ctx.save();ctx.strokeStyle='#ecf7ff55';ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);ctx.lineTo(points[1][0],points[1][1]);ctx.lineTo(points[2][0],points[2][1]);ctx.stroke();ctx.restore();}
 }
+
 function glow(x,y,r,color,alpha=.28){
   if(quality==='low')return;
   ctx.save();
@@ -1830,8 +1838,132 @@ function drawPlayer(){
 // ============================================================================
 // HỆ THỐNG VẼ TẠO HÌNH 3D ĐẶC TRƯNG CHO TỪNG VỊ THẦN TRONG 21 MYTHIC BOSSES
 // ============================================================================
+// Articulated dragons: curved anatomy, individually shaded scales and animated whiskers.
+const bossArts={
+anubis:['Cân Linh Hồn','Cổng Tử Giới','Bước Âm Phủ','Vòng Phán Quyết','Đại Phán Xét'],ra:['Lông Vũ Mặt Trời','Nhật Trụ','Nhật Hành','Vành Nhật Hoa','Thiên Dương Bùng Nổ'],wukong:['Kim Cô Bổng','Định Hải Nhất Kích','Cân Đẩu Vân','Bổng Ảnh Liên Hoàn','Đại Náo Thiên Cung'],sphinx:['Cổ Ngữ Sa Mạc','Ấn Kim Tự Tháp','Sư Vương Vồ','Bão Chữ Cổ','Lăng Mộ Thức Tỉnh'],culinh:['Tuyên Hoa Phủ','Khai Sơn','Cự Linh Xung Kích','Song Phủ Luân','Thiên Sơn Sụp Đổ'],poseidon:['Tam Xoa Kích','Hải Trụ','Rẽ Sóng','Vương Miện Triều','Đại Hồng Thủy'],kraken:['Gai Xúc Tu','Xúc Tu Trồi Dậy','Vực Thẳm Trườn','Bát Túc Loạn Vũ','Vòng Vây Kraken'],longvuong:['Long Châu','Long Trảo Giáng','Long Du','Tứ Hải Long Đào','Tứ Hải Quy Nhất'],leviathan:['Nanh Biển Sâu','Thủy Xoáy','Hải Xà Lao','Vòng Xà Hải','Vực Sâu Nuốt Chửng'],thuytinh:['Thủy Tiễn','Vũ Trận','Ngự Thủy','Phong Vũ Luân','Nước Dâng Ngập Trời'],fenrir:['Nanh Hắc Lang','Xích Gleipnir','Lang Vồ','Trảo Tận Thế','Nuốt Chửng Nhật Nguyệt'],cuuvi:['Hồ Hỏa','Ấn Hồ Ly','Hồ Ảnh','Cửu Hỏa Liên','Cửu Vĩ Thiên Hỏa'],medusa:['Xà Tiễn','Xà Nhãn','Xà Bộ','Đàn Rắn Độc','Đền Đá Gorgon'],bachho:['Bạch Kim Trảo','Hổ Ấn','Bạch Hổ Vồ','Phong Trảo','Tây Thiên Hổ Khiếu'],cernunnos:['Mầm Linh Mộc','Rễ Cổ Thụ','Lộc Bộ','Lá Thiêng','Đại Ngàn Thức Giấc'],zeus:['Thiên Lôi','Sét Olympus','Lôi Bộ','Lôi Võng','Phán Quyết Olympus'],thor:['Mjolnir Phi','Búa Giáng','Asgard Xung Kích','Búa Xoay','Sấm Ragnarok'],natra:['Hỏa Tiêm Thương','Liên Hoa Hỏa','Phong Hỏa Luân','Càn Khôn Quyển','Tam Đầu Lục Tý'],ares:['Chiến Mâu','Chiến Kỳ','Khiên Xung Phong','Huyết Kiếm Trận','Chiến Trường Sparta'],loicong:['Lôi Đục','Thiên Lôi Chùy','Dực Lôi','Ngũ Lôi Cổ','Vạn Lôi Triều Tông'],cosmic_dragon:['Tinh Vân Long Tức','Thiên Thạch','Hắc Long Du','Vành Hư Không','Hố Đen Diệt Thế']};
+function bossArtName(id,k){return (bossArts[id]||bossMoveNames)[k]||'Thần thuật';}
+// Each symbol has its own silhouette; shared drawing primitives keep effects inexpensive.
+function mythicGlyph(id,x,y,size,t,col,acc){ctx.save();ctx.translate(x,y);ctx.scale(size/30,size/30);ctx.strokeStyle=acc;ctx.fillStyle=col;ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';
+ const line=(a)=>{ctx.beginPath();a.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.stroke();};
+ const arc=(x,y,r,a=0,b=TAU)=>{ctx.beginPath();ctx.arc(x,y,r,a,b);ctx.stroke();};
+ const leaf=(a,b,c,d)=>{ctx.beginPath();ctx.moveTo(a,b);ctx.quadraticCurveTo(c+8,d-8,c,d);ctx.quadraticCurveTo(a-8,b+8,a,b);ctx.fill();ctx.stroke();};
+ switch(id){
+ case 'anubis':line([[0,25],[0,-24]]);line([[-24,-10],[24,-10]]);for(let s of [-1,1]){line([[s*19,-10],[s*27,10],[s*11,10],[s*19,-10]]);arc(s*19,10,8,0,Math.PI);}arc(0,-23,4);break;
+ case 'ra':arc(0,0,13);for(let i=0;i<12;i++){let a=i*TAU/12+t*.6;line([[Math.cos(a)*18,Math.sin(a)*18],[Math.cos(a)*29,Math.sin(a)*29]]);}break;
+ case 'wukong':ctx.rotate(t*3);line([[-29,0],[29,0]]);ctx.lineWidth=6;line([[-29,0],[-20,0]]);line([[20,0],[29,0]]);arc(0,0,20,.1,2.4);break;
+ case 'sphinx':line([[-25,20],[0,-25],[25,20],[-25,20]]);line([[-12,7],[0,-3],[12,7],[0,13],[-12,7]]);arc(0,6,3);break;
+ case 'culinh':for(let s of [-1,1]){line([[s*20,24],[-s*12,-24]]);ctx.beginPath();ctx.arc(-s*11,-13,14,s>0?Math.PI/2:-Math.PI/2,s>0?Math.PI*1.5:Math.PI/2);ctx.closePath();ctx.fill();ctx.stroke();}break;
+ case 'poseidon':line([[0,29],[0,-28]]);line([[-18,-23],[-18,-5],[18,-5],[18,-23]]);for(let a of [-18,0,18])line([[a-4,-18],[a,-27],[a+4,-18]]);break;
+ case 'kraken':for(let i=0;i<8;i++){ctx.save();ctx.rotate(i*TAU/8+t*.3);ctx.beginPath();ctx.moveTo(0,4);ctx.bezierCurveTo(23,5,32,32,13,28);ctx.stroke();for(let j=0;j<3;j++)arc(16+j*3,12+j*4,1);ctx.restore();}break;
+ case 'longvuong':arc(0,0,10);for(let s of [-1,1]){ctx.beginPath();ctx.moveTo(s*25,22);ctx.bezierCurveTo(s*40,-22,-s*12,-37,-s*16,-12);ctx.stroke();line([[s*14,-17],[s*24,-29],[s*24,-16]]);}break;
+ case 'leviathan':for(let j=0;j<3;j++){ctx.beginPath();for(let i=0;i<=30;i++){let a=i*.25+t*.7;let r=i*.8;let x=Math.cos(a)*r,y=Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();ctx.rotate(2.1);}break;
+ case 'thuytinh':for(let j=-2;j<=2;j++){line([[j*12,-25],[j*12-8,-8]]);ctx.beginPath();ctx.moveTo(-29,8+j*4);ctx.bezierCurveTo(-10,-5+j*4,10,24+j*4,29,8+j*4);ctx.stroke();}break;
+ case 'fenrir':for(let s of [-1,1]){line([[s*7,-25],[s*20,-7],[s*9,25],[s*4,5]]);for(let i=0;i<3;i++)arc(s*(19+i*3),-15+i*10,4);}break;
+ case 'cuuvi':for(let i=0;i<9;i++){ctx.save();ctx.rotate(i*TAU/9+t*.3);leaf(0,5,0,29);ctx.restore();}break;
+ case 'medusa':ctx.beginPath();ctx.moveTo(-29,0);ctx.quadraticCurveTo(0,-25,29,0);ctx.quadraticCurveTo(0,25,-29,0);ctx.stroke();arc(0,0,9);line([[0,-8],[0,8]]);for(let s of [-1,1])line([[s*20,12],[s*26,22],[s*18,28]]);break;
+ case 'bachho':for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(-20+i*7,25);ctx.quadraticCurveTo(-9+i*8,-5,14+i*7,-25);ctx.stroke();}break;
+ case 'cernunnos':for(let i=0;i<6;i++){ctx.save();ctx.rotate(i*TAU/6+t*.2);line([[0,0],[0,29]]);leaf(0,10,9,19);leaf(0,18,-9,26);ctx.restore();}break;
+ case 'zeus':line([[5,-30],[-16,2],[3,-3],[-5,30],[19,-7],[0,-3],[5,-30]]);break;
+ case 'thor':ctx.rotate(Math.sin(t*5)*.4);line([[0,26],[0,-12]]);ctx.fillRect(-20,-25,40,17);ctx.strokeRect(-20,-25,40,17);line([[-26,-8],[-32,3],[-23,0],[-29,14]]);break;
+ case 'natra':ctx.rotate(t*3);arc(0,0,20);for(let i=0;i<8;i++){ctx.rotate(TAU/8);line([[18,0],[28,7],[23,-4]]);}line([[-28,0],[28,0]]);break;
+ case 'ares':line([[-18,-23],[18,-23],[16,7],[0,27],[-16,7],[-18,-23]]);line([[-28,25],[24,-29],[20,-16],[12,-23],[24,-29]]);break;
+ case 'loicong':for(let i=0;i<5;i++){let a=i*TAU/5;arc(Math.cos(a)*22,Math.sin(a)*22,6);}line([[-6,-17],[6,-4],[-4,3],[6,18]]);break;
+ case 'cosmic_dragon':ctx.save();ctx.scale(1,.45);for(let i=0;i<3;i++){ctx.rotate(.6);arc(0,0,20+i*6);}ctx.restore();ctx.fillStyle='#05040e';ctx.beginPath();ctx.arc(0,0,12,0,TAU);ctx.fill();break;
+ }ctx.restore();}
+function mythicScene(e,p,u){const id=e.bossId,r=e.r||50,f=1-u,c=e.color,a=e.accent||'#fff',rise=Math.sin(u*Math.PI);ctx.save();ctx.globalAlpha=f*.8;ctx.strokeStyle=c;ctx.lineWidth=3;
+ const bolt=(x,y,h,seed)=>{ctx.beginPath();ctx.moveTo(x,y-h);for(let j=1;j<=7;j++)ctx.lineTo(x+Math.sin(j*4+seed)*12*(1-j/8),y-h+j*h/7);ctx.stroke();};
+ if(['zeus','thor','loicong'].includes(id)){for(let i=0;i<(id==='zeus'?5:id==='loicong'?8:2);i++){let z=i*2.4;bolt(p.x+Math.cos(z)*r*.7,p.y+Math.sin(z)*r*.3,100+rise*90,i);}if(id==='thor')mythicGlyph('thor',p.x,p.y-110*(1-u),45,state.time,c,a);}
+ else if(id==='kraken'||id==='cernunnos'){for(let i=0;i<6;i++){let z=i*TAU/6,x=p.x+Math.cos(z)*r,y=p.y+Math.sin(z)*r*.5;ctx.lineWidth=id==='kraken'?9:5;ctx.beginPath();ctx.moveTo(x,y);ctx.bezierCurveTo(x-25,y-rise*85,x+35,y-rise*120,x+Math.sin(i)*20,y-rise*100);ctx.stroke();if(id==='kraken')for(let j=0;j<4;j++)volume(x+j*2,y-rise*j*20,2,1,a);else for(let j=1;j<4;j++){ctx.beginPath();ctx.moveTo(x,y-rise*j*25);ctx.lineTo(x+(j%2?18:-18),y-rise*j*25-14);ctx.stroke();}}}
+ else if(['poseidon','thuytinh','longvuong','leviathan'].includes(id)){for(let j=0;j<5;j++){ctx.beginPath();for(let i=0;i<=30;i++){let x=p.x-r*1.4+i*r*2.8/30,y=p.y+j*5-Math.sin(i*.3-u*8+j)*14*rise; i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}if(id==='thuytinh'){ctx.lineWidth=1;for(let i=0;i<22;i++){let x=p.x+Math.sin(i*6.7)*r*1.4,y=p.y-((i*19+u*160)%120);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-5,y+15);ctx.stroke();}}if(id==='poseidon')for(let i=-1;i<=1;i++)mythicGlyph(id,p.x+i*35,p.y-70*rise,25,state.time,c,a);}
+ else if(id==='ra'||id==='cuuvi'||id==='natra'){for(let i=0;i<(id==='cuuvi'?9:7);i++){let z=i*TAU/(id==='cuuvi'?9:7)+u*2,x=p.x+Math.cos(z)*r,y=p.y+Math.sin(z)*r*.5;flame(x,y,7,25+rise*38,i+state.time*2,false,id==='ra'?3:2);}if(id==='ra'){ctx.globalAlpha=f*.45;glow(p.x,p.y-65*rise,65,c,.7);mythicGlyph('ra',p.x,p.y-65*rise,48,state.time,c,a);}}
+ else if(id==='fenrir'||id==='bachho'){ctx.lineWidth=5;for(let j=-1;j<=1;j++){ctx.beginPath();ctx.moveTo(p.x-r+j*16,p.y+30);ctx.quadraticCurveTo(p.x+j*20,p.y-40,p.x+r+j*16,p.y-75*rise);ctx.stroke();}}
+ else if(id==='wukong'){for(let j=0;j<4;j++){ctx.save();ctx.translate(p.x,p.y-22);ctx.rotate(j*.65+u*4);ctx.globalAlpha=f*(1-j*.17);ctx.fillStyle=a;ctx.fillRect(-r,-3,r*2,6);ctx.fillStyle='#ff6647';ctx.fillRect(-r+14,-2,r*2-28,4);ctx.restore();}}
+ else if(id==='cosmic_dragon'){ctx.fillStyle='#02020d';ctx.beginPath();ctx.ellipse(p.x,p.y-25,r*rise,r*rise*.55,0,0,TAU);ctx.fill();for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(p.x,p.y-25,r*(.7+i*.13),r*(.2+i*.08),u*2,0,TAU);ctx.stroke();}}
+ else if(id==='medusa'){for(let i=0;i<7;i++){let z=i*2.4,x=p.x+Math.cos(z)*r,y=p.y+Math.sin(z)*r*.5;plate(x,y,7,40*rise,'#7b9e91');}mythicGlyph(id,p.x,p.y-55*rise,40,state.time,c,a);}
+ else{for(let i=0;i<6;i++){let z=i*TAU/6,x=p.x+Math.cos(z)*r,y=p.y+Math.sin(z)*r*.5;mythicGlyph(id,x,y-rise*35,18+rise*8,state.time,c,a);if(id==='culinh'||id==='sphinx')plate(x,y,7,20*rise,c);}}
+ ctx.restore();}
+
+function drawMythicImpact(e,p,u){const f=Math.max(0,1-u),col=e.color,acc=e.accent||'#fff';ctx.save();ctx.globalAlpha=f;
+ const r=e.r||50,k=e.move||0;if(e.impact||k===4)mythicScene(e,p,u);ring(p.x,p.y,r*(.35+u),col,f*.75,2);glow(p.x,p.y-18,r,col,f*.16);
+ // Vertical emergence, rotating volley, or directional cast are visually distinct.
+ if(e.impact){for(let i=0;i<5;i++){let a=i*TAU/5;const x=p.x+Math.cos(a)*r*.7,y=p.y+Math.sin(a)*r*.35;ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-Math.sin(u*Math.PI)*45);ctx.stroke();}}
+ const count=e.impact?1:k===3?4:k===4?5:1;
+ for(let i=0;i<count;i++){let a=i*TAU/count+u*1.5;let x=p.x+(count>1?Math.cos(a)*r:0),y=p.y-20+(count>1?Math.sin(a)*r*.5:0);mythicGlyph(e.bossId,x,y-(e.impact?Math.sin(u*Math.PI)*35:0),(count>1?16:34)*(1+u*.35),state.time,col,acc);}
+ ctx.restore();}
+function bossSurfaceDetail(e,t){const id=e.bossId;if(['longvuong','cosmic_dragon','kraken','leviathan','fenrir','bachho','cuuvi','sphinx'].includes(id))return;
+ ctx.save();const acc=e.accent; // etched armor, rivets, floating weapon insignia and moving cloth
+ for(let s of [-1,1]){for(let j=0;j<4;j++){plate(s*(17+j*.3),-27+j*5,4,5,tone(e.color,.5));}for(let j=0;j<3;j++){ctx.fillStyle=acc;ctx.beginPath();ctx.arc(s*12,-31+j*6,.8,0,TAU);ctx.fill();}}
+ mythicGlyph(id,0,-32,7,t,e.color,acc);
+ if(['anubis','ra','zeus','cernunnos','thuytinh','loicong'].includes(id)){ctx.globalAlpha=.45;mythicGlyph(id,0,-94,15,t,e.color,acc);}
+ if(id==='wukong'||id==='natra'||id==='ares'||id==='thor'){ctx.strokeStyle=id==='thor'?'#cf3549':'#ff6558';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(12,-47);ctx.bezierCurveTo(42,-50,24,-17,42+Math.sin(t*3)*5,-8);ctx.stroke();}
+ if(id==='medusa'){for(let i=0;i<7;i++){ctx.strokeStyle=i%2?'#60b789':'#276b59';ctx.lineWidth=3;let x=(i-3)*4;ctx.beginPath();ctx.moveTo(x,-65);ctx.bezierCurveTo(x*2,-85,x*3+Math.sin(t*3+i)*4,-62,x*2,-54);ctx.stroke();volume(x*2,-54,3,2,'#70ca82');}}
+ ctx.restore();}
+function drawMythicBeast(e,t){const id=e.bossId,c=e.color,a=e.accent,ink='#071018';ctx.save();
+ if(id==='kraken'){for(let i=0;i<8;i++){let side=i<4?-1:1,j=i%4,x=side*(20+j*8),y=-7+j*3;ctx.strokeStyle=ink;ctx.lineWidth=12-j;ctx.beginPath();ctx.moveTo(side*8,-26);ctx.bezierCurveTo(x,-20,x+side*25,25,side*(48+j*8),-14+Math.sin(t*3+i)*12);ctx.stroke();ctx.strokeStyle=tone(c,.7+j*.1);ctx.lineWidth=8-j*.6;ctx.stroke();for(let k=0;k<4;k++)volume(x+side*k*6,y+k*2,2,1.2,a);}volume(0,-55,29,35,c);ctx.strokeStyle='#114738';ctx.lineWidth=1;for(let n=-2;n<=2;n++){ctx.beginPath();ctx.moveTo(n*5,-85);ctx.quadraticCurveTo(n*12,-65,n*9,-53);ctx.stroke();}for(let s of [-1,1]){volume(s*13,-47,8,5,ink);volume(s*13,-47,4,2,'#ffb54a');poly([[s*5,-53],[s*22,-59],[s*21,-51],[s*8,-49]],'#114b3e',ink,.7);}volume(0,-30,8,9,'#132923');}
+ else if(id==='leviathan'){for(let i=35;i>=0;i--){let u=i/35,x=Math.sin(u*7+t*1.5)*31,y=-u*95,r=5+(1-u)*10;volume(x,y,r,r*.8,c);if(i%3===0)poly([[x-r,y],[x-r-9,y-12],[x,y-4]],a,ink,.6);}let x=Math.sin(t*1.5)*31;volume(x,-9,19,15,c);for(let s of [-1,1]){poly([[x+s*12,-19],[x+s*25,-34],[x+s*17,-9]],a,ink,1);volume(x+s*8,-13,3,2,'#ffed98');}poly([[x-12,-5],[x+12,-5],[x,-1]],'#fff');}
+ else {const fox=id==='cuuvi',wolf=id==='fenrir',tiger=id==='bachho',sphinx=id==='sphinx',coat=fox?'#e4c8d7':tiger?'#d3e1e2':sphinx?'#b6954c':'#403e60';
+ if(fox){for(let i=0;i<9;i++){ctx.save();ctx.translate(-16,-21);ctx.rotate(-1.7+i*.34+Math.sin(t*2+i)*.05);ctx.beginPath();ctx.moveTo(0,0);ctx.bezierCurveTo(-16,-25,-12,-65,0,-72);ctx.bezierCurveTo(16,-53,13,-22,0,0);ctx.fillStyle=i%2?'#f5dee7':'#b97eab';ctx.fill();ctx.strokeStyle=ink;ctx.lineWidth=1;ctx.stroke();ctx.restore();}}
+ for(let s of [-1,1])for(let i of [-1,1]){const x=i*24+s*4,y=-9+Math.sin(t*5+i+s)*2;volume(x,y,7,15,tone(coat,s<0?.65:1));volume(x+3,2,9,4,coat);for(let k=0;k<3;k++)poly([[x+k*3,2],[x+k*3+2,6],[x+k*3+3,2]],'#eee');}
+ volume(-4,-27,37,21,coat);volume(22,-39,20,24,coat);volume(28,-47,18,17,coat);volume(41,-39,13,8,coat);volume(49,-40,4,3,ink);
+ for(let i=0;i<7;i++){poly([[10,-56+i*6],[0,-60+i*6],[-5,-49+i*6],[14,-43+i*6]],tone(coat,.75),ink,.5);}
+ if(tiger){for(let i=0;i<6;i++){let x=-28+i*10;poly([[x,-44],[x+6,-40],[x+2,-25],[x-2,-34]],'#25323d');}for(let i=0;i<3;i++)poly([[23,-59+i*7],[35,-56+i*7],[26,-53+i*7]],'#17232d');}
+ for(let x of [19,35])poly([[x-6,-55],[x-3,-73],[x+7,-54]],coat,ink,1);
+ volume(35,-49,4,2,wolf?'#ecb7ff':fox?'#ff5fba':'#76ddff');poly([[40,-34],[43,-27],[45,-35]],'#fff');
+ if(wolf){ctx.strokeStyle='#afb6d6';ctx.lineWidth=2;for(let i=0;i<8;i++){ctx.beginPath();ctx.ellipse(-8+i*5,-29+Math.sin(i*.6)*8,4,2,i*.5,0,TAU);ctx.stroke();}}
+ if(sphinx){volume(29,-56,15,16,'#c3a05c');for(let s of [-1,1]){poly([[29+s*10,-70],[29+s*23,-43],[29+s*9,-36]],'#254f6c',a,1);for(let j=0;j<5;j++){ctx.strokeStyle=a;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(29+s*12,-63+j*5);ctx.lineTo(29+s*20,-59+j*5);ctx.stroke();}}volume(24,-58,2,1,ink);volume(34,-58,2,1,ink);}
+ }
+ ctx.restore();}
+
+function drawRoyalDragon(t, western, rage){
+ const ink='#07151d', skin=western?'#632d48':'#206a73', light=western?'#bc6475':'#88c9bd', pale=western?'#e0b79c':'#d1e4ca', eye=western?'#ffb56b':'#aaf7ff';
+ const stroke=(pts,color,w)=>{ctx.beginPath();ctx.moveTo(...pts[0]);for(let i=1;i<pts.length;i++)ctx.lineTo(...pts[i]);ctx.strokeStyle=color;ctx.lineWidth=w;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke()};
+ const shape=(fn,fill,line=ink,w=1)=>{ctx.beginPath();fn();ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=line;ctx.lineWidth=w;ctx.stroke()};
+ const oval=(x,y,rx,ry,c)=>{const g=ctx.createRadialGradient(x-rx*.3,y-ry*.4,1,x,y,Math.max(rx,ry));g.addColorStop(0,light);g.addColorStop(.45,c);g.addColorStop(1,ink);shape(()=>ctx.ellipse(x,y,rx,ry,0,0,TAU),g)};
+ ctx.save();ctx.translate(0,8);ctx.scale(.82,.82);
+ const breath=Math.sin(t*2.3)*2;
+ if(western){
+  for(const side of [-1,1]){ctx.save();ctx.scale(side,1);const flap=Math.sin(t*2.8)*8;
+   let g=ctx.createLinearGradient(15,-40,130,-110);g.addColorStop(0,'#a55a70');g.addColorStop(.5,'#4b233d');g.addColorStop(1,'#171528');
+   shape(()=>{ctx.moveTo(12,-45);ctx.bezierCurveTo(40,-80,55,-110+flap,118,-133+flap);ctx.lineTo(105,-96+flap);ctx.quadraticCurveTo(84,-102,81,-68);ctx.quadraticCurveTo(58,-79,57,-46);ctx.quadraticCurveTo(31,-58,19,-24);ctx.closePath()},g,ink,2);
+   for(const [a,b] of [[118,-133],[105,-96],[81,-68],[57,-46]])stroke([[14,-43],[47,-91+flap],[a,b+flap]],'#bd8690',1.6);
+   shape(()=>{ctx.moveTo(46,-88+flap);ctx.lineTo(50,-107+flap);ctx.lineTo(55,-91+flap)},pale);ctx.restore();
+  }
+ }
+ // A continuous tapering spine is sampled from tail to neck.
+ const pts=[];for(let i=0;i<=60;i++){let u=i/60;pts.push({x:Math.sin(u*TAU*1.12+.2)*(55*(1-u)+14)+Math.sin(t*2-u*8)*3,y:24-u*120,r:2+Math.sin(u*Math.PI*.85)*15});}
+ for(let i=0;i<pts.length-1;i++)stroke([[pts[i].x,pts[i].y],[pts[i+1].x,pts[i+1].y]],ink,pts[i].r*2+3);
+ for(let i=0;i<pts.length;i++){const p=pts[i];oval(p.x,p.y,p.r,p.r*.78,skin);}
+ // Scales follow the curve; belly plates sit on the lit inner side.
+ for(let i=3;i<59;i+=2){let p=pts[i];
+  for(let j=-2;j<=2;j++){let sx=p.x+j*p.r*.34,sy=p.y+Math.abs(j)*1.3;shape(()=>{ctx.moveTo(sx-2.3,sy-2);ctx.quadraticCurveTo(sx,sy-4,sx+2.3,sy-2);ctx.lineTo(sx,sy+2);ctx.closePath()},j<0?light:skin,'#163f49',.45);}
+  shape(()=>{ctx.moveTo(p.x+p.r*.27,p.y-2);ctx.quadraticCurveTo(p.x+p.r*.8,p.y-3,p.x+p.r*.85,p.y);ctx.lineTo(p.x+p.r*.5,p.y+3);ctx.lineTo(p.x+p.r*.25,p.y+2)},pale,'#4b7978',.5);
+  if(i%4===3)shape(()=>{ctx.moveTo(p.x-p.r*.7,p.y);ctx.lineTo(p.x-p.r-8,p.y-9);ctx.lineTo(p.x-p.r*.75,p.y-5)},western?'#d4a7b3':'#b1ded3');
+ }
+ // Four bent limbs with separated hooked talons.
+ for(const [idx,side] of [[19,-1],[27,1],[43,-1],[47,1]]){let p=pts[idx],a=p.x+side*14,b=p.y+8,c=a+side*18,d=b+8+Math.sin(t*3+idx)*2;
+ stroke([[p.x,p.y],[a,b-6],[c,d]],ink,10);stroke([[p.x,p.y],[a,b-6],[c,d]],skin,7);
+ for(let j=0;j<3;j++){stroke([[c,d],[c+side*(8+j*2),d-5+j*5]],light,3);shape(()=>{ctx.moveTo(c+side*(8+j*2),d-6+j*5);ctx.lineTo(c+side*(12+j*2),d-2+j*5);ctx.lineTo(c+side*(8+j*2),d-2+j*5)},pale);}
+ }
+ const p=pts[60];ctx.translate(p.x,p.y+breath);ctx.rotate(Math.sin(t*1.6)*.05);
+ // Flowing mane frames the face instead of a geometric helmet.
+ for(let side of [-1,1])for(let j=0;j<9;j++){let yy=-24+j*4,xx=side*(13+Math.sin(j)*2);shape(()=>{ctx.moveTo(xx,yy);ctx.quadraticCurveTo(xx+side*17,yy-5,xx+side*(22-j*.8),yy-20+Math.sin(t*3+j)*3);ctx.quadraticCurveTo(xx+side*9,yy+7,xx,yy+8)},western?'#7c4662':'#b6d4c9','#345b63',.65);}
+ // Branching antler horns.
+ for(let side of [-1,1]){stroke([[side*10,-22],[side*17,-37],[side*20,-56]],ink,6);stroke([[side*10,-22],[side*17,-37],[side*20,-56]],pale,3.7);stroke([[side*16,-35],[side*29,-44],[side*32,-55]],pale,2.5);if(!western)stroke([[side*20,-46],[side*12,-54],[side*10,-63]],pale,2);}
+ oval(0,-15,18,22,skin);oval(-11,-8,10,13,skin);oval(11,-8,10,13,skin);
+ for(let row=0;row<4;row++)for(let j=-2;j<=2;j++){let sx=j*5,sy=-31+row*5;shape(()=>{ctx.moveTo(sx-2,sy);ctx.lineTo(sx,sy-2);ctx.lineTo(sx+2,sy);ctx.lineTo(sx,sy+3)},row%2?skin:light,'#254f59',.5);}
+ // Heavy brows, slit pupils, pronounced muzzle and open jaw.
+ for(let side of [-1,1]){shape(()=>{ctx.moveTo(side*3,-13);ctx.lineTo(side*15,-18);ctx.lineTo(side*14,-11);ctx.lineTo(side*6,-8)},ink);stroke([[side*5,-12],[side*12,-14]],eye,2.5);stroke([[side*9,-14],[side*9,-11]],ink,1);stroke([[side*3,-17],[side*14,-21],[side*18,-17]],light,3);}
+ oval(0,10,12,10,skin);shape(()=>ctx.ellipse(0,8,10,7,0,0,TAU),'#190f19');
+ for(let side of [-1,1])for(let j=0;j<3;j++)shape(()=>{ctx.moveTo(side*(3+j*3),3);ctx.lineTo(side*(2+j*3),9-j);ctx.lineTo(side*(5+j*3),4)},'#fff1d1');
+ oval(0,0,13,7,skin);oval(-6,0,2.4,1.6,ink);oval(6,0,2.4,1.6,ink);
+ if(!western){for(let side of [-1,1]){ctx.beginPath();ctx.moveTo(side*9,3);ctx.bezierCurveTo(side*33,20,side*40,-16,side*56,-7+Math.sin(t*3+side)*6);ctx.strokeStyle='#e0e9ce';ctx.lineWidth=1.1;ctx.stroke();for(let j=0;j<4;j++){ctx.beginPath();ctx.moveTo(side*j*2,16);ctx.quadraticCurveTo(side*12,26,side*(12+j*3),30+Math.sin(t*3+j)*4);ctx.strokeStyle=light;ctx.lineWidth=1;ctx.stroke();}}}
+ if(rage){glow(0,7,16,eye,.5);for(let side of [-1,1])glow(side*9,-12,7,eye,.65);}
+ ctx.restore();
+}
+
 function drawBespokeMythicBoss(e, x, y, t, step, col){
   const id = e.bossId || 'zeus';
+  if(['kraken','leviathan','fenrir','bachho','cuuvi','sphinx'].includes(id)){ctx.save();ctx.translate(x,y);drawMythicBeast(e,t);ctx.restore();return;}
   const acc = e.accent || '#ffd166';
   const ink = '#05040a';
   const sway = Math.sin(t*4)*3;
@@ -1845,23 +1977,7 @@ function drawBespokeMythicBoss(e, x, y, t, step, col){
 
   // 1. RỒNG CHUNG CỰC VŨ TRỤ: NIDHOGG-LONG VƯƠNG
   if(id==='cosmic_dragon' || e.ultimate){
-    const flap = Math.sin(t*7)*14;
-    ring(0, 2, 44, acc, 0.7, 2.6);
-    for(let seg=6;seg>=1;seg--){
-      const sx = -seg*12 + Math.sin(t*6+seg)*7;
-      const sy = -8 + seg*3;
-      drawDiamond(sx, sy, 11-seg, 6.5-seg*0.5, '#240b36', ink, 1.8);
-    }
-    poly([[-12,-38],[-72,-68+flap],[-86,-28+flap],[-44,-14],[-12,-22]],col,ink,2.4);
-    poly([[12,-38],[72,-68+flap],[86,-28+flap],[44,-14],[12,-22]],col,ink,2.4);
-    poly([[-16,-35],[-58,-54+flap],[-64,-28+flap],[-16,-24]],acc);
-    poly([[16,-35],[58,-54+flap],[64,-28+flap],[16,-24]],acc);
-    poly([[-19,-50],[0,-64],[19,-50],[23,-14],[0,-4],[-23,-14]],'#190a29',ink,2.5);
-    drawDiamond(0,-32,12,17,acc,'#ffffff',1.8);
-    poly([[-15,-58],[0,-78],[15,-58],[11,-42],[-11,-42]],col,ink,2.2);
-    poly([[-10,-68],[-28,-96],[-6,-72]],'#ffd166',ink,2);
-    poly([[10,-68],[28,-96],[6,-72]],'#ffd166',ink,2);
-    ctx.fillStyle='#ffffff'; ctx.fillRect(-8,-58,5,4); ctx.fillRect(3,-58,5,4);
+    drawRoyalDragon(t,true,e.hp<e.maxHp*.5);
   }
 
   // 2. ANUBIS • Tử Thần Đầu Chó Rừng Ai Cập
@@ -2030,25 +2146,7 @@ function drawBespokeMythicBoss(e, x, y, t, step, col){
 
   // 9. ĐÔNG HẢI LONG VƯƠNG • Ngao Quảng (Đầu Rồng + Sừng San Hô + Ngọc Như Ý)
   else if(id==='longvuong'){
-    ctx.scale(1.40,1.40);
-    // Đuôi rồng lượn sóng phía sau
-    poly([[-10,-10],[-32,-4+sway],[-38,-16+sway],[-14,-20]],'#0284c7',ink,1.8);
-    // Long Bào Ngọc Bích & Đai Vàng
-    poly([[-16,-44],[16,-44],[20,-6],[-20,-6]],'#0369a1',ink,2);
-    poly([[-8,-44],[8,-44],[10,-6],[-10,-6]],acc,ink,1.6);
-    // Đầu Rồng Đông Hải, Bờm xanh & Cặp Sừng Hươu San Hô Vàng
-    poly([[-11,-58],[11,-58],[13,-42],[-13,-42]],'#38bdf8',ink,2);
-    poly([[-9,-68],[-18,-86],[-10,-78],[-6,-84],[-4,-58]],acc,ink,1.6); // Sừng trái
-    poly([[9,-68],[18,-86],[10,-78],[6,-84],[4,-58]],acc,ink,1.6);     // Sừng phải
-    // Râu rồng dài bay lượn
-    ctx.strokeStyle='#ffffff'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(-8,-46); ctx.quadraticCurveTo(-24,-38,-30,-48+sway); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(8,-46); ctx.quadraticCurveTo(24,-38,30,-48-sway); ctx.stroke();
-    // Viên Định Hải Thần Châu xoay tròn
-    const orbY = -34 + Math.sin(t*6)*4;
-    glow(24,orbY,24,'#4cc9f0',0.75);
-    ctx.fillStyle='#e0f2fe'; ctx.beginPath(); ctx.arc(24,orbY,7,0,TAU); ctx.fill();
-    ctx.strokeStyle=acc; ctx.lineWidth=1.8; ctx.stroke();
+    drawRoyalDragon(t,false,e.hp<e.maxHp*.5);
   }
 
   // 10. LEVIATHAN • Xà Thần Đại Dương Nhiều Đốt
@@ -2322,79 +2420,39 @@ function drawBespokeMythicBoss(e, x, y, t, step, col){
 
   ctx.restore();
 
-  // Nhãn Danh Hiệu & Pháp Bảo nổi bật phía trên đầu Boss trong đấu trường
-  if(e.bossName){
-    ctx.save();
-    ctx.font='900 10.5px Segoe UI, sans-serif';
-    ctx.textAlign='center';
-    ctx.strokeStyle='#05040a'; ctx.lineWidth=3.8;
-    ctx.strokeText(e.bossName, x, y - e.r*2 - 26);
-    ctx.fillStyle=acc;
-    ctx.fillText(e.bossName, x, y - e.r*2 - 26);
-
-    if(e.weapon){
-      ctx.font='700 8.5px Segoe UI, sans-serif';
-      ctx.strokeStyle='#05040a'; ctx.lineWidth=3;
-      ctx.strokeText('[' + e.weapon + ']', x, y - e.r*2 - 15);
-      ctx.fillStyle='#e2e8f0';
-      ctx.fillText('[' + e.weapon + ']', x, y - e.r*2 - 15);
-    }
-    ctx.restore();
-  }
 }
 
-function drawEnemy(e){
-  const p=iso(e.x,e.y),x=Math.round(p.x),y=Math.round(p.y),t=state.time,step=Math.sin(t*9+e.x)*2;
-  const col=e.hitFlash>0?'#ffffff':e.color;
-  ctx.fillStyle='#020308bb'; ctx.beginPath(); ctx.ellipse(x+4,y+4,e.r+6,8,0,0,TAU); ctx.fill();
-  ring(x,y+2,e.r*0.98,col,.38,e.type==='boss'?2.2:1.5);
-
-  if(e.type==='boss'){
-    drawBespokeMythicBoss(e, x, y, t, step, col);
-  }
-  else if(e.type==='slime'){
-    poly([[x-15,y],[x-13,y-13],[x-7,y-20+step],[x+7,y-20+step],[x+14,y-11],[x+16,y]],'#3d1622','#05040a',2);
-    poly([[x-11,y-3],[x-8,y-14],[x-3,y-19+step],[x+8,y-14],[x+11,y-3]],col,'#05040a',1.4);
-    ctx.fillStyle='#fff3b0';ctx.fillRect(x-6,y-13,4,4);ctx.fillRect(x+4,y-12,3,3);
-  }
-  else if(e.type==='drone'){
-    const yy=y-16+Math.sin(t*5)*3;
-    poly([[x-20,yy],[x-8,yy-10],[x+9,yy-10],[x+20,yy],[x+8,yy+9],[x-8,yy+9]],'#1f293d','#05040a',2);
-    drawDiamond(x,yy,9,5,col,'#05040a',1.4);
-    ctx.fillStyle='#ffffff';ctx.fillRect(x-2,yy-2,4,3);
-    glow(x,yy,20,col,.35);
-  }
-  else if(e.type==='wisp'){
-    flame(x,y-2,14,32+Math.sin(t*6)*5,t*8,true);
-    glow(x,y-14,32,col,.35);
-    ctx.fillStyle='#081c12';ctx.fillRect(x-6,y-16,4,4);ctx.fillRect(x+4,y-16,4,4);
-  }
-  else{
-    ctx.save(); ctx.translate(x,y); ctx.scale(1.05,1.05);
-    ctx.fillStyle='#2b2333';ctx.fillRect(-13,-8+step,9,12);ctx.fillRect(4,-8-step,9,12);
-    poly([[-14,-30],[-4,-37],[11,-32],[16,-11],[7,-5],[-11,-8]],col,'#05040a',2);
-    ctx.fillStyle='#1f1829';ctx.fillRect(-8,-25,17,16);
-    ctx.fillStyle='#ffd166';ctx.fillRect(-3,-23,7,9);
-    glow(0,-19,26,'#ff9248',.55);
-    poly([[-22,-27-step],[-13,-27-step],[-13,-7-step],[-22,-7-step]],col,'#05040a',1.8);
-    poly([[15,-25+step],[24,-25+step],[24,-4+step],[15,-4+step]],col,'#05040a',1.8);
-    ctx.restore();
-  }
-
-  if(e.hp<e.maxHp||e.type==='boss'){
-    const bw = e.type==='boss' ? 58 : 38;
-    const by = y - e.r*2 - (e.type==='boss'?10:14);
-    ctx.fillStyle='#07050d';ctx.fillRect(x-bw/2,by,bw,5);
-    ctx.fillStyle=e.type==='boss'?(e.accent||'#ffd166'):'#ff4d6d';
-    ctx.fillRect(x-bw/2+1,by+1,(bw-2)*clamp(e.hp/e.maxHp,0,1),3);
-  }
-  if(e.burn>0){
-    flame(x+9,y-4,6,18,t*13,false,e.heatTier||1);
-    if(state.biome==='forest') ring(x,y,e.r+8,'#ff6a22',.6);
-  }
-  if(e.poison>0) ring(x,y,14,'#65f788',.75);
-  if(e.slow>0.25) drawDiamond(x,y-14,e.r+3,e.r,'rgba(140,235,255,0.32)','#b8f6ff',1.6);
+const bossMoveNames=['PHÁO LINH LỰC','THIÊN PHẠT','XUNG PHONG','BÃO LINH KHÍ','ĐẠI KIẾP'];
+function tone(hex,mul=1,add=0){const n=parseInt(hex.slice(1),16);return '#'+[n>>16&255,n>>8&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(v*mul+add))).toString(16).padStart(2,'0')).join('');}
+function volume(x,y,rx,ry,col){ctx.save();const g=ctx.createRadialGradient(x-rx*.35,y-ry*.45,1,x,y,Math.max(rx,ry)*1.2);g.addColorStop(0,tone(col,1.1,60));g.addColorStop(.32,tone(col,1.05));g.addColorStop(.8,tone(col,.42));g.addColorStop(1,'#060c18');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.fill();ctx.strokeStyle='#09111ba0';ctx.lineWidth=1;ctx.stroke();ctx.restore();}
+function plate(x,y,w,h,col){poly([[x-w,y-h*.3],[x-w*.72,y-h],[x+w*.5,y-h*1.05],[x+w,y-h*.45],[x+w*.7,y],[x-w*.5,y]],col,'#0a1020',1.3);poly([[x-w*.72,y-h],[x+w*.5,y-h*1.05],[x+w*.12,y-h*.72],[x-w*.65,y-h*.6]],tone(col,1.22,12));ctx.fillStyle='#d9e5e790';ctx.fillRect(x-w*.45,y-h*.65,2,2);}
+function encounterHalo(e,x,y,t){const acc=e.accent||e.color,charged=e.windup>0,phase=e.hp<e.maxHp*.5;ctx.save();glow(x,y-30,e.ultimate?110:70,e.color,phase?.18:.1);ring(x,y+2,e.r*1.32,acc,.26,1);ctx.strokeStyle=acc;ctx.lineWidth=1;ctx.globalAlpha=.3;for(let i=0;i<8;i++){const a=i*TAU/8+t*.18;ctx.beginPath();ctx.ellipse(x,y+2,e.r*1.9,e.r*.94,0,a,a+.25);ctx.stroke();}if(charged||phase){for(let i=0;i<10;i++){const a=i*2.4+t*.3,rr=e.r*1.3,yy=y-((t*20+i*13)%90);ctx.globalAlpha=(charged?.7:.3);ctx.fillStyle=acc;ctx.fillRect(x+Math.cos(a)*rr,yy,1.5,3);}}ctx.restore();}
+function drawEnemy(e){const p=iso(e.x,e.y),x=p.x,y=p.y,t=state.time,col=e.hitFlash>0?'#f5faff':e.color,step=Math.sin(t*8+e.x)*2;
+ ctx.save();const shadow=ctx.createRadialGradient(x+8,y+5,2,x+8,y+5,e.r*2.2);shadow.addColorStop(0,'#00000090');shadow.addColorStop(1,'transparent');ctx.fillStyle=shadow;ctx.beginPath();ctx.ellipse(x+8,y+5,e.r*2.2,e.r*.65,0,0,TAU);ctx.fill();
+ if(e.type==='boss'){
+ encounterHalo(e,x,y,t);const scale=e.ultimate?1.25:1.22,wind=e.windup>0?1-e.windup/e.windupMax:0;ctx.translate(x,y);ctx.scale(scale,scale);const lean=e.attackPose>0?Math.sin(e.attackPose*9)*.05:Math.sin(t*1.8)*.012;ctx.rotate(lean);ctx.scale(1+wind*.025,1-wind*.025);materialMode=true;drawBespokeMythicBoss(e,0,0,t,step,col);bossSurfaceDetail(e,t);materialMode=false;
+ }else{ctx.translate(x,y);materialMode=true;
+ if(e.type==='slime'){
+ const squash=1+Math.sin(t*5+e.x)*.06;ctx.scale(squash,1/squash);volume(0,-13,20,16,tone(col,.75));volume(-1,-17,17,14,col);ctx.save();ctx.globalAlpha=.28;ctx.strokeStyle='#fff2cf';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(-2,-17,15,11,-.12,3.5,5.3);ctx.stroke();ctx.restore();volume(-6,-14,5,4,'#132034');volume(6,-14,5,4,'#132034');ctx.fillStyle='#fff4a9';ctx.fillRect(-8,-16,4,2);ctx.fillRect(4,-16,4,2);ctx.fillStyle='#0a1726';ctx.fillRect(-4,-8,8,2);for(let i=0;i<5;i++)volume(-15+i*7,-1+Math.sin(t*6+i),4,3,tone(col,.7));ctx.save();ctx.globalAlpha=.55;volume(-6,-24,5,2,'#ffffff');ctx.restore();
+ }else if(e.type==='drone'){
+ const yy=-25+Math.sin(t*4)*3;for(const side of [-1,1]){ctx.strokeStyle='#152538';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(side*6,yy);ctx.lineTo(side*25,yy+3);ctx.stroke();plate(side*24,yy+6,9,9,'#5b7187');ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(side*24,yy-6,12,3,0,0,TAU);ctx.stroke();const a=t*25;ctx.strokeStyle='#c3dce7';ctx.beginPath();ctx.moveTo(side*24-Math.cos(a)*11,yy-6-Math.sin(a)*2);ctx.lineTo(side*24+Math.cos(a)*11,yy-6+Math.sin(a)*2);ctx.stroke();glow(side*24,yy+9,15,col,.2);poly([[side*24-3,yy+8],[side*24+3,yy+8],[side*24,yy+18+Math.sin(t*15)*2]],col);}
+ plate(0,yy+8,17,18,'#647e94');plate(0,yy+6,12,12,'#1c3248');volume(0,yy,7,6,col);volume(-1,yy-1,3,3,'#e2ffff');ctx.strokeStyle='#9eafbd';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,yy-12);ctx.lineTo(4,yy-21);ctx.stroke();ctx.fillStyle='#ff9168';ctx.fillRect(3,yy-23,3,3);
+ }else if(e.type==='golem'){
+ for(const side of [-1,1]){const yy=step*side;volume(side*10,-12+yy,7,9,'#283344');plate(side*11,3+yy,8,13,tone(col,.75));plate(side*23,-17-yy,10,16,col);volume(side*20,-32-yy,8,8,'#2f4052');plate(side*22,-30-yy,13,14,tone(col,.9));}
+ plate(0,-8,19,30,col);plate(0,-12,13,22,'#293b4e');volume(0,-25,8,9,'#d58c48');ctx.strokeStyle='#ffda8a';ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,-25,6,0,TAU);ctx.stroke();glow(0,-25,25,'#ff9e50',.24);ctx.fillStyle='#fff4cb';ctx.fillRect(-2,-29,4,8);plate(0,-39,11,13,tone(col,.8));ctx.fillStyle='#091625';ctx.fillRect(-7,-47,14,4);ctx.fillStyle='#ffe0a2';ctx.fillRect(-6,-46,5,2);ctx.fillRect(2,-46,5,2);poly([[-10,-50],[-17,-59],[-6,-52]],tone(col,1.1));poly([[10,-50],[17,-59],[6,-52]],tone(col,1.1));
+ }else{
+ const bob=Math.sin(t*4+e.x)*3;glow(0,-24+bob,36,col,.2);poly([[-17,-16+bob],[-12,-36+bob],[0,-47+bob],[13,-35+bob],[18,-15+bob],[9,-1+bob],[3,-10+bob],[-3,4+bob],[-10,-7+bob],[-16,0+bob]],tone(col,.38),'#102b30');plate(0,-17+bob,12,20,tone(col,.65));volume(0,-25+bob,9,10,'#162b35');ctx.fillStyle='#d3ffbc';ctx.fillRect(-7,-28+bob,5,3);ctx.fillRect(3,-28+bob,5,3);poly([[-3,-20+bob],[0,-17+bob],[3,-20+bob]],'#82d795');for(let i=0;i<3;i++){const a=t*1.5+i*TAU/3,xx=Math.cos(a)*21,yy=-20+bob+Math.sin(a)*8;volume(xx,yy,3,4,col);glow(xx,yy,9,col,.2);}}
+ materialMode=false;}
+ ctx.restore();
+ if(e.type!=='boss'&&e.hp<e.maxHp){const top=e.type==='golem'?65:e.type==='wisp'?57:e.type==='drone'?52:35;ctx.fillStyle='#07111f';ctx.fillRect(x-19,y-top,38,4);ctx.fillStyle=e.color;ctx.fillRect(x-18,y-top+1,36*clamp(e.hp/e.maxHp,0,1),2);}
+ if(e.burn>0)flame(x+10,y-5,5,16,t*13,false,e.heatTier||1);if(e.poison>0)ring(x,y,14,'#65f788',.6);if(e.slow>.25)drawDiamond(x,y-14,e.r+3,e.r,'rgba(140,235,255,.22)','#b8f6ff',1);
 }
+function drawBossWarnings(){for(const b of state.enemies){if(b.type!=='boss'||!(b.windup>0))continue;const q=iso(b.x,b.y),target=b.castTarget||state.player,p=iso(target.x,target.y),progress=1-b.windup/b.windupMax;ctx.save();ctx.strokeStyle='#ffb68d';ctx.fillStyle='#e1604033';ctx.lineWidth=1.5;const kind=b.pendingSkill;
+ if(kind===2){const v=norm(p.x-q.x,p.y-q.y),w=16;poly([[q.x-v.y*w,q.y+v.x*w],[p.x-v.y*w,p.y+v.x*w],[p.x+v.y*w,p.y-v.x*w],[q.x+v.y*w,q.y-v.x*w]],'#de674033','#ffb994');ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(p.x,p.y);ctx.stroke();}
+ else if(kind===1||kind===4){ring(p.x,p.y,kind===4?72:52,'#ffb994',.7,1.5);ring(p.x,p.y,(kind===4?72:52)*progress,b.accent,.6,2);}
+ else{ring(q.x,q.y,b.r*2.1,'#ffc694',.3);ctx.beginPath();ctx.ellipse(q.x,q.y,b.r*3.2,b.r*1.6,0,-Math.PI/2,-Math.PI/2+TAU*progress);ctx.stroke();}
+ ctx.restore();}}
+function updateBossIntro(){const box=document.getElementById('bossEntrance'),i=state.bossIntro;if(i&&state.running&&state.time<i.until){if(box.dataset.name!==i.name){box.dataset.name=i.name;box.innerHTML='<small>MYTHIC ENCOUNTER</small><strong>'+i.name+'</strong><em>'+i.sub+'</em>';box.style.setProperty('--arrival',i.color);}box.classList.add('show');}else box.classList.remove('show');}
 
 function drawShield(x,y,r,t,power,tier=1){
   const isDesert = state.biome==='desert';
@@ -2599,6 +2657,7 @@ function drawEffects(){
   for(const e of state.effects){
     const t=e.t/e.life,p=iso(e.x,e.y),fade=Math.max(0,1-t);
     ctx.save();
+    if(e.type==='mythicCast') drawMythicImpact(e,p,t);
     if(e.type==='waterRipple') ring(p.x,p.y,e.r*t,e.color,fade*.5);
     if(e.type==='flameArc') drawThermalArc(e);
     if(e.type==='firePatch') drawFirePatchField(e,p,t);
@@ -2606,6 +2665,7 @@ function drawEffects(){
     if(e.type==='cataclysm') drawCataclysm(e,p,t);
 
     if(e.type==='bossTelegraph'){
+      if(e.bossId){ctx.globalAlpha=.6;mythicGlyph(e.bossId,p.x,p.y-8,20+t*8,state.time,e.color,e.accent);ctx.globalAlpha=1;}
       ctx.fillStyle='rgba(255, 46, 76, 0.22)';
       ctx.beginPath(); ctx.ellipse(p.x,p.y,e.r*1.55*t,e.r*0.78*t,0,0,TAU); ctx.fill();
       ring(p.x,p.y,e.r,e.color||'#ff2e4c',0.9,2.2);
@@ -2750,7 +2810,7 @@ function render(){
   }
   drawBg();
   drawGroundDetails();
-  drawDrops();
+  drawDrops();drawBossWarnings();
 
   const sceneObjects=[
     {x:state.player.x,y:state.player.y,kind:'player'},
@@ -2790,7 +2850,7 @@ function render(){
     ctx.moveTo(mouse.x+8,mouse.y); ctx.lineTo(mouse.x+12,mouse.y);
     ctx.stroke();
   }
-  renderMini();
+  renderMini();updateBossIntro();
 }
 
 function sound(kind){
@@ -2933,7 +2993,7 @@ function updatePanels(){
   // CẬP NHẬT KHUNG GIAO DIỆN BOSS HOÀNG KIM (ORNATE BOSS HUD)
   const bossBox = document.getElementById('bossHUD');
   if(boss){
-    const pct = clamp(boss.hp/boss.maxHp*100,0,100);
+    const pct = clamp(boss.hp/boss.maxHp*100,0,100);const rage=pct<50;
     bossBox.style.setProperty('--bcol', boss.color);
     bossBox.style.setProperty('--bacc', boss.accent||'#ffd166');
     bossBox.style.setProperty('--bglow', boss.color+'55');
@@ -2952,10 +3012,12 @@ function updatePanels(){
         <div class="bossBarFill" style="width:${pct}%"></div>
         <div class="bossTicks"><i></i><i></i><i></i><i></i></div>
         <div class="bossHpNumbers">
-          <span>MÀN T${state.stage} • ${boss.unlockedSkills} TUYỆT KỸ MỞ KHÓA</span>
+          <span>${rage?"PHA II · CUỒNG NỘ":"PHA I · THỨC TỈNH"} • T${state.stage}</span>
           <span>${Math.ceil(boss.hp)} / ${boss.maxHp} HP (${Math.round(pct)}%)</span>
         </div>
       </div>
+      <div class="bossIntent"><span class="phaseGem ${rage?'rage':''}">◆</span><span>${boss.windup>0?'ĐANG VẬN CHIÊU · '+bossArtName(boss.bossId,boss.pendingSkill):(boss.dashTime>0?'XUNG PHONG':rage?'CUỒNG NỘ · Tốc độ thi triển tăng':'THEO DÕI MỤC TIÊU')}</span><span class="intentTime">${boss.windup>0?boss.windup.toFixed(1)+'s':boss.unlockedSkills+' kỹ năng'}</span></div>
+      <div class="castTrack"><span style="width:${boss.windup>0?(1-boss.windup/boss.windupMax)*100:0}%;background:${boss.accent}"></span></div>
     `;
   } else {
     bossBox.innerHTML = '';
@@ -3047,6 +3109,7 @@ function openBank(){
 }
 
 window.addEventListener('keydown',e=>{
+  if(document.getElementById('bestiary')?.open)return;
   const k=e.key.toLowerCase();
   if(['tab',' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
   keys[k]=true; if(e.repeat)return;
@@ -3080,6 +3143,14 @@ fitResolution();
 updatePanels();
 openModal('startModal');
 requestAnimationFrame(loop);
+
+const artSources={"thuytinh":"https://nxbkimdong.com.vn/tranh-truyen-dan-gian-viet-nam-son-tinh-thuy-tinh-2023","anubis": "https://fastidious.gg/heroes/init", "ra": "https://vocal.media/history/ra-the-supreme-sun-god-and-guardian-of-ancient-egypt", "wukong": "https://easy-peasy.ai/ai-image-generator/images/fierce-monkey-chinese-clothing-celestial-power", "sphinx": "https://www.thebrightmerchant.com/personal-work/3-woman-heads", "culinh": "https://uk.pinterest.com/pin/juling-shen--388787380349760199/", "poseidon": "https://www.redbubble.com/i/art-print/Poseidon-vs-the-Kraken-by-DanielEskridge/55435049.1G4ZT", "kraken": "https://www.redbubble.com/i/art-print/Poseidon-vs-the-Kraken-by-DanielEskridge/55435049.1G4ZT", "leviathan": "https://shop.creepyhollows.com/leviathan-spirit-custom-conjuration.html", "fenrir": "https://www.wikingar.de/Fenrir-The-Untamed-Wolf-of-the-Norse-Twilight-of-the-Gods", "cuuvi": "https://shanhai0.com/divine-beasts/", "medusa": "https://www.etsy.com/listing/1512217796/medusa-dark-goddess-gorgon-snakes", "bachho": "https://www.metmuseum.org/art/collection/search/44381", "cernunnos": "https://morphic.com/jp/resources/videos/celtic-mythology-videos", "zeus": "https://easy-peasy.ai/ai-image-generator/images/zeus-greek-god-lightning-powerful-depiction", "thor": "https://www.story.com/ai-stories/ai-fantasy-stories/the-final-battle-38", "natra": "https://www.lushanghai.com/works/spirit-of-ne-zha/", "ares": "https://www.ancientgreecereloaded.com/files/ancient_greece_reloaded_website/gods_of_olympus/gods_ares_gr.php", "loicong": "https://baike.sogou.com/m/fullLemma?g_ut=3&lid=8213059"};
+const book=document.getElementById('bestiary');let bookWasPaused=false;
+document.getElementById('bossCards').innerHTML=allMythicBosses.map(b=>`<article class="bossCard" style="--accent:${b.accent}"><h3>${b.name}</h3><p>${b.trait}</p><ol>${bossArts[b.id].map((n,i)=>`<li>${n} · ${['Đạn quạt','Đánh dấu mặt đất','Lao tới','Đạn vòng','Tổ hợp'][i]} <button data-summon="${b.id}" data-move="${i}" style="display:inline;padding:1px 5px;margin:0" title="Thử chiêu này">▶</button></li>`).join('')}</ol>${artSources[b.id]?`<a href="${artSources[b.id]}" target="_blank" rel="noopener noreferrer">Xem ảnh tham khảo ↗</a>`:`<p>${b.id==='thuytinh'?'Thiết kế sáng tạo: thủy quan, vương miện và pháp luân.':'Tham khảo hai ảnh rồng bạn cung cấp.'}</p>`}<button data-summon="${b.id}">Thử boss này</button></article>`).join('');
+document.getElementById('openBestiary').onclick=()=>{bookWasPaused=state.paused;state.paused=true;book.showModal();};book.onclose=()=>state.paused=bookWasPaused;
+document.getElementById('closeBestiary').onclick=()=>book.close();
+document.getElementById('bossCards').onclick=ev=>{const b=ev.target.closest('[data-summon]');if(!b)return;bookWasPaused=false;book.close();reset('lab');spawnMythicBoss(b.dataset.summon==='cosmic_dragon',b.dataset.summon);document.getElementById('labBossPicker').value=b.dataset.summon;const foe=state.enemies.find(e=>e.type==='boss');if(foe){foe.x=70;foe.y=50;if(b.dataset.move!==undefined){foe.pendingSkill=Number(b.dataset.move);foe.castTarget={x:state.player.x,y:state.player.y};foe.windupMax=foe.windup=1.2;}}};
+
 })();
 </script>
 </body>
