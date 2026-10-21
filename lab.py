@@ -779,55 +779,973 @@ def an_batch(frame):
     if not rows and not errors:errors.append({'Dòng':'','Lỗi':'Chưa chọn dòng để tính.'})
     return rows,errors
 
-def render_batch_analysis():
-    st.subheader('Tính hàng loạt — thông số theo từng dòng')
-    st.caption('Cùng công thức và kiểm tra với Tiện ích Phân tích. Không suy nền, thể tích, Csurr hoặc recovery theo tên mẫu. Chỉ chọn dòng chất phân tích cần tính; không chọn dòng chuẩn/blank/surrogate như mẫu thật.')
-    template=pd.DataFrame([an_batch_template()])
-    st.download_button('Tải mẫu CSV nhập hàng loạt',template.to_csv(index=False).encode('utf-8-sig'),'GALAXY_CHEM_mau_tinh.csv','text/csv')
-    st.info('CSV/XLSX: có thể dùng mẫu ở trên hoặc file máy có Data File, Compound Name, Final Conc., Unit. Các cột chưa có phải điền trước khi tính. PDF cần xuất bảng CSV/XLSX từ phần mềm máy để tránh đoán nhầm cột nồng độ.')
-    upload=st.file_uploader('Bảng kết quả nguồn',type=['csv','xlsx'],key='batch_source')
-    if upload is None:return
-    digest=hashlib.sha256(upload.getvalue()).hexdigest()
+# ==========================================
+# NÂNG CẤP XỬ LÝ FILE PDF MASSHUNTER, NHẬN DIỆN CHUẨN ĐỒNG HÀNH & TÍNH THEO NHÓM MẪU
+# ==========================================
+SURROGATE_CONFIG_PATH = Path(__file__).resolve().parent / ".galaxy_chem_surrogates.json"
+
+DEFAULT_SURROGATES = [
+    {"Tên chuẩn đồng hành": "Toluene-D8", "Nhóm chỉ tiêu gợi ý": "VOCs (Khí thải / Không khí / Nước)", "Csurr đầu mặc định": 10.0, "Đơn vị": "ng/mL", "Ghi chú": "Chuẩn đồng hành VOCs GC-MS"},
+    {"Tên chuẩn đồng hành": "BFB", "Nhóm chỉ tiêu gợi ý": "VOCs (Khí thải / Nước)", "Csurr đầu mặc định": 10.0, "Đơn vị": "ng/mL", "Ghi chú": "p-Bromofluorobenzene (viết tắt)"},
+    {"Tên chuẩn đồng hành": "p-Bromofluorobenzene", "Nhóm chỉ tiêu gợi ý": "VOCs (Khí thải / Nước)", "Csurr đầu mặc định": 10.0, "Đơn vị": "ng/mL", "Ghi chú": "Chuẩn đồng hành VOCs nước sạch / khí thải"},
+    {"Tên chuẩn đồng hành": "1,2-Dichloroethane-D4", "Nhóm chỉ tiêu gợi ý": "VOCs (Khí thải / Nước)", "Csurr đầu mặc định": 10.0, "Đơn vị": "ng/mL", "Ghi chú": "Chuẩn đồng hành VOCs"},
+    {"Tên chuẩn đồng hành": "Phenol-D5", "Nhóm chỉ tiêu gợi ý": "Phenol", "Csurr đầu mặc định": 50.0, "Đơn vị": "ng/mL", "Ghi chú": "Chuẩn đồng hành nhóm Phenol"},
+    {"Tên chuẩn đồng hành": "Anpha-HCH-D6", "Nhóm chỉ tiêu gợi ý": "OCPs", "Csurr đầu mặc định": 50.0, "Đơn vị": "ng/mL", "Ghi chú": "Chuẩn đồng hành nhóm thuốc trừ sâu Clo hữu cơ (OCPs)"},
+    {"Tên chuẩn đồng hành": "Phenanthrene D10", "Nhóm chỉ tiêu gợi ý": "PAHs / Base-Neutral", "Csurr đầu mặc định": 50.0, "Đơn vị": "ng/mL", "Ghi chú": "Chuẩn đồng hành nhóm PAHs / bán bay hơi"},
+    {"Tên chuẩn đồng hành": "PCB13C12", "Nhóm chỉ tiêu gợi ý": "PCBs", "Csurr đầu mặc định": 50.0, "Đơn vị": "ng/mL", "Ghi chú": "Chuẩn đồng hành nhóm PCBs"},
+    {"Tên chuẩn đồng hành": "Chlorpyrifos D10", "Nhóm chỉ tiêu gợi ý": "OPPs", "Csurr đầu mặc định": 50.0, "Đơn vị": "ng/mL", "Ghi chú": "Chuẩn đồng hành nhóm Lân hữu cơ (OPPs)"},
+]
+
+SAMPLE_METHOD_PRESETS = {
+    "PP1_NUOC": {
+        "code": "PP1_NUOC",
+        "label": "Phương pháp 1: Mẫu Nước (NT, NM, NS, NN)",
+        "prefixes": ("NT", "NM", "NS", "NN"),
+        "matrix": "Nước",
+        "v_sample": 500.0,
+        "v_sample_unit": "mL",
+        "v_extract": 1.0,
+        "v_extract_unit": "mL",
+        "enrichment_default": 500.0,
+        "default_out_unit": "µg/L",
+        "allowed_out_units": ["µg/L", "mg/L", "ng/L"],
+        "formula_desc": "H(%) = (Csurr sau / Csurr đầu) × 100  |  C thực = C mẫu đo × (V dịch chiết / V mẫu) × K × (100 / H% nếu bật hiệu chỉnh) = C mẫu đo × K / Hệ số làm giàu × (100 / H%)",
+    },
+    "PP2_KHI_THAI": {
+        "code": "PP2_KHI_THAI",
+        "label": "Phương pháp 2: Mẫu Khí thải (KT)",
+        "prefixes": ("KT",),
+        "matrix": "Khí",
+        "v_sample": 24.0,
+        "v_sample_unit": "L",
+        "v_extract": 1.0,
+        "v_extract_unit": "mL",
+        "enrichment_default": 24000.0,
+        "default_out_unit": "µg/Nm³",
+        "allowed_out_units": ["µg/Nm³", "mg/Nm³", "µg/m³", "mg/m³"],
+        "formula_desc": "H(%) = (Csurr sau / Csurr đầu) × 100  |  C thực (µg/Nm³) = [(C mẫu đo − C blank) × V mẫu đo (mL) × K / V khí chuẩn (L)] × (100 / H% nếu bật hiệu chỉnh)",
+    },
+    "PP3_KLV_KXQ": {
+        "code": "PP3_KLV_KXQ",
+        "label": "Phương pháp 3: Không khí KLV & KXQ (KLV, KXQ, KKXQ)",
+        "prefixes": ("KLV", "KXQ", "KKXQ"),
+        "matrix": "Khí",
+        "v_sample": 4.0,
+        "v_sample_unit": "L",
+        "v_extract": 1.0,
+        "v_extract_unit": "mL",
+        "enrichment_default": 4000.0,
+        "default_out_unit": "µg/m³",
+        "allowed_out_units": ["µg/m³", "mg/m³", "µg/Nm³", "mg/Nm³"],
+        "formula_desc": "H(%) = (Csurr sau / Csurr đầu) × 100  |  C thực (µg/m³) = [(C mẫu đo − C blank) × V dung môi (mL) × K / V khí (L)] × (100 / H% nếu bật hiệu chỉnh)",
+    },
+}
+
+def surr_norm_key(name):
+    """Chuẩn hóa tên chất để so khớp tự động chuẩn đồng hành không phân biệt hoa/thường hay dấu gạch/khoảng trắng."""
+    s = u_text(name).casefold()
+    s = re.sub(r'[\s_\-]+', '', s)
+    return s
+
+def load_surrogate_registry():
+    """Đọc danh sách chất chuẩn đồng hành đã lưu (file cấu hình cục bộ + bộ nhớ phiên)."""
+    if "surrogate_registry" in st.session_state and isinstance(st.session_state.surrogate_registry, pd.DataFrame):
+        return st.session_state.surrogate_registry.copy()
+    records = None
+    if SURROGATE_CONFIG_PATH.is_file():
+        try:
+            loaded = json.loads(SURROGATE_CONFIG_PATH.read_text(encoding="utf-8"))
+            if isinstance(loaded, list) and loaded:
+                records = loaded
+        except Exception:
+            records = None
+    if records is None:
+        records = [dict(r) for r in DEFAULT_SURROGATES]
+    df = pd.DataFrame(records)
+    for col, default_val in [("Tên chuẩn đồng hành", ""), ("Nhóm chỉ tiêu gợi ý", ""), ("Csurr đầu mặc định", 50.0), ("Đơn vị", "ng/mL"), ("Ghi chú", "")]:
+        if col not in df.columns:
+            df[col] = default_val
+    df["Tên chuẩn đồng hành"] = df["Tên chuẩn đồng hành"].map(u_text)
+    df = df[df["Tên chuẩn đồng hành"].ne("")].drop_duplicates(subset=["Tên chuẩn đồng hành"], keep="first").reset_index(drop=True)
+    df["Csurr đầu mặc định"] = pd.to_numeric(df["Csurr đầu mặc định"], errors="coerce").fillna(50.0)
+    st.session_state.surrogate_registry = df.copy()
+    return df
+
+def save_surrogate_registry(df_reg):
+    """Lưu danh sách chất chuẩn đồng hành để web tự động nhớ cho các lần sau."""
+    df = df_reg.copy()
+    df["Tên chuẩn đồng hành"] = df["Tên chuẩn đồng hành"].map(u_text)
+    df = df[df["Tên chuẩn đồng hành"].ne("")].copy()
+    seen = set()
+    keep_indices = []
+    for idx, val in df["Tên chuẩn đồng hành"].items():
+        k = surr_norm_key(val)
+        if k and k not in seen:
+            seen.add(k)
+            keep_indices.append(idx)
+    df = df.loc[keep_indices].reset_index(drop=True)
+    df["Csurr đầu mặc định"] = pd.to_numeric(df["Csurr đầu mặc định"], errors="coerce").fillna(50.0)
+    for col in ["Nhóm chỉ tiêu gợi ý", "Đơn vị", "Ghi chú"]:
+        if col not in df.columns:
+            df[col] = ""
+        df[col] = df[col].map(u_text)
+    st.session_state.surrogate_registry = df.copy()
     try:
-        frame=pd.read_csv(io.BytesIO(upload.getvalue()),dtype=object,keep_default_na=False) if upload.name.lower().endswith('.csv') else pd.read_excel(io.BytesIO(upload.getvalue()),dtype=object,keep_default_na=False)
-        frame.columns=[str(c).strip() for c in frame.columns]
-        if frame.columns.duplicated().any():raise ValueError('Tên cột bị trùng.')
-        mapping={'Data File':'Tên mẫu','Compound Name':'Chỉ Tiêu','Final Conc.':'C đo','Unit':'Đơn vị C đo','Units':'Đơn vị C đo'}
-        frame=frame.rename(columns={k:v for k,v in mapping.items() if k in frame and v not in frame})
-        if frame.columns.duplicated().any():raise ValueError('Nhiều cột cùng ánh xạ về một trường; giữ một cột nguồn.')
-        if not {'Tên mẫu','Chỉ Tiêu','C đo'}.issubset(frame):raise ValueError('Thiếu cột Tên mẫu, Chỉ Tiêu hoặc C đo.')
-        for key,value in an_batch_template().items():
-            if key not in frame:frame[key]=value
-        for key in ['Chọn','Khí chuẩn','Hiệu chỉnh recovery','Cộng Tổng']:frame[key]=frame[key].map(lambda v:an_bool(v,key))
-        for key in ['C đo','Hệ số pha loãng','V mẫu','V dịch chiết (mL)','Csurr thêm','Csurr đo','MDL','LOQ','Kết quả thay thế']:
-            frame[key]=frame[key].map(u_text)
-        opts={'Nền mẫu':['Nước','Khí'],'Cơ sở C đo':['Mẫu gốc','Dịch chiết'],'SOP QC':['','ns','kt'],
-              'Đơn vị V mẫu':list(U_GROUPS['Thể tích']),'Đơn vị V dịch chiết':list(U_GROUPS['Thể tích'])}
-        config={k:st.column_config.SelectboxColumn(options=v) for k,v in opts.items()}
-        frame=st.data_editor(frame,hide_index=True,num_rows='dynamic',column_config=config,key='batch_editor_'+digest,use_container_width=True)
-        fingerprint=hashlib.sha256(frame.to_json().encode()).hexdigest()
-        saved=st.session_state.get('batch_saved_fp')
-        if saved and saved!=fingerprint:st.session_state.results_stale=True
-        if st.button('Tính & kiểm tra toàn bộ dòng đã chọn',key='batch_compute'):
-            result,errors=an_batch(frame)
-            st.session_state.batch_preview={'fp':fingerprint,'rows':result,'errors':errors}
-        preview=st.session_state.get('batch_preview')
-        if preview:
-            stale=preview['fp']!=fingerprint
-            if stale:st.warning('Dữ liệu đã đổi; tính lại trước khi lưu hoặc xuất.')
-            if preview['errors']:st.error('Có lỗi: chưa cho lưu/xuất cả mẻ. Sửa từng dòng rồi tính lại.');st.dataframe(pd.DataFrame(preview['errors']),hide_index=True)
-            output=pd.DataFrame(preview['rows'])
-            if not output.empty:
-                st.dataframe(output,hide_index=True,use_container_width=True)
-                ready=st.checkbox('Đã đối chiếu dòng được chọn, cơ sở đơn vị, thông số và QC; thay bảng kết quả trong phiên bằng mẻ này',key='batch_review_'+fingerprint)
-                blocked=stale or bool(preview['errors']) or not ready
-                st.download_button('Tải kết quả tính hàng loạt',output.to_csv(index=False).encode('utf-8-sig'),'GALAXY_CHEM_ket_qua.csv','text/csv',disabled=blocked)
-                if st.button('Lưu mẻ vào bảng báo cáo trong phiên',disabled=blocked,key='batch_save'):
-                    st.session_state.results=output
-                    st.session_state.batch_saved_fp=fingerprint
-                    st.session_state.results_stale=False
-                    st.success('Đã lưu bảng kết quả trong phiên. Tải CSV để lưu lâu dài.')
-    except (ValueError,TypeError,KeyError,OverflowError) as exc:st.error(str(exc))
+        SURROGATE_CONFIG_PATH.write_text(
+            json.dumps(df.to_dict(orient="records"), ensure_ascii=False, indent=2),
+            encoding="utf-8"
+        )
+    except Exception:
+        pass
+    return df
+
+def is_surrogate_compound(compound_name, registry_df=None):
+    if registry_df is None:
+        registry_df = load_surrogate_registry()
+    key = surr_norm_key(compound_name)
+    if not key:
+        return False
+    known_keys = {surr_norm_key(x) for x in registry_df["Tên chuẩn đồng hành"].tolist() if u_text(x)}
+    return key in known_keys
+
+def detect_sample_method_code(sample_name):
+    """Tự động phân loại mẫu vào 3 phương pháp tính theo tiếp đầu ngữ mã mẫu (NT/NM/NS vs KT vs KLV/KXQ)."""
+    clean = u_text(sample_name).upper()
+    clean = re.sub(r'^\d{8}_', '', clean)
+    prefix_match = re.match(r'^([A-Z]+)', clean)
+    prefix = prefix_match.group(1) if prefix_match else ""
+    if prefix in ("NT", "NM", "NS", "NN"):
+        return "PP1_NUOC"
+    if prefix.startswith("KT"):
+        return "PP2_KHI_THAI"
+    if prefix.startswith(("KLV", "KXQ", "KKXQ")):
+        return "PP3_KLV_KXQ"
+    for code, spec in SAMPLE_METHOD_PRESETS.items():
+        if any(clean.startswith(p) for p in spec["prefixes"]):
+            return code
+    return "PP1_NUOC"
+
+def auto_assign_surrogate(analyte_name, sample_surrogates):
+    """Gợi ý chuẩn đồng hành phù hợp cho từng chỉ tiêu khi trong mẫu có 1 hoặc nhiều chuẩn đồng hành."""
+    if not sample_surrogates:
+        return ""
+    if len(sample_surrogates) == 1:
+        return sample_surrogates[0]
+    a_low = u_text(analyte_name).lower()
+    by_key = {surr_norm_key(s): s for s in sample_surrogates}
+    if "phenol" in a_low:
+        for k, s in by_key.items():
+            if "phenol" in k:
+                return s
+    if "pcb" in a_low:
+        for k, s in by_key.items():
+            if "pcb" in k:
+                return s
+    opp_keywords = ("dichlorvos", "mevinphos", "diazinon", "chlorpyrifos", "chlorpyfifos", "chlorfenvinphos", "azinphos", "malathion", "fenthion", "bromophos", "parathion")
+    if any(w in a_low for w in opp_keywords):
+        for k, s in by_key.items():
+            if "chlorpyrifos" in k or "d10" in k:
+                return s
+    ocp_keywords = ("hch", "lindane", "heptachlor", "aldrin", "chlordane", "endosulfan", "dde", "ddt", "ddd", "dieldrin", "endrin", "methoxychlor", "mirex", "chloroneb", "etridiazole", "trifluralin", "simazine", "atrazine", "chlorobenzilate", "chlorthal", "pendimethalin", "permethrin", "hexachlorobenzene", "pentachlorobenzene")
+    if any(w in a_low for w in ocp_keywords):
+        for k, s in by_key.items():
+            if "hch" in k or "phenanthrene" in k:
+                return s
+    return sample_surrogates[0]
+
+def parse_masshunter_pdf(data, filename=""):
+    """
+    Trích xuất toàn bộ kết quả từ file PDF MassHunter (Quantitative Analysis Results Summary Report
+    & Quant Sample Report & Quant Calibration Report).
+    Trả về dict gồm:
+      - batch_path: đường dẫn mẻ trên máy đo
+      - unit: đơn vị đo trích từ báo cáo (mặc định ng/mL)
+      - sequence: danh sách các dòng trong Sequence Table
+      - cal_levels: dict {Compound: [danh sách nồng độ điểm chuẩn]}
+      - records: DataFrame các dòng kết quả mẫu (Sample) gồm:
+          ['Tên mẫu', 'Data File', 'Sample Name', 'Acq. Method', 'Dil.', 'Chỉ Tiêu', 'RT', 'Resp.', 'C đo', 'Trạng thái đo', 'Đơn vị C đo', 'Ratio']
+    """
+    import pdfplumber
+    batch_path = ""
+    detected_unit = ""
+    sequence_rows = []
+    summary_records = []
+    sample_report_records = []
+    cal_levels = {}
+
+    with pdfplumber.open(io.BytesIO(data)) as pdf:
+        mode = None
+        current_compound = None
+        current_cal_compound = None
+        current_sample_meta = {}
+
+        for page_idx, page in enumerate(pdf.pages):
+            text = page.extract_text() or ""
+            lines = [line.strip() for line in text.splitlines() if line.strip()]
+            if not lines:
+                continue
+
+            header_line = lines[0]
+            if "Quantitative Analysis Results Summary Report" in header_line:
+                mode = "summary"
+            elif "Quant Calibration Report" in header_line:
+                mode = "calibration"
+            elif "Quant Sample Report" in header_line:
+                mode = "sample"
+
+            if mode == "summary":
+                in_seq = False
+                for line in lines:
+                    if line.startswith("Batch Data Path"):
+                        batch_path = line.replace("Batch Data Path", "").strip()
+                    if line.startswith("Sequence Table"):
+                        in_seq = True
+                        continue
+                    if in_seq:
+                        if line.startswith("Data File"):
+                            continue
+                        m_seq = re.match(r'^(\S+\.d)\s+(.+?)\s+(Cal|Sample|Blank|QC|CCV)\s+(\d+)\s+(\d+(?:\.\d+)?)\s+(?:(\d+)\s+)?(.+)$', line)
+                        if m_seq:
+                            sequence_rows.append({
+                                "Data File": m_seq.group(1),
+                                "Sample Name": m_seq.group(2).strip(),
+                                "Type": m_seq.group(3),
+                                "Vial": m_seq.group(4),
+                                "Vol": m_seq.group(5),
+                                "Level": m_seq.group(6) or "",
+                                "Method": m_seq.group(7).strip(),
+                            })
+                            continue
+                        else:
+                            in_seq = False
+
+                    if line.startswith(("Quantitative Analysis", "Batch Data Path", "Analysis Time", "Calibration Last", "Sequence Table", "Data File", "Page ", "Generated at")) or line in ("AM", "PM", "Name", "Version", "Update"):
+                        continue
+
+                    m_row = re.match(
+                        r'^(\S+\.d)\s+(Sample|Cal|Blank|QC)\s*'
+                        r'(?:(\d+\.\d+)\s+(\d+)\s+)?'
+                        r'(ND|[+-]?\d+(?:\.\d+)?)?'
+                        r'(?:\s+(\d+\.\d+)\s+(\d+\.\d+))?$',
+                        line
+                    )
+                    if m_row and current_compound:
+                        datafile, rtype, rt, resp, fconc, exp_conc, acc = m_row.groups()
+                        if rtype == "Sample":
+                            val_num = None if (fconc is None or fconc == "ND") else float(fconc)
+                            summary_records.append({
+                                "Data File": datafile,
+                                "Tên mẫu": re.sub(r'\.[dD]$', '', datafile),
+                                "Chỉ Tiêu": current_compound,
+                                "RT": float(rt) if rt else None,
+                                "Resp.": int(resp) if resp else None,
+                                "C đo": val_num,
+                                "Trạng thái đo": "ND" if (fconc is None or fconc == "ND") else "Định lượng",
+                            })
+                        continue
+
+                    if not line.endswith(".d") and "Sample" not in line and "Cal " not in line and "Resp." not in line:
+                        current_compound = line.strip()
+
+            elif mode == "calibration":
+                for line in lines:
+                    m_unit = re.search(r'Concentration\s*\(([^)]+)\)', line)
+                    if m_unit and not detected_unit:
+                        detected_unit = u_canonical(m_unit.group(1))
+                    m_cal_title = re.match(r'^(.+?)\s+Relative Standard Error\s+([\d.]+)', line)
+                    if m_cal_title:
+                        current_cal_compound = m_cal_title.group(1).strip()
+                        cal_levels.setdefault(current_cal_compound, [])
+                    m_cal_pt = re.search(r'Calibration\s+(\d+)\s+[xX]?\s*(\d+\.\d+)\s+(\d+)', line)
+                    if m_cal_pt and current_cal_compound:
+                        lvl_conc = float(m_cal_pt.group(2))
+                        if lvl_conc not in cal_levels[current_cal_compound]:
+                            cal_levels[current_cal_compound].append(lvl_conc)
+
+            elif mode == "sample":
+                in_table = False
+                for line in lines:
+                    if line.startswith("Batch Data Path") and not batch_path:
+                        batch_path = line.replace("Batch Data Path", "").strip()
+                    m_df = re.search(r'Data File\s+(\S+\.d)', line)
+                    if m_df:
+                        current_sample_meta = {"Data File": m_df.group(1), "Dil.": 1.0, "Type": "", "Sample Name": "", "Acq. Method": ""}
+                    m_type = re.match(r'^Type\s+(Sample|Cal|Blank|QC)\s+Name\s+(.*)$', line)
+                    if m_type and current_sample_meta:
+                        current_sample_meta["Type"] = m_type.group(1)
+                        current_sample_meta["Sample Name"] = m_type.group(2).strip()
+                    m_dil = re.match(r'^Dil\.\s+(\d+(?:\.\d+)?)\s+Acq\. Method File\s+(.*)$', line)
+                    if m_dil and current_sample_meta:
+                        current_sample_meta["Dil."] = float(m_dil.group(1))
+                        current_sample_meta["Acq. Method"] = m_dil.group(2).strip()
+                    if line.startswith("Name RT Resp. Final Conc. Units Ratio"):
+                        in_table = True
+                        continue
+                    if in_table:
+                        if line.startswith(("Page ", "+ Selected Ion", "+ TIC")):
+                            in_table = False
+                            continue
+                        if re.match(r'^[A-Za-z0-9,_-]+\s*$', line) and len(line.split()) == 1:
+                            in_table = False
+                            continue
+                        m_srow = re.match(
+                            r'^(.+?)\s+(\d+\.\d+)\s+(\d+)\s+([+-]?\d+\.\d+)\s+(\S+)(?:\s+(\d+\.\d+))?$',
+                            line
+                        )
+                        if m_srow and current_sample_meta.get("Type") == "Sample":
+                            cname, rt, resp, fconc, unit_str, ratio = m_srow.groups()
+                            canon_u = u_canonical(unit_str)
+                            if not detected_unit and canon_u:
+                                detected_unit = canon_u
+                            sample_report_records.append({
+                                "Data File": current_sample_meta["Data File"],
+                                "Tên mẫu": re.sub(r'\.[dD]$', '', current_sample_meta["Data File"]),
+                                "Sample Name": current_sample_meta.get("Sample Name", ""),
+                                "Acq. Method": current_sample_meta.get("Acq. Method", ""),
+                                "Dil.": current_sample_meta.get("Dil.", 1.0),
+                                "Chỉ Tiêu": cname.strip(),
+                                "RT": float(rt),
+                                "Resp.": int(resp),
+                                "C đo": float(fconc),
+                                "Trạng thái đo": "Định lượng",
+                                "Đơn vị C đo": canon_u or "ng/mL",
+                                "Ratio": float(ratio) if ratio else None,
+                            })
+
+    unit_final = detected_unit or "ng/mL"
+    seq_df = pd.DataFrame(sequence_rows)
+    dil_map = {}
+    sname_map = {}
+    method_map = {}
+    if not seq_df.empty:
+        for _, srow in seq_df.iterrows():
+            sname_map[srow["Data File"]] = srow["Sample Name"]
+            method_map[srow["Data File"]] = srow["Method"]
+    for r in sample_report_records:
+        df_file = r["Data File"]
+        dil_map[df_file] = r.get("Dil.", 1.0)
+        if r.get("Sample Name"):
+            sname_map[df_file] = r["Sample Name"]
+        if r.get("Acq. Method"):
+            method_map[df_file] = r["Acq. Method"]
+
+    # Gộp dữ liệu từ Summary Report (có cả các chất ND) và Sample Report (có thêm Ratio, Dil, Units)
+    merged_records = []
+    sample_lookup = {(r["Data File"], r["Chỉ Tiêu"].casefold()): r for r in sample_report_records}
+
+    if summary_records:
+        for r in summary_records:
+            key = (r["Data File"], r["Chỉ Tiêu"].casefold())
+            s_extra = sample_lookup.get(key, {})
+            merged_records.append({
+                "Tên mẫu": r["Tên mẫu"],
+                "Data File": r["Data File"],
+                "Sample Name": sname_map.get(r["Data File"], ""),
+                "Acq. Method": method_map.get(r["Data File"], ""),
+                "Hệ số pha loãng": dil_map.get(r["Data File"], 1.0),
+                "Chỉ Tiêu": r["Chỉ Tiêu"],
+                "RT": r["RT"] if r["RT"] is not None else s_extra.get("RT"),
+                "Resp.": r["Resp."] if r["Resp."] is not None else s_extra.get("Resp."),
+                "C đo": r["C đo"],
+                "Trạng thái đo": r["Trạng thái đo"],
+                "Đơn vị C đo": s_extra.get("Đơn vị C đo", unit_final),
+                "Ratio": s_extra.get("Ratio"),
+            })
+    elif sample_report_records:
+        for r in sample_report_records:
+            merged_records.append({
+                "Tên mẫu": r["Tên mẫu"],
+                "Data File": r["Data File"],
+                "Sample Name": r.get("Sample Name", ""),
+                "Acq. Method": r.get("Acq. Method", ""),
+                "Hệ số pha loãng": r.get("Dil.", 1.0),
+                "Chỉ Tiêu": r["Chỉ Tiêu"],
+                "RT": r["RT"],
+                "Resp.": r["Resp."],
+                "C đo": r["C đo"],
+                "Trạng thái đo": r["Trạng thái đo"],
+                "Đơn vị C đo": r.get("Đơn vị C đo", unit_final),
+                "Ratio": r.get("Ratio"),
+            })
+
+    if not merged_records:
+        raise ValueError("Không tìm thấy dữ liệu mẫu (Type = Sample) trong file PDF MassHunter này.")
+
+    df_out = pd.DataFrame(merged_records)
+    return {
+        "batch_path": batch_path,
+        "unit": unit_final,
+        "sequence": seq_df,
+        "cal_levels": cal_levels,
+        "records": df_out,
+        "filename": filename,
+    }
+
+def compute_prefix_based_batch(analyte_df, surrogate_df, method_configs, limit_library=None):
+    """
+    Thực hiện tính Hiệu suất thu hồi H(%) của chuẩn đồng hành và Nồng độ thực (C thực) của chỉ tiêu
+    theo 3 phương pháp tương ứng với đầu mã mẫu:
+      - PP1_NUOC (NT, NM, NS, NN): V mẫu = 500 mL -> V dịch chiết = 1 mL (Hệ số làm giàu = 500)
+      - PP2_KHI_THAI (KT): V khí = 24 L -> V mẫu đo = 1 mL
+      - PP3_KLV_KXQ (KLV, KXQ, KKXQ): V khí = 4 L -> V dung môi = 1 mL
+    """
+    surr_lookup = {}
+    if surrogate_df is not None and not surrogate_df.empty:
+        for _, srow in surrogate_df.iterrows():
+            s_sample = u_text(srow.get("Tên mẫu"))
+            s_name = u_text(srow.get("Chuẩn đồng hành"))
+            if not s_sample or not s_name:
+                continue
+            c_before = an_number(srow.get("Csurr đầu"), f"Csurr đầu ({s_sample} - {s_name})", positive=True, optional=True)
+            c_after = an_number(srow.get("Csurr sau"), f"Csurr sau ({s_sample} - {s_name})", optional=True)
+            s_unit = u_canonical(srow.get("Đơn vị") or "ng/mL")
+            h_pct = None
+            if c_before is not None and c_after is not None and c_before > 0:
+                h_pct = an_ratio([c_after, 100.0], [c_before])
+            surr_lookup[(s_sample.casefold(), surr_norm_key(s_name))] = {
+                "name": s_name,
+                "c_before": c_before,
+                "c_after": c_after,
+                "unit": s_unit,
+                "h_pct": h_pct,
+            }
+
+    results = []
+    errors = []
+
+    for idx, row in analyte_df.iterrows():
+        try:
+            if not an_bool(row.get("Chọn", True), "Chọn"):
+                continue
+            sample_name = u_text(row.get("Tên mẫu"))
+            analyte_name = u_text(row.get("Chỉ Tiêu"))
+            if not sample_name or not analyte_name:
+                continue
+
+            m_code = u_text(row.get("Mã phương pháp")) or detect_sample_method_code(sample_name)
+            if m_code not in SAMPLE_METHOD_PRESETS:
+                m_code = detect_sample_method_code(sample_name)
+            preset = SAMPLE_METHOD_PRESETS[m_code]
+            m_cfg = method_configs.get(m_code, {})
+
+            c_do_raw = row.get("C đo")
+            status_do = u_text(row.get("Trạng thái đo"))
+            is_nd = (status_do.upper() == "ND") or (c_do_raw is None) or (isinstance(c_do_raw, float) and math.isnan(c_do_raw)) or (u_text(c_do_raw).upper() in ("", "ND", "NONE", "NAN"))
+            c_do = 0.0 if is_nd else an_number(c_do_raw, f"C đo ({sample_name} - {analyte_name})")
+
+            src_unit = u_canonical(row.get("Đơn vị C đo") or m_cfg.get("src_unit") or "ng/mL")
+            out_unit = u_canonical(row.get("Đơn vị kết quả") or m_cfg.get("out_unit") or preset["default_out_unit"])
+            dilution = an_number(row.get("Hệ số pha loãng", 1.0), "Hệ số pha loãng", positive=True)
+            v_sample = an_number(row.get("V mẫu", m_cfg.get("v_sample", preset["v_sample"])), "V mẫu", positive=True)
+            v_extract = an_number(row.get("V dịch chiết (mL)", m_cfg.get("v_extract", preset["v_extract"])), "V dịch chiết (mL)", positive=True)
+            c_blank = an_number(row.get("C blank", m_cfg.get("c_blank", 0.0)), "C blank", optional=True) or 0.0
+            correct_h = an_bool(row.get("Chia H%", m_cfg.get("correct_recovery", False)), "Chia H%")
+
+            assigned_surr = u_text(row.get("Chuẩn đồng hành áp dụng"))
+            surr_info = surr_lookup.get((sample_name.casefold(), surr_norm_key(assigned_surr)), {}) if assigned_surr else {}
+
+            c_surr_before = an_number(row.get("Csurr đầu"), "Csurr đầu", positive=True, optional=True)
+            if c_surr_before is None:
+                c_surr_before = surr_info.get("c_before")
+            c_surr_after = an_number(row.get("Csurr sau"), "Csurr sau", optional=True)
+            if c_surr_after is None:
+                c_surr_after = surr_info.get("c_after")
+
+            h_pct = None
+            if c_surr_before is not None and c_surr_after is not None and c_surr_before > 0:
+                h_pct = an_ratio([c_surr_after, 100.0], [c_surr_before])
+
+            recovery_factor = 1.0
+            if correct_h:
+                if h_pct is None or h_pct <= 0:
+                    raise ValueError(f"{sample_name} / {analyte_name}: Đã bật Chia hiệu suất thu hồi (H%) nhưng chuẩn đồng hành '{assigned_surr or 'Chưa chọn'}' chưa có H% > 0 (Csurr sau = {c_surr_after}). Hãy nhập Csurr hoặc tắt Chia H% cho chỉ tiêu này.")
+                recovery_factor = an_ratio([100.0], [h_pct])
+
+            # Tính toán theo 3 phương pháp
+            if m_code == "PP1_NUOC":
+                # Quy đổi C đo về µg/L (= ng/mL)
+                c_do_ug_l = an_convert(c_do, src_unit, "µg/L")
+                c_blank_ug_l = an_convert(c_blank, src_unit, "µg/L") if c_blank else 0.0
+                net_c = max(0.0, c_do_ug_l - c_blank_ug_l)
+                enrichment_factor = an_ratio([v_sample], [v_extract])  # 500 mL / 1 mL = 500
+                c_uncorrected_ug_l = 0.0 if is_nd else an_ratio([net_c, v_extract, dilution], [v_sample])
+                c_uncorrected = an_convert(c_uncorrected_ug_l, "µg/L", out_unit)
+                c_corrected = an_ratio([c_uncorrected, recovery_factor])
+                v_sample_unit = "mL"
+                formula_str = f"PP1 (Nước {v_sample:g}mL→{v_extract:g}mL, F={enrichment_factor:g}): C = Cđo × ({v_extract:g}/{v_sample:g}) × K" + (" × (100/H%)" if correct_h else "")
+            else:
+                # PP2_KHI_THAI (24L -> 1mL) hoặc PP3_KLV_KXQ (4L -> 1mL)
+                # Quy đổi C đo dịch giải hấp về ng/mL (= µg/L)
+                c_do_ng_ml = an_convert(c_do, src_unit, "ng/mL")
+                c_blank_ng_ml = an_convert(c_blank, src_unit, "ng/mL") if c_blank else 0.0
+                net_c_ng_ml = max(0.0, c_do_ng_ml - c_blank_ng_ml)
+                # Khối lượng chất trong dịch chiết (ng) = net_c (ng/mL) * V_extract (mL) * K
+                # Chia cho V_khí (L) -> ng/L = µg/m³ (hoặc µg/Nm³)
+                enrichment_factor = an_ratio([v_sample * 1000.0], [v_extract])
+                c_uncorrected_ug_m3 = 0.0 if is_nd else an_ratio([net_c_ng_ml, v_extract, dilution], [v_sample])
+                base_gas_unit = "µg/Nm³" if "Nm³" in out_unit else "µg/m³"
+                c_uncorrected = u_convert(c_uncorrected_ug_m3, base_gas_unit, out_unit)
+                c_corrected = an_ratio([c_uncorrected, recovery_factor])
+                v_sample_unit = "L"
+                label_pp = "PP2 (Khí thải" if m_code == "PP2_KHI_THAI" else "PP3 (KLV/KXQ"
+                formula_str = f"{label_pp} {v_sample:g}L→{v_extract:g}mL): C = (Cđo − Cblank) × {v_extract:g}mL × K / {v_sample:g}L" + (" × (100/H%)" if correct_h else "")
+
+            # Tra cứu giới hạn MDL/LOQ nếu có trong thư viện
+            mdl = an_number(row.get("MDL"), "MDL", positive=True, optional=True)
+            loq = an_number(row.get("LOQ"), "LOQ", positive=True, optional=True)
+            limit_unit = u_text(row.get("Đơn vị giới hạn"))
+            if mdl is None and loq is None and limit_library is not None and not limit_library.empty:
+                for cand_matrix in [m_code, sample_name[:2].upper(), sample_name[:3].upper(), preset["matrix"]]:
+                    try:
+                        m_val, l_val, u_val = an_limit_lookup(limit_library, analyte_name, cand_matrix)
+                        if m_val is not None or l_val is not None:
+                            mdl, loq, limit_unit = m_val, l_val, u_val
+                            break
+                    except Exception:
+                        pass
+
+            if (mdl is not None or loq is not None) and limit_unit:
+                try:
+                    if mdl is not None:
+                        mdl = u_convert(mdl, limit_unit, out_unit)
+                    if loq is not None:
+                        loq = u_convert(loq, limit_unit, out_unit)
+                except Exception:
+                    pass
+
+            if is_nd or c_corrected == 0.0:
+                if mdl is not None:
+                    qualifier, report_str, bound = "Dưới MDL (ND)", f"KPH (< MDL {mdl:.6g})", mdl
+                elif loq is not None:
+                    qualifier, report_str, bound = "Dưới LOQ (ND)", f"< LOQ ({loq:.6g})", loq
+                else:
+                    qualifier, report_str, bound = "KPH / ND", "KPH", 0.0
+            else:
+                qualifier, report_str, bound = an_classify(c_corrected, mdl, loq)
+
+            qc_note = "Chưa có Csurr"
+            if h_pct is not None:
+                if m_code == "PP1_NUOC":
+                    qc_note = "Đạt (70–130%)" if 70.0 <= h_pct <= 130.0 else "Ngoài khoảng 70–130%"
+                else:
+                    qc_note = "Đạt (40–120%)" if 40.0 <= h_pct <= 120.0 else "Ngoài khoảng 40–120%"
+
+            results.append({
+                "Tên mẫu": sample_name,
+                "Nhóm phương pháp": preset["label"],
+                "Tên chỉ tiêu": analyte_name,
+                "Trạng thái đo": "ND" if is_nd else "Định lượng",
+                "C đo": 0.0 if is_nd else c_do,
+                "Đơn vị C đo": src_unit,
+                "Chuẩn đồng hành": assigned_surr,
+                "C_surr_truoc": c_surr_before,
+                "C_surr_sau": c_surr_after,
+                "Đơn vị Csurr": surr_info.get("unit", src_unit),
+                "R số (%)": h_pct,
+                "R(%)": f"{h_pct:.2f}%" if h_pct is not None else "",
+                "QC recovery": qc_note,
+                "V mẫu": v_sample,
+                "Đơn vị V mẫu": v_sample_unit,
+                "V dịch chiết (mL)": v_extract,
+                "Hệ số làm giàu": enrichment_factor,
+                "Hệ số pha loãng": dilution,
+                "Hiệu chỉnh recovery": correct_h,
+                "C tính chưa hiệu chỉnh": c_uncorrected,
+                "C tính đầy đủ": c_corrected,
+                "C số cuối": c_corrected,
+                "C thực": report_str,
+                "Đơn vị kết quả": out_unit,
+                "Phân loại": qualifier,
+                "MDL sau đổi": mdl,
+                "LOQ sau đổi": loq,
+                "Công thức": formula_str,
+                "Cộng Tổng": False,
+                "Ngưỡng dùng cộng": bound,
+            })
+        except Exception as exc:
+            errors.append({"Dòng": int(idx) + 1, "Mẫu": u_text(row.get("Tên mẫu")), "Chỉ tiêu": u_text(row.get("Chỉ Tiêu")), "Lỗi": str(exc)})
+
+    return results, errors
+
+def render_batch_analysis(system_key="gcms"):
+    st.subheader("🚀 Trích xuất tự động File PDF MassHunter / Excel & Tính Hiệu suất thu hồi (H%) + C thực")
+    st.caption(
+        "Hỗ trợ đọc trực tiếp file PDF kết quả từ máy MassHunter (`Quantitative Analysis Results Summary Report` / `Quant Sample Report`) "
+        "hoặc file CSV/Excel. Tự động nhận diện và ghi nhớ **Chất chuẩn đồng hành (Surrogate)**, tính hiệu suất thu hồi **H(%)** và tự động áp dụng "
+        "**3 phương pháp tính C thực** theo đầu mã mẫu: **NT, NM, NS** (500 mL → 1 mL) · **KT** (24 L → 1 mL) · **KLV, KXQ** (4 L → 1 mL)."
+    )
+
+    registry_df = load_surrogate_registry()
+
+    # 1. QUẢN LÝ BỘ NHỚ CHẤT CHUẨN ĐỒNG HÀNH (NHẬP 1 LẦN, WEB TỰ NHỚ)
+    with st.expander("🧠 Bộ nhớ Chất Chuẩn Đồng Hành (Nhập 1 lần — Web tự động nhớ & phân biệt)", expanded=False):
+        st.info(
+            "💡 Các tên chất trong danh sách dưới đây sẽ được **tự động tách riêng làm Chất chuẩn đồng hành (Surrogate)** "
+            "khi bạn tải file kết quả MassHunter lên để tính **Hiệu suất thu hồi H(%) = (Csurr sau / Csurr đầu) × 100**. "
+            "Bạn chỉ cần thêm tên chất mới 1 lần và bấm **Lưu bộ nhớ chuẩn đồng hành**."
+        )
+        edited_reg = st.data_editor(
+            registry_df,
+            num_rows="dynamic",
+            hide_index=True,
+            use_container_width=True,
+            key=f"surr_reg_editor_{system_key}",
+            column_config={
+                "Tên chuẩn đồng hành": st.column_config.TextColumn("Tên chuẩn đồng hành (Surrogate) *", required=True, width="medium"),
+                "Nhóm chỉ tiêu gợi ý": st.column_config.TextColumn("Nhóm chỉ tiêu đại diện", width="medium"),
+                "Csurr đầu mặc định": st.column_config.NumberColumn("Csurr ban đầu mặc định", min_value=0.0001, format="%.4g"),
+                "Đơn vị": st.column_config.SelectboxColumn("Đơn vị", options=AN_LIQUID),
+                "Ghi chú": st.column_config.TextColumn("Ghi chú", width="medium"),
+            },
+        )
+        c_save_reg, c_reset_reg = st.columns([1, 1])
+        if c_save_reg.button("💾 Lưu bộ nhớ chuẩn đồng hành", type="primary", key=f"save_surr_reg_{system_key}"):
+            saved_reg = save_surrogate_registry(edited_reg)
+            st.success(f"Đã ghi nhớ {len(saved_reg)} chất chuẩn đồng hành! Hệ thống sẽ tự động nhận diện ở mọi lần tải file tiếp theo.")
+            st.rerun()
+        if c_reset_reg.button("🔄 Khôi phục danh sách mặc định", key=f"reset_surr_reg_{system_key}"):
+            save_surrogate_registry(pd.DataFrame(DEFAULT_SURROGATES))
+            st.rerun()
+
+    # 2. CẤU HÌNH THÔNG SỐ MẶC ĐỊNH CHO 3 NHÓM PHƯƠNG PHÁP MẪU (NT/NM/NS, KT, KLV/KXQ)
+    with st.expander("⚙️ Thông số hệ số làm giàu & nồng độ chuẩn đồng hành theo 3 nhóm mẫu (NT/NM/NS · KT · KLV/KXQ)", expanded=True):
+        col_pp1, col_pp2, col_pp3 = st.columns(3)
+        with col_pp1:
+            st.markdown("💧 **Nhóm 1: Mẫu Nước (`NT`, `NM`, `NS`)**")
+            v_samp_nuoc = st.number_input("Thể tích mẫu nước V mẫu (mL)", min_value=0.1, value=500.0, step=50.0, key=f"v_samp_nuoc_{system_key}")
+            v_ext_nuoc = st.number_input("Thể tích dịch chiết cuối V đm (mL)", min_value=0.01, value=1.0, step=0.5, key=f"v_ext_nuoc_{system_key}")
+            f_nuoc = v_samp_nuoc / v_ext_nuoc if v_ext_nuoc > 0 else 500.0
+            st.caption(f"👉 Hệ số làm giàu Nước: **{f_nuoc:g} lần** ({v_samp_nuoc:g} mL → {v_ext_nuoc:g} mL)")
+            out_unit_nuoc = st.selectbox("Đơn vị kết quả Nước", ["µg/L", "mg/L", "ng/L"], index=0, key=f"out_u_nuoc_{system_key}")
+            corr_h_nuoc = st.checkbox("Hiệu chỉnh chia H% (× 100/H%) cho mẫu Nước", value=True, key=f"corr_h_nuoc_{system_key}")
+
+        with col_pp2:
+            st.markdown("🏭 **Nhóm 2: Mẫu Khí thải (`KT`)**")
+            v_samp_kt = st.number_input("Thể tích khí thải V khí (L)", min_value=0.1, value=24.0, step=1.0, key=f"v_samp_kt_{system_key}")
+            v_ext_kt = st.number_input("Thể tích mẫu đo V giải hấp (mL)", min_value=0.01, value=1.0, step=0.5, key=f"v_ext_kt_{system_key}")
+            st.caption(f"👉 Tỷ lệ làm giàu Khí thải: **{v_samp_kt:g} L khí → {v_ext_kt:g} mL mẫu đo**")
+            out_unit_kt = st.selectbox("Đơn vị kết quả Khí thải", ["µg/Nm³", "mg/Nm³", "µg/m³", "mg/m³"], index=0, key=f"out_u_kt_{system_key}")
+            corr_h_kt = st.checkbox("Hiệu chỉnh chia H% (× 100/H%) cho mẫu KT", value=True, key=f"corr_h_kt_{system_key}")
+
+        with col_pp3:
+            st.markdown("🌬️ **Nhóm 3: Không khí (`KLV`, `KXQ`)**")
+            v_samp_kk = st.number_input("Thể tích khí KLV/KXQ (L)", min_value=0.1, value=4.0, step=0.5, key=f"v_samp_kk_{system_key}")
+            v_ext_kk = st.number_input("Thể tích dung môi giải hấp (mL)", min_value=0.01, value=1.0, step=0.5, key=f"v_ext_kk_{system_key}")
+            st.caption(f"👉 Tỷ lệ làm giàu KLV & KXQ: **{v_samp_kk:g} L khí → {v_ext_kk:g} mL dung môi**")
+            out_unit_kk = st.selectbox("Đơn vị kết quả KLV/KXQ", ["µg/m³", "mg/m³", "µg/Nm³", "mg/Nm³"], index=0, key=f"out_u_kk_{system_key}")
+            corr_h_kk = st.checkbox("Hiệu chỉnh chia H% (× 100/H%) cho KLV/KXQ", value=True, key=f"corr_h_kk_{system_key}")
+
+    method_configs = {
+        "PP1_NUOC": {"v_sample": v_samp_nuoc, "v_extract": v_ext_nuoc, "out_unit": out_unit_nuoc, "correct_recovery": corr_h_nuoc},
+        "PP2_KHI_THAI": {"v_sample": v_samp_kt, "v_extract": v_ext_kt, "out_unit": out_unit_kt, "correct_recovery": corr_h_kt},
+        "PP3_KLV_KXQ": {"v_sample": v_samp_kk, "v_extract": v_ext_kk, "out_unit": out_unit_kk, "correct_recovery": corr_h_kk},
+    }
+
+    # 3. TẢI FILE KẾT QUẢ MASSHUNTER (PDF / CSV / XLSX)
+    upload = st.file_uploader(
+        "📂 Tải lên File PDF kết quả MassHunter (예: Gen_Complete_ESTD.pdf) hoặc CSV/Excel",
+        type=["pdf", "csv", "xlsx"],
+        key=f"batch_source_{system_key}",
+    )
+    if upload is None:
+        template = pd.DataFrame([an_batch_template()])
+        st.download_button(
+            "📥 Tải mẫu CSV nhập hàng loạt (nếu dùng CSV)",
+            template.to_csv(index=False).encode("utf-8-sig"),
+            "GALAXY_CHEM_mau_tinh.csv",
+            "text/csv",
+            key=f"dl_tpl_{system_key}",
+        )
+        return
+
+    digest = hashlib.sha256(upload.getvalue()).hexdigest()[:16]
+    fname_lower = upload.name.lower()
+
+    try:
+        if fname_lower.endswith(".pdf"):
+            parsed_pdf = parse_masshunter_pdf(upload.getvalue(), upload.name)
+            raw_df = parsed_pdf["records"]
+            st.success(
+                f"✔️ Đã đọc thành công file PDF MassHunter **{upload.name}** · "
+                f"Mẻ: `{parsed_pdf['batch_path'] or 'Không rõ'}` · "
+                f"Đơn vị máy đo: **{parsed_pdf['unit']}** · "
+                f"**{raw_df['Tên mẫu'].nunique()} mẫu** ({len(raw_df)} dòng kết quả)."
+            )
+            if not parsed_pdf["sequence"].empty:
+                with st.expander("📋 Xem Sequence Table & Đường chuẩn trích xuất từ PDF", expanded=False):
+                    st.dataframe(parsed_pdf["sequence"], hide_index=True, use_container_width=True)
+                    if parsed_pdf["cal_levels"]:
+                        cal_summary = pd.DataFrame([
+                            {"Chất": k, "Các điểm chuẩn (ng/mL)": "; ".join(f"{x:g}" for x in v)}
+                            for k, v in parsed_pdf["cal_levels"].items()
+                        ])
+                        st.dataframe(cal_summary, hide_index=True, use_container_width=True)
+        else:
+            raw_df = (
+                pd.read_csv(io.BytesIO(upload.getvalue()), dtype=object, keep_default_na=False)
+                if fname_lower.endswith(".csv")
+                else pd.read_excel(io.BytesIO(upload.getvalue()), dtype=object, keep_default_na=False)
+            )
+            raw_df.columns = [str(c).strip() for c in raw_df.columns]
+            mapping = {"Data File": "Tên mẫu", "Compound Name": "Chỉ Tiêu", "Final Conc.": "C đo", "Unit": "Đơn vị C đo", "Units": "Đơn vị C đo"}
+            raw_df = raw_df.rename(columns={k: v for k, v in mapping.items() if k in raw_df and v not in raw_df})
+            if not {"Tên mẫu", "Chỉ Tiêu", "C đo"}.issubset(raw_df.columns):
+                raise ValueError("File thiếu cột Tên mẫu (Data File), Chỉ Tiêu (Compound Name) hoặc C đo (Final Conc.).")
+            raw_df["Tên mẫu"] = raw_df["Tên mẫu"].map(lambda x: re.sub(r'\.[dD]$', '', u_text(x)))
+            if "Hệ số pha loãng" not in raw_df.columns:
+                raw_df["Hệ số pha loãng"] = 1.0
+            if "Đơn vị C đo" not in raw_df.columns:
+                raw_df["Đơn vị C đo"] = "ng/mL"
+            def _parse_cdo(v):
+                t = u_text(v)
+                if not t or t.upper() == "ND":
+                    return None
+                try:
+                    return float(t.replace(",", "."))
+                except ValueError:
+                    return None
+            raw_df["Trạng thái đo"] = raw_df["C đo"].map(lambda v: "ND" if _parse_cdo(v) is None else "Định lượng")
+            raw_df["C đo"] = raw_df["C đo"].map(_parse_cdo)
+
+        # Tự động phân biệt Chất chuẩn đồng hành vs Chỉ tiêu phân tích dựa trên Bộ nhớ Surrogate
+        registry_df = load_surrogate_registry()
+        default_csurr_map = {
+            surr_norm_key(r["Tên chuẩn đồng hành"]): float(r["Csurr đầu mặc định"])
+            for _, r in registry_df.iterrows()
+            if u_text(r["Tên chuẩn đồng hành"])
+        }
+
+        raw_df["Là chuẩn đồng hành"] = raw_df["Chỉ Tiêu"].map(lambda c: is_surrogate_compound(c, registry_df))
+
+        # Cho phép người dùng tick chọn thêm chất chuẩn đồng hành mới ngay trên giao diện và tự động nhớ
+        all_compounds_in_file = list(dict.fromkeys(raw_df["Chỉ Tiêu"].dropna().astype(str).tolist()))
+        detected_surrogates = list(dict.fromkeys(raw_df.loc[raw_df["Là chuẩn đồng hành"], "Chỉ Tiêu"].astype(str).tolist()))
+
+        selected_surrogates = st.multiselect(
+            "🎯 Chất chuẩn đồng hành (Surrogate) phát hiện trong file (nếu bạn chọn thêm chất mới tại đây, web sẽ tự động ghi nhớ cho các lần sau):",
+            options=all_compounds_in_file,
+            default=detected_surrogates,
+            key=f"pick_surr_in_file_{digest}_{system_key}",
+        )
+
+        # Nếu người dùng chọn thêm chất mới chưa có trong registry, tự động lưu vào bộ nhớ!
+        new_surr_added = [s for s in selected_surrogates if not is_surrogate_compound(s, registry_df)]
+        if new_surr_added:
+            new_rows = pd.DataFrame([
+                {"Tên chuẩn đồng hành": s, "Nhóm chỉ tiêu gợi ý": "Tự động nhớ từ file kết quả", "Csurr đầu mặc định": 10.0, "Đơn vị": "ng/mL", "Ghi chú": f"Thêm từ {upload.name}"}
+                for s in new_surr_added
+            ])
+            registry_df = save_surrogate_registry(pd.concat([registry_df, new_rows], ignore_index=True))
+            st.toast(f"Đã tự động ghi nhớ chuẩn đồng hành mới: {', '.join(new_surr_added)}")
+
+        selected_surr_keys = {surr_norm_key(s) for s in selected_surrogates}
+        raw_df["Là chuẩn đồng hành"] = raw_df["Chỉ Tiêu"].map(lambda c: surr_norm_key(c) in selected_surr_keys)
+
+        surr_raw = raw_df[raw_df["Là chuẩn đồng hành"]].copy().reset_index(drop=True)
+        analyte_raw = raw_df[~raw_df["Là chuẩn đồng hành"]].copy().reset_index(drop=True)
+
+        # 4. BẢNG TÍNH HIỆU SUẤT THU HỒI CHUẨN ĐỒNG HÀNH (Csurr đầu, Csurr sau -> H%)
+        st.markdown("### 1️⃣ Bảng Chất Chuẩn Đồng Hành & Tính Hiệu Suất Thu Hồi ($H\%$)")
+        c_quick1, c_quick2 = st.columns([1.2, 2])
+        quick_csurr_init = c_quick1.number_input(
+            "⚡ Nhập nhanh Csurr ban đầu cho toàn bộ chuẩn đồng hành (ng/mL):",
+            min_value=0.0001,
+            value=10.0 if any(u_text(s).upper().startswith("KT") for s in raw_df["Tên mẫu"].unique()) else 50.0,
+            step=5.0,
+            key=f"quick_csurr_{digest}_{system_key}",
+        )
+        apply_quick_csurr = c_quick2.checkbox(
+            "Áp dụng giá trị Csurr ban đầu này cho tất cả dòng chuẩn đồng hành bên dưới",
+            value=False,
+            key=f"apply_quick_csurr_{digest}_{system_key}",
+        )
+
+        if surr_raw.empty:
+            st.warning("Chưa có chất nào được đánh dấu là Chuẩn đồng hành trong file này. Bạn có thể chọn tên chất ở ô phía trên hoặc tự nhập tay Csurr.")
+            surr_table = pd.DataFrame(columns=["Tên mẫu", "Chuẩn đồng hành", "Csurr đầu", "Csurr sau", "Đơn vị", "H% thu hồi", "Đánh giá QC"])
+        else:
+            surr_rows = []
+            for _, srow in surr_raw.iterrows():
+                s_name = u_text(srow["Chỉ Tiêu"])
+                c_init = quick_csurr_init if apply_quick_csurr else default_csurr_map.get(surr_norm_key(s_name), quick_csurr_init)
+                c_meas = srow["C đo"]
+                h_val = (c_meas / c_init * 100.0) if (c_meas is not None and pd.notna(c_meas) and c_init > 0) else None
+                surr_rows.append({
+                    "Tên mẫu": u_text(srow["Tên mẫu"]),
+                    "Chuẩn đồng hành": s_name,
+                    "Csurr đầu": float(c_init),
+                    "Csurr sau": float(c_meas) if (c_meas is not None and pd.notna(c_meas)) else None,
+                    "Đơn vị": u_text(srow.get("Đơn vị C đo") or "ng/mL"),
+                    "H% thu hồi": round(h_val, 2) if h_val is not None else None,
+                    "Trạng thái đo": u_text(srow.get("Trạng thái đo")),
+                })
+            surr_table = pd.DataFrame(surr_rows)
+
+        surr_edited = st.data_editor(
+            surr_table,
+            hide_index=True,
+            num_rows="dynamic",
+            use_container_width=True,
+            key=f"surr_editor_{digest}_{apply_quick_csurr}_{quick_csurr_init}_{system_key}",
+            disabled=["H% thu hồi", "Trạng thái đo"],
+            column_config={
+                "Csurr đầu": st.column_config.NumberColumn("Csurr ban đầu (nhập tay)", min_value=0.0001, format="%.4g"),
+                "Csurr sau": st.column_config.NumberColumn("Csurr sau (từ máy)", min_value=0.0, format="%.6g"),
+                "H% thu hồi": st.column_config.NumberColumn("Hiệu suất thu hồi H (%)", format="%.2f%%"),
+            },
+        )
+        # Cập nhật lại H% ngay khi người dùng sửa Csurr đầu hoặc Csurr sau trong bảng
+        if not surr_edited.empty:
+            def _calc_h_row(r):
+                try:
+                    cb = float(r["Csurr đầu"])
+                    ca = float(r["Csurr sau"])
+                    if cb > 0 and math.isfinite(ca):
+                        return round(ca / cb * 100.0, 2)
+                except Exception:
+                    return None
+                return None
+            surr_edited["H% thu hồi"] = surr_edited.apply(_calc_h_row, axis=1)
+
+        # Lập danh sách chuẩn đồng hành khả dụng (có Csurr sau > 0) cho từng mẫu
+        valid_surr_per_sample = {}
+        all_surr_per_sample = {}
+        surr_pair_lookup = {}
+        if not surr_edited.empty:
+            for _, sr in surr_edited.iterrows():
+                sm = u_text(sr.get("Tên mẫu"))
+                sn = u_text(sr.get("Chuẩn đồng hành"))
+                if not sm or not sn:
+                    continue
+                all_surr_per_sample.setdefault(sm, []).append(sn)
+                ca = sr.get("Csurr sau")
+                if ca is not None and pd.notna(ca) and float(ca) > 0:
+                    valid_surr_per_sample.setdefault(sm, []).append(sn)
+                surr_pair_lookup[(sm.casefold(), surr_norm_key(sn))] = sr
+
+        # 5. BẢNG CHỈ TIÊU PHÂN TÍCH & PHÂN LOẠI TỰ ĐỘNG THEO ĐẦU MẪU (NT/NM/NS, KT, KLV/KXQ)
+        st.markdown("### 2️⃣ Bảng Chỉ Tiêu Mẫu Thực & Phương Pháp Tính Tự Động Theo Mã Mẫu")
+        filter_col1, filter_col2 = st.columns([1, 2])
+        hide_nd = filter_col1.checkbox("Ẩn các chỉ tiêu không phát hiện (ND / C đo = 0) khi chọn", value=False, key=f"hide_nd_{digest}_{system_key}")
+        global_surr_override = filter_col2.selectbox(
+            "Chế độ gán chuẩn đồng hành cho chỉ tiêu:",
+            ["Tự động gán theo nhóm hóa học / theo mẫu"] + [f"Dùng cố định: {s}" for s in selected_surrogates] + ["Không áp dụng chuẩn đồng hành"],
+            key=f"surr_assign_mode_{digest}_{system_key}",
+        )
+
+        prep_rows = []
+        for _, arow in analyte_raw.iterrows():
+            s_name = u_text(arow["Tên mẫu"])
+            c_name = u_text(arow["Chỉ Tiêu"])
+            m_code = detect_sample_method_code(s_name)
+            preset = SAMPLE_METHOD_PRESETS[m_code]
+            m_cfg = method_configs[m_code]
+
+            # Chọn chuẩn đồng hành áp dụng cho chỉ tiêu này
+            if global_surr_override == "Không áp dụng chuẩn đồng hành":
+                chosen_surr = ""
+            elif global_surr_override.startswith("Dùng cố định: "):
+                chosen_surr = global_surr_override.replace("Dùng cố định: ", "").strip()
+            else:
+                avail = valid_surr_per_sample.get(s_name) or all_surr_per_sample.get(s_name) or selected_surrogates
+                chosen_surr = auto_assign_surrogate(c_name, avail)
+
+            s_info = surr_pair_lookup.get((s_name.casefold(), surr_norm_key(chosen_surr)), {})
+            c_do_val = arow.get("C đo")
+            is_zero_or_nd = (arow.get("Trạng thái đo") == "ND") or (c_do_val is None) or (pd.isna(c_do_val)) or (float(c_do_val) == 0.0)
+
+            prep_rows.append({
+                "Chọn": not (hide_nd and is_zero_or_nd),
+                "Tên mẫu": s_name,
+                "Mã phương pháp": m_code,
+                "Chỉ Tiêu": c_name,
+                "Trạng thái đo": u_text(arow.get("Trạng thái đo")),
+                "C đo": float(c_do_val) if (c_do_val is not None and pd.notna(c_do_val)) else None,
+                "Đơn vị C đo": u_text(arow.get("Đơn vị C đo") or "ng/mL"),
+                "Chuẩn đồng hành áp dụng": chosen_surr,
+                "Csurr đầu": s_info.get("Csurr đầu"),
+                "Csurr sau": s_info.get("Csurr sau"),
+                "H%": s_info.get("H% thu hồi"),
+                "Chia H%": bool(m_cfg["correct_recovery"]) and (s_info.get("H% thu hồi") is not None and pd.notna(s_info.get("H% thu hồi")) and float(s_info.get("H% thu hồi") or 0) > 0),
+                "V mẫu": float(m_cfg["v_sample"]),
+                "Đơn vị V mẫu": preset["v_sample_unit"],
+                "V dịch chiết (mL)": float(m_cfg["v_extract"]),
+                "Hệ số pha loãng": float(arow.get("Hệ số pha loãng", 1.0) or 1.0),
+                "C blank": 0.0,
+                "Đơn vị kết quả": m_cfg["out_unit"],
+            })
+
+        prep_df = pd.DataFrame(prep_rows)
+        edited_analytes = st.data_editor(
+            prep_df,
+            hide_index=True,
+            num_rows="dynamic",
+            use_container_width=True,
+            key=f"analyte_editor_{digest}_{hide_nd}_{global_surr_override}_{v_samp_nuoc}_{v_ext_nuoc}_{v_samp_kt}_{v_ext_kt}_{v_samp_kk}_{v_ext_kk}_{corr_h_nuoc}_{corr_h_kt}_{corr_h_kk}_{system_key}",
+            column_config={
+                "Chọn": st.column_config.CheckboxColumn("Tính?", default=True),
+                "Mã phương pháp": st.column_config.SelectboxColumn(
+                    "Phương pháp tính",
+                    options=list(SAMPLE_METHOD_PRESETS.keys()),
+                    required=True,
+                ),
+                "Chuẩn đồng hành áp dụng": st.column_config.SelectboxColumn(
+                    "Chuẩn đồng hành",
+                    options=[""] + selected_surrogates,
+                ),
+                "C đo": st.column_config.NumberColumn("C mẫu đo (Final Conc.)", format="%.6g"),
+                "Csurr đầu": st.column_config.NumberColumn("Csurr đầu", format="%.4g"),
+                "Csurr sau": st.column_config.NumberColumn("Csurr sau", format="%.6g"),
+                "H%": st.column_config.NumberColumn("H (%)", format="%.2f%%"),
+                "V mẫu": st.column_config.NumberColumn("V mẫu (mL hoặc L)", format="%.4g"),
+                "V dịch chiết (mL)": st.column_config.NumberColumn("V dịch chiết/mẫu đo (mL)", format="%.4g"),
+                "Hệ số pha loãng": st.column_config.NumberColumn("Hệ số K", format="%.4g"),
+                "Đơn vị kết quả": st.column_config.SelectboxColumn(
+                    "Đơn vị KQ",
+                    options=["µg/L", "mg/L", "ng/L", "µg/Nm³", "mg/Nm³", "µg/m³", "mg/m³"],
+                ),
+            },
+        )
+
+        # Tự động tính kết quả và hiển thị ngay
+        calc_results, calc_errors = compute_prefix_based_batch(
+            edited_analytes,
+            surr_edited,
+            method_configs,
+            limit_library=st.session_state.get("df_limit"),
+        )
+
+        if calc_errors:
+            st.error(f"Phát hiện {len(calc_errors)} dòng lỗi cần kiểm tra:")
+            st.dataframe(pd.DataFrame(calc_errors), hide_index=True, use_container_width=True)
+
+        if calc_results:
+            out_df = pd.DataFrame(calc_results)
+            st.markdown("### 3️⃣ Bảng Kết Quả Hiệu Suất Thu Hồi ($H\%$) & Nồng Độ Thực ($C_{\text{thực}}$)")
+            display_cols = [
+                "Tên mẫu", "Nhóm phương pháp", "Tên chỉ tiêu", "C đo", "Đơn vị C đo",
+                "Chuẩn đồng hành", "C_surr_truoc", "C_surr_sau", "R(%)", "QC recovery",
+                "V mẫu", "Đơn vị V mẫu", "V dịch chiết (mL)", "Hệ số làm giàu", "Hệ số pha loãng",
+                "C tính chưa hiệu chỉnh", "C tính đầy đủ", "C thực", "Đơn vị kết quả", "Công thức"
+            ]
+            st.dataframe(out_df[[c for c in display_cols if c in out_df.columns]], hide_index=True, use_container_width=True)
+
+            c_dl1, c_dl2 = st.columns([1, 1])
+            c_dl1.download_button(
+                "📥 Tải Bảng Kết Quả Đầy Đủ (.csv)",
+                out_df.to_csv(index=False).encode("utf-8-sig"),
+                f"Ket_qua_MassHunter_{lab_now():%Y%m%d_%H%M}.csv",
+                "text/csv",
+                type="primary",
+                use_container_width=True,
+                key=f"dl_res_csv_{digest}_{system_key}",
+            )
+            if c_dl2.button("💾 Lưu kết quả vào Phiên Báo Cáo & Biên Bản (BB-KT / Word / Excel)", use_container_width=True, key=f"save_session_res_{digest}_{system_key}"):
+                st.session_state.results = out_df
+                st.session_state.results_stale = False
+                st.success("🎉 Đã lưu toàn bộ kết quả vào phiên làm việc! Bạn có thể chuyển sang mục '📝 Báo cáo & Lập Biên bản' để xuất BB-KT Word/Excel ngay.")
+    except Exception as exc:
+        st.error(f"Lỗi xử lý dữ liệu: {exc}")
 
 
 def limit_fingerprint(frame):
@@ -2517,11 +3435,9 @@ elif menu == "🧬 Vận hành Thermo":
         
     with col_import:
         with st.container(border=True):
-            st.markdown("<div class='sub-title'>2. Xử lý kết quả Thermo</div>", unsafe_allow_html=True)
-            st.info("Khu vực chờ tích hợp thuật toán đọc file xuất từ máy Thermo.")
-            thermo_file = st.file_uploader("Kéo thả báo cáo Thermo (PDF/Excel/CSV)", type=["pdf", "xlsx", "xls", "csv"])
-            if thermo_file:
-                st.warning("🚧 Hệ thống đang chờ cập nhật thuật toán bóc tách dữ liệu từ file report Thermo.")
+            st.markdown("<div class='sub-title'>2. Xử lý kết quả Thermo / MassHunter PDF</div>", unsafe_allow_html=True)
+            st.info("Sử dụng bộ trích xuất tự động PDF MassHunter / Excel ở bên dưới để tự động nhận diện chuẩn đồng hành, tính H% và C thực.")
+    render_batch_analysis(system_key="thermo")
 
 elif menu == "🧮 Tiện ích Phân tích":
     render_analysis_utilities(df_current)
