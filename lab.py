@@ -161,6 +161,73 @@ small.stCaption {color:var(--lab-text-muted)!important;opacity:1!important}
 [data-testid="stAlert"] p{color:inherit!important}
 .stButton button:disabled,.stDownloadButton button:disabled{color:#c7d0e0!important;opacity:.75}
 
+
+/* VIETLAB V5: bảng xem trước biên bản, kẻ ô rõ ràng và gộp nhóm mẫu.
+   Giới hạn selector vào .bbkt-preview-* để không ảnh hưởng bảng nhập dữ liệu. */
+.bbkt-preview-frame{
+    width:100%;border:1px solid #6481a4;border-radius:12px;
+    background:#101d31;box-shadow:0 8px 28px rgba(3,9,24,.22);
+    overflow:hidden;margin:8px 0 15px;
+}
+.bbkt-preview-scroll{max-height:560px;overflow:auto;overscroll-behavior:contain}
+.bbkt-preview-scroll:focus-visible{outline:2px solid #a9c9ff;outline-offset:-3px}
+.bbkt-preview-table{
+    width:100%;min-width:640px;border-collapse:separate;border-spacing:0;
+    table-layout:fixed;color:#f2f6ff;font-size:14px;line-height:1.5;
+}
+.bbkt-preview-table .bbkt-col-sample{width:23%}
+.bbkt-preview-table .bbkt-col-analyte{width:56%}
+.bbkt-preview-table .bbkt-col-result{width:21%}
+.bbkt-preview-table thead th{
+    position:sticky;top:0;z-index:3;background:#2b496b!important;
+    color:#fff!important;font-size:13px;font-weight:750;text-align:left;
+    padding:13px 16px;border-right:1px solid #627f9f;border-bottom:2px solid #89acdf;
+    letter-spacing:.15px;
+}
+.bbkt-preview-table thead th:last-child{text-align:left;border-right:0}
+.bbkt-preview-table tbody td,
+.bbkt-preview-table tbody th{
+    text-align:left;vertical-align:top;padding:10px 16px;
+    border-bottom:1px solid #435a74;border-right:1px solid #435a74;
+    color:#edf4ff;overflow-wrap:anywhere;word-break:normal;
+}
+.bbkt-preview-table tbody tr > :last-child{border-right:0}
+.bbkt-preview-table tbody tr.bbkt-group-even td{background:#16283f}
+.bbkt-preview-table tbody tr.bbkt-group-odd td{background:#1b304a}
+.bbkt-preview-table tbody tr.bbkt-row-stripe.bbkt-group-even td{background:#192d46}
+.bbkt-preview-table tbody tr.bbkt-row-stripe.bbkt-group-odd td{background:#203751}
+.bbkt-preview-table tbody tr.bbkt-group-start > *{border-top:2px solid #7395b8}
+.bbkt-preview-table tbody tr:first-child > *{border-top:0}
+.bbkt-preview-table tbody tr:hover td{background:#2a4564!important}
+.bbkt-preview-table tbody .bbkt-sample-cell{
+    background:#263f5d!important;color:#f8fbff!important;
+    border-left:4px solid #88bbff;vertical-align:top;
+    font-weight:750;
+}
+.bbkt-preview-table .bbkt-sample-code{display:block;font-weight:750;letter-spacing:.1px}
+.bbkt-preview-table .bbkt-sample-count{
+    display:block;color:#c3d7f0;font-size:11px;font-weight:500;margin-top:5px;
+}
+.bbkt-preview-table .bbkt-indicator-cell{font-weight:500}
+.bbkt-preview-table .bbkt-result-cell{font-variant-numeric:tabular-nums}
+.bbkt-preview-table .bbkt-result-numeric{color:#e7f4ff;font-weight:750}
+.bbkt-preview-table .bbkt-result-kph{
+    display:inline-block;color:#ffe2a1;background:rgba(151,102,25,.24);
+    padding:2px 7px;border-radius:5px;border:1px solid #94764c;
+    font-size:12px;font-weight:650;
+}
+.bbkt-preview-table .bbkt-result-empty{color:#b6c6d9!important}
+.bbkt-preview-empty{
+    border:1px dashed #6481a4;border-radius:10px;padding:22px;
+    background:#15263d;color:#d7e5f8;
+}
+@media(max-width:720px){
+    .bbkt-preview-table{min-width:620px;font-size:13px}
+    .bbkt-preview-table thead th,.bbkt-preview-table tbody td,
+    .bbkt-preview-table tbody th{padding:9px 11px}
+    .bbkt-preview-scroll{max-height:470px}
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -2172,7 +2239,7 @@ def bbkt_defaults(frame):
     for number,sample in enumerate(samples,1):
         mask=frame['Tên mẫu'].map(bbkt_text).eq(sample)
         frame.loc[mask & frame['Vial'].eq(''),'Vial']=str(number)
-        prefix=re.split(r'[.\-\s]',sample.upper(),maxsplit=1)[0]
+        prefix=re.split(r'[._\-\s]',sample.upper(),maxsplit=1)[0]
         volume={'KXQ':'4','KLV':'4','KT':'24'}.get(prefix,'')
         frame.loc[mask & frame['V khí'].eq(''),'V khí']=volume
     frame['KH ống']=frame['Vial']
@@ -2195,6 +2262,46 @@ def bbkt_preview(frame):
     preview.loc[repeated,'Tên mẫu']=''
     return preview
 
+
+def bbkt_preview_html(frame):
+    """Bảng xem trước chỉ đọc, có kẻ ô và gộp mã mẫu theo nhóm.
+
+    Văn bản từ Excel được escape trước khi đưa vào HTML để không biến
+    tên mẫu/chỉ tiêu/kết quả thành HTML có thể thực thi.
+    """
+    data=bbkt_sort(frame)[['Tên mẫu','Tên chỉ tiêu','Kết quả']]
+    if data.empty:
+        return '<div class="bbkt-preview-empty" role="status">Chưa chọn dòng nào để xem trước.</div>'
+
+    lines=[
+        '<div class="bbkt-preview-frame">',
+        '<div class="bbkt-preview-scroll" role="region" aria-label="Bảng xem trước biên bản theo mã mẫu" tabindex="0">',
+        '<table class="bbkt-preview-table">',
+        '<colgroup><col class="bbkt-col-sample"><col class="bbkt-col-analyte"><col class="bbkt-col-result"></colgroup>',
+        '<thead><tr><th scope="col">Mã mẫu</th><th scope="col">Tên chỉ tiêu phân tích</th><th scope="col">Kết quả</th></tr></thead>',
+    ]
+    for group_no,(sample,group) in enumerate(data.groupby('Tên mẫu',sort=False)):
+        odd_even='bbkt-group-odd' if group_no%2 else 'bbkt-group-even'
+        for row_no,(_,record) in enumerate(group.iterrows()):
+            boundary=' bbkt-group-start' if row_no==0 else ''
+            zebra=' bbkt-row-stripe' if row_no%2 else ''
+            lines.append(f'<tr class="{odd_even}{boundary}{zebra}">')
+            if row_no==0:
+                label=html.escape(bbkt_text(sample),quote=True)
+                lines.append(f'<th class="bbkt-sample-cell" scope="rowgroup" rowspan="{len(group)}"><span class="bbkt-sample-code">{label}</span><span class="bbkt-sample-count">{len(group)} chỉ tiêu</span></th>')
+            indicator=html.escape(bbkt_text(record['Tên chỉ tiêu']),quote=True)
+            lines.append(f'<td class="bbkt-indicator-cell">{indicator}</td>')
+            raw_value=bbkt_text(record['Kết quả'])
+            if not raw_value:
+                lines.append('<td class="bbkt-result-cell bbkt-result-empty"><span>—</span></td>')
+            else:
+                result=html.escape(raw_value,quote=True)
+                style='bbkt-result-kph' if re.match(r'^\s*KPH(?:\s|\(|$)',raw_value,re.I) else 'bbkt-result-numeric'
+                lines.append(f'<td class="bbkt-result-cell"><span class="{style}">{result}</span></td>')
+            lines.append('</tr>')
+    lines.extend(['</table></div></div>'])
+    return ''.join(lines)
+
 def bbkt_groups(frame,capacity):
     if not 5<=capacity<=21:raise ValueError('Số dòng mỗi trang phải từ 5 đến 21.')
     pages=[];page=[]
@@ -2210,7 +2317,7 @@ def bbkt_groups(frame,capacity):
     if page:pages.append(page)
     return pages
 
-def bbkt_build(template,frame,result_unit,measured_unit='',surr_unit='',capacity=18,draft=False):
+def bbkt_build(template,frame,result_unit,measured_unit='',surr_unit='',capacity=18,draft=False,metadata=None):
     from docx import Document
     from docx.table import Table
     from docx.shared import Pt,Cm
@@ -2227,7 +2334,7 @@ def bbkt_build(template,frame,result_unit,measured_unit='',surr_unit='',capacity
     frame=bbkt_recovery(bbkt_defaults(frame))
     if frame[['Tên mẫu','Tên chỉ tiêu']].eq('').any().any():raise ValueError('Có dòng thiếu mã mẫu/chỉ tiêu.')
     if frame[['Tên mẫu','Tên chỉ tiêu']].apply(lambda c:c.str.casefold()).duplicated().any():raise ValueError('Trùng mẫu/chỉ tiêu trong bản xuất.')
-    if not draft and frame['Kết quả'].eq('').any():raise ValueError('Có kết quả trống; hoàn thiện hoặc chọn xuất bản nháp.')
+    if not draft and frame.loc[~frame['Tên mẫu'].str.fullmatch(r'(?i)BLANK|BLK|MẪU TRẮNG',na=False),'Kết quả'].eq('').any():raise ValueError('Có kết quả trống; hoàn thiện hoặc chọn xuất bản nháp.')
     if not draft and not result_unit:raise ValueError('Cần xác nhận đơn vị kết quả trước khi xuất.')
     for field,unit in [('C đo',measured_unit),('Csurr trước',surr_unit),('Csurr sau',surr_unit)]:
         if frame[field].ne('').any() and not unit:raise ValueError('Cần chọn đơn vị cho '+field)
@@ -2302,6 +2409,27 @@ def bbkt_build(template,frame,result_unit,measured_unit='',surr_unit='',capacity
                             for p in cell.paragraphs:
                                 for run in p.runs:run.font.size=Pt(8)
             start=end
+    if metadata is not None:
+        from bien_ban_xu_ly import _all_paragraphs, _replace_paragraph_tokens, replace_report_unit
+        values = dict(metadata)
+        values.setdefault('loai_mau','')
+        values.setdefault('ma_me','')
+        values.setdefault('ngay_phan_tich','')
+        values.setdefault('nguoi_phan_tich','')
+        values.setdefault('phuong_phap','')
+        values.setdefault('chi_tieu_phan_tich','')
+        for field in ('nguoi_phan_tich','phuong_phap','chi_tieu_phan_tich'):
+            if draft and not values[field]: values[field]='[CHƯA NHẬP — CẦN XÁC NHẬN]'
+        # BB-KT cũ không có sổ pha hóa chất; xóa marker, đánh dấu thiếu dữ liệu ở bản nháp.
+        for i in range(1,5):
+            for field in ('ten','ngay_pha','han_su_dung'):
+                values[f'hc{i}_{field}']=''
+        for paragraph in _all_paragraphs(doc):
+            _replace_paragraph_tokens(paragraph,values)
+            replace_report_unit(paragraph, result_unit)
+        unresolved=[paragraph.text for paragraph in _all_paragraphs(doc)
+                    if re.search(r'\{\{[^{}]+\}\}',paragraph.text)]
+        if unresolved:raise ValueError('Mẫu Word còn thẻ chưa điền; kiểm tra thẻ theo template.')
     out=io.BytesIO();doc.save(out);return out.getvalue()
 
 def bbkt_recovery(frame):
@@ -2466,25 +2594,86 @@ def render_bbkt():
         st.dataframe(edited[['Tên mẫu','Tên chỉ tiêu','Csurr trước','Csurr sau','H%']],hide_index=True,use_container_width=True)
 
     st.markdown('**Biên bản theo từng mã mẫu**')
-    st.caption('Mã mẫu ở dòng chỉ tiêu đầu tiên; các dòng trống mã bên dưới thuộc cùng mẫu. Mỗi chỉ tiêu và kết quả nằm trên cùng một hàng.')
-    st.table(bbkt_preview(edited[edited['Chọn'].map(lambda v:an_bool(v,'Chọn'))]).style.hide(axis='index'))
-    a,b,c=st.columns(3)
-    result_unit=a.selectbox('Đơn vị kết quả đã xác nhận',['','µg/Nm³','mg/Nm³','µg/m³','mg/m³'],key='bbkt_result_unit')
-    measured_unit=b.selectbox('Đơn vị C đo (nếu có)',['']+AN_LIQUID,key='bbkt_measured_unit')
-    surr_unit=c.selectbox('Đơn vị Csurr (nếu có)',['']+AN_LIQUID,key='bbkt_surr_unit')
-    st.caption('Chọn đúng đơn vị của nguồn: đây là điền biểu mẫu, không tự đổi trị số KPH/MDL bằng cách đổi nhãn. Hai tiêu đề µg/Nm³ và mg/Nm³ trong mẫu Word sẽ được thống nhất theo lựa chọn đã xác nhận.')
+    st.caption('Bảng chỉ để đối chiếu. Khi xuất, hệ thống phân loại theo KT/KLV/KXQ, mỗi nền có Word và Excel độc lập; BLANK ở vị trí 1.')
+    preview_rows=edited[edited['Chọn'].map(lambda v:an_bool(v,'Chọn'))]
+    st.markdown(bbkt_preview_html(preview_rows),unsafe_allow_html=True)
+    from bien_ban_xu_ly import SAMPLE_FAMILIES, sample_family
+    valid_codes = {sample_family(code) for code in preview_rows['Tên mẫu'].map(bbkt_text)}
+    if '' in valid_codes:
+        st.error('Có mã mẫu không nhận diện được nền; kiểm tra KT/KLV/KXQ và mã mẫu.')
+        return
+    if any(code not in ('KT','KLV','KXQ') for code in valid_codes):
+        st.warning('Nền nước NS/NM/NT cần một mẫu SOP riêng, không dùng nhầm mẫu xử lý khí.')
+    st.markdown('**Điền thông tin đầu biên bản riêng cho từng nền mẫu**')
+    group_inputs={}
+    for code in sorted(valid_codes):
+        family_frame=preview_rows.loc[preview_rows['Tên mẫu'].map(sample_family).eq(code)]
+        family_name, auto_unit=SAMPLE_FAMILIES[code]
+        # Những trường này là đầu vào người dùng xác nhận; không tự dựng tên người hay SOP.
+        with st.expander(f'{code} — {family_name}', expanded=True):
+            left,right=st.columns(2)
+            analyst=left.text_input('Người làm / Người phân tích',key=f'bbkt_v6_analyst_{code}_{source_id}')
+            method=right.text_input('Phương pháp xử lý mẫu — SOP',key=f'bbkt_v6_method_{code}_{source_id}')
+            names=list(dict.fromkeys(family_frame['Tên chỉ tiêu'].map(bbkt_text)))
+            indicators='; '.join(names)
+            if len(indicators)>150: indicators=f'{len(names)} chỉ tiêu (xem bảng kết quả)'
+            analyses=st.text_area('Chỉ tiêu phân tích',value=indicators,height=85,key=f'bbkt_v6_indicator_{code}_{source_id}')
+            default_label=auto_unit or '(chưa cấu hình cho nền này)'
+            st.text_input('Đơn vị kết quả — tự nhận diện theo nền',value=default_label,disabled=True,key=f'bbkt_v6_unit_{code}_{source_id}')
+            group_inputs[code]={'loai_mau':family_name,'nguoi_phan_tich':analyst.strip(),
+                                'phuong_phap':method.strip(),'chi_tieu_phan_tich':analyses.strip(),
+                                'ma_me':batch,'ngay_phan_tich':bbkt_text(family_frame['Ngày PT'].iloc[0])}
+    measured_unit=st.selectbox('Đơn vị C đo (nếu có)',['']+AN_LIQUID,key='bbkt_measured_unit')
+    surr_unit=st.selectbox('Đơn vị Csurr (nếu có)',['']+AN_LIQUID,key='bbkt_surr_unit')
     capacity=st.number_input('Số dòng tối đa mỗi trang',min_value=5,max_value=21,value=18,key='bbkt_capacity')
-    draft=st.checkbox('Xuất bản nháp nếu còn thiếu kết quả/đơn vị',value=True,key='bbkt_draft')
-    reviewed=st.checkbox('Đã đối chiếu mã mẫu, chỉ tiêu, kết quả và đơn vị với nguồn',key='bbkt_review_'+hashlib.sha256((edited.to_json()+batch+result_unit+measured_unit+surr_unit+str(draft)+str(capacity)).encode()).hexdigest()[:16])
+    draft=st.checkbox('Xuất bản nháp nếu thiếu dữ liệu',value=True,key='bbkt_draft')
+    klv_ok=st.checkbox('Xác nhận KLV phải viết Mg/m³ (khác mg/m³ về hệ SI)',key='bbkt_v6_klv_confirm') if 'KLV' in valid_codes else True
+    digest=hashlib.sha256((edited.to_json()+batch+repr(group_inputs)+measured_unit+surr_unit+str(draft)+str(capacity)).encode()).hexdigest()[:16]
+    reviewed=st.checkbox('Đã đối chiếu mã mẫu, chỉ tiêu, kết quả và đơn vị với nguồn',key='bbkt_review_'+digest)
     if template and reviewed:
         try:
-            chosen=edited[edited['Chọn'].map(lambda v:an_bool(v,'Chọn'))]
-            word_name=bbkt_filename(batch,'docx');excel_name=bbkt_filename(batch,'xlsx')
-            output=bbkt_build(template.getvalue(),chosen,result_unit,measured_unit,surr_unit,int(capacity),draft)
-            st.download_button('Tải BB-KT đã điền (.docx)',output,word_name,'application/vnd.openxmlformats-officedocument.wordprocessingml.document',key='bbkt_download')
-            st.download_button('Tải BB-KT Excel (.xlsx)',bbkt_excel(output),excel_name,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',key='bbkt_download_excel')
+            from bien_ban_xu_ly import _as_text
+            from zipfile import ZipFile,ZIP_DEFLATED
+            chosen=edited[edited['Chọn'].map(lambda v:an_bool(v,'Chọn'))].copy()
+            artifacts=[]
+            for code in sorted(valid_codes):
+                family,unit=SAMPLE_FAMILIES[code]
+                if not unit:raise ValueError(f'{code}: thiếu đơn vị và SOP phù hợp.')
+                if not draft and not all(group_inputs[code][key] for key in ('nguoi_phan_tich','phuong_phap','chi_tieu_phan_tich')):
+                    raise ValueError(f'{code}: cần nhập người làm, phương pháp và chỉ tiêu trước khi xuất chính thức.')
+                if code=='KLV' and not (draft or klv_ok):
+                    raise ValueError('Cần xác nhận Mg/m³ cho nền KLV.')
+                sub=chosen.loc[chosen['Tên mẫu'].map(sample_family).eq(code)].copy()
+                if sub.empty:continue
+                # BLANK là mẫu trắng vật lý số 1, không tạo số đo hoặc kết quả giả.
+                if not sub['Tên mẫu'].map(lambda x:bbkt_text(x).strip().upper()=='BLANK').any():
+                    empty={col:'' for col in sub.columns}
+                    empty.update({'Tên mẫu':'BLANK','Tên chỉ tiêu':'Mẫu trắng (chưa có kết quả)',
+                                  'K':'1','Vial':'1','V khí':'','Kết quả':''})
+                    sub=pd.concat([pd.DataFrame([empty]),sub],ignore_index=True)
+                sub['Vial']=''
+                sub['KH ống']=''
+                sub=bbkt_defaults(sub)
+                # Mẫu trắng không có thể tích/điều kiện đo mặc định.
+                sub.loc[sub['Tên mẫu'].eq('BLANK'),['V khí','Pa','Nhiệt độ','C đo','Kết quả']]=''
+                if not draft and sub.loc[~sub['Tên mẫu'].eq('BLANK'),'Kết quả'].eq('').any():
+                    raise ValueError(f'{code}: còn kết quả trống, chỉ được xuất bản nháp.')
+                meta=group_inputs[code]
+                result=bbkt_build(template.getvalue(),sub,unit,measured_unit,surr_unit,int(capacity),draft,metadata=meta)
+                safe=re.sub(r'[^A-Za-z0-9_.-]+','_',batch) or 'MA_ME'
+                basename=f'{"NHAP_" if draft else ""}Bien_Ban_{code}_{safe}'
+                artifacts.extend([(basename+'.docx',result),(basename+'.xlsx',bbkt_excel(result))])
+            if not artifacts:raise ValueError('Chưa chọn mẫu hợp lệ để xuất.')
+            pack=io.BytesIO()
+            with ZipFile(pack,'w',ZIP_DEFLATED) as zf:
+                for filename,data in artifacts:zf.writestr(filename,data)
+            st.download_button('Tải toàn bộ Word + Excel theo nền (.zip)',pack.getvalue(),
+                               f'Bien_Ban_Tach_Nen_{re.sub(r"[^A-Za-z0-9_.-]+","_",batch)}.zip',
+                               mime='application/zip',key='bbkt_v6_download')
+            st.success(f'Đã tạo {len(artifacts)//2} nền mẫu độc lập. Mọi giá trị KPH giữ nguyên từ nguồn.')
         except Exception as exc:st.error('Chưa xuất được: '+str(exc))
-    elif not template:st.info('Tải mẫu BB-KT Word để xuất đúng bố cục.')
+    elif not template:
+        st.info('Tải mẫu Word .docx để xuất đúng bố cục.')
 
 
 def render_sop_reference():
