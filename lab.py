@@ -1971,14 +1971,25 @@ def bbkt_text(value):
     return str(value).strip()
 
 def bbkt_note_values(note):
-    # Decimal comma is part of the value; p/t labels delimit adjacent fields.
-    values={};issues=[]
-    for label,field in [('p','Pa'),('t','Nhiệt độ')]:
-        matches=re.findall(r'(?<!\w)'+label+r'\s*=\s*([+-]?\d+(?:[.,]\d+)?)(?![\d.])',bbkt_text(note),flags=re.I)
-        unique=list(dict.fromkeys(v.replace(',','.') for v in matches))
-        if len(unique)==1:values[field]=unique[0]
-        elif len(unique)>1:issues.append('Nhiều giá trị '+label+' trong ghi chú; cần nhập lại.')
-    return values,issues
+    """Đọc nhiệt độ T và P trong ghi chú Excel, không suy ra đơn vị của P.
+
+    Ví dụ thực tế: 'T=27, V=0,006, P=425,9'; 't=30,14'; 't33'.
+    Chỉ khớp nhãn độc lập, không hiểu 'vmstd' hoặc tên chỉ tiêu là T/P.
+    """
+    note = bbkt_text(note)
+    values, issues = {}, []
+    patterns = {
+        'Pa': r'(?<![\w])p\s*(?:=|:)\s*([+-]?\d+(?:[.,]\d+)?)',
+        'Nhiệt độ': r'(?<![\w])t\s*(?:=|:)?\s*([+-]?\d+(?:[.,]\d+)?)',
+    }
+    for field, pattern in patterns.items():
+        matches = re.findall(pattern, note, flags=re.I)
+        unique = list(dict.fromkeys(v.replace(',', '.') for v in matches))
+        if len(unique) == 1:
+            values[field] = unique[0]
+        elif len(unique) > 1:
+            issues.append(f'Nhiều giá trị {field} trong ghi chú; cần đối chiếu.')
+    return values, issues
 
 def bbkt_start_date(sheet,header):
     from datetime import datetime
@@ -2025,6 +2036,15 @@ def bbkt_read_excel(data):
     if header is None:raise ValueError('Không tìm thấy ô KHM trong 40 dòng đầu.')
     start_date,date_source=bbkt_start_date(sheet,header)
     batch_code=bbkt_batch_code(sheet,header)
+    source_method=''
+    for _row in sheet.iter_rows(min_row=1,max_row=header-1):
+        for _cell in _row:
+            _raw=bbkt_text(_cell.value)
+            if lab_norm(_raw).startswith('phuong phap phan tich:'):
+                _value=_raw.split(':',1)[1].strip()
+                if _value and source_method and _value!=source_method:
+                    raise ValueError('Nhiều phương pháp phân tích khác nhau trong tiêu đề Excel.')
+                source_method=_value or source_method
     stop=next((c for c in range(code_col+1,sheet.max_column+1) if lab_norm(sheet.cell(header,c).value)=='ghi chu'),sheet.max_column+1)
     compounds=[]
     for col in range(code_col+1,stop):
@@ -2051,7 +2071,7 @@ def bbkt_read_excel(data):
             seen.add(key)
             record={k:'' for k in BBKT_COLUMNS}
             record.update({'K':'1','Ngày PT':start_date,'Mã mẻ nguồn':batch_code,**conditions})
-            record.update({'Ngày bắt đầu nguồn':start_date,'Ô ngày nguồn':date_source,'Ô điều kiện nguồn':sheet.title+'!'+sheet.cell(rownum,stop).coordinate if note else ''})
+            record.update({'Ngày bắt đầu nguồn':start_date,'Ô ngày nguồn':date_source,'Phương pháp phân tích nguồn':source_method,'Ô điều kiện nguồn':sheet.title+'!'+sheet.cell(rownum,stop).coordinate if note else ''})
             record.update({'Chọn':True,'Tên mẫu':sample,'Tên chỉ tiêu':name,'Kết quả':value,'Ô nguồn':sheet.title+'!'+cell.coordinate,'Tên chỉ tiêu gốc':bbkt_text(sheet.cell(header,col).value),'Ghi chú nguồn':bbkt_text(sheet.cell(rownum,stop).value) if stop<=sheet.max_column else ''})
             rows.append(record)
             if not value:issues.append(f'{sample} / {name}: chưa có kết quả tại {cell.coordinate}.')
@@ -3511,9 +3531,16 @@ elif menu == "🧮 Tiện ích Phân tích":
 elif menu == "📝 Báo cáo & Lập Biên bản":
     st.markdown("<h1 class='main-title'>📝 Báo cáo & Lập Biên Bản</h1>", unsafe_allow_html=True)
     
-    tab_bbkt, tab_report, tab_qr = st.tabs(["1. BB-KT tự điền", "2. Biểu mẫu có thẻ", "3. Sinh Mã Vạch QR"])
+    tab_bbkt, tab_xuly, tab_report, tab_qr = st.tabs(["1. BB-KT tự điền", "2. Biên bản xử lý mẫu", "3. Biểu mẫu có thẻ", "4. Sinh Mã Vạch QR"])
     with tab_bbkt:
         render_bbkt()
+
+    with tab_xuly:
+        from bien_ban_xu_ly import render_bien_ban_xu_ly
+        render_bien_ban_xu_ly(excel_reader=bbkt_read_excel, result_reader=bbkt_from_results,
+                             results=st.session_state.get('results', pd.DataFrame()),
+                             stock=st.session_state.get('df_chem', pd.DataFrame()),
+                             excel_exporter=bbkt_excel)
 
     with tab_report:
         st.info("Biên bản dùng thẻ {{ row.don_vi_cdo }}, {{ row.don_vi_csurr }}, {{ row.don_vi_kq }} để hiển thị đơn vị đã chọn. Template có đơn vị cố định cần sửa nhãn cho khớp; không tự thay toàn bộ chữ ppm trong mẫu.") 
