@@ -52,6 +52,55 @@ def _as_text(value):
     return str(value).strip()
 
 
+def _safe_excel_literal(value):
+    """Stop untrusted source strings from becoming Excel formulas.
+
+    A leading apostrophe forces literal text in Excel's import/export layer;
+    reading the exported workbook then returns the original visible value.
+    """
+    if isinstance(value, str) and value.startswith('='):
+        return "'" + value
+    return value
+
+
+def validate_result_unit(frame, selected_unit):
+    """Do not silently relabel quantified values from a known source unit.
+
+    Matching is narrow: only the alternative micro sign and cubic-3 spelling
+    are normalised. Mg and mg deliberately remain DIFFERENT units.
+    """
+    if 'Đơn vị kết quả nguồn' not in frame.columns:
+        return
+    def canonical(value):
+        return (_as_text(value).replace('μ', 'µ').replace('ug', 'µg')
+                .replace('Nm3', 'Nm³').replace('m3', 'm³').replace(' ', ''))
+    supplied = {canonical(value) for value in frame['Đơn vị kết quả nguồn']
+                if _as_text(value)}
+    if supplied and supplied != {canonical(selected_unit)}:
+        raise ValueError('Đơn vị nguồn ' + ', '.join(sorted(supplied)) +
+                         ' khác đơn vị xuất ' + (_as_text(selected_unit) or '(trống)') +
+                         '. Không được chỉ thay nhãn đơn vị mà chưa quy đổi số liệu.')
+
+
+def validate_dates(metadata, rows):
+    """Reject mistyped/non-calendar analysis and desorption dates in exported reports."""
+    dates = [('Ngày phân tích (đầu biên bản)', metadata.get('ngay_phan_tich'))]
+    for key in ('Ngày PT', 'TG giải hấp'):
+        if key in rows:
+            dates.extend((f'{key} (dòng {i+1})', value)
+                         for i, value in enumerate(rows[key].tolist()))
+    for label, value in dates:
+        entered = _as_text(value)
+        if not entered:
+            continue  # Draft exports may have unknown dates; never invent one.
+        if not re.fullmatch(r'\d{1,2}/\d{1,2}/\d{4}', entered):
+            raise ValueError(f'{label}: ngày phải theo định dạng dd/mm/yyyy.')
+        try:
+            datetime.strptime(entered, '%d/%m/%Y')
+        except ValueError as exc:
+            raise ValueError(f'{label}: ngày không tồn tại trên lịch ({entered}).') from exc
+
+
 def _norm(value):
     s = unicodedata.normalize('NFD', _as_text(value).casefold()).replace('đ', 'd')
     return ''.join(x for x in s if unicodedata.category(x) != 'Mn')
@@ -60,7 +109,7 @@ def _norm(value):
 def sample_family(code):
     """Nhận diện tiền tố đầy đủ: KLV/KXQ không bị hiểu là KT."""
     text = _as_text(code).upper()
-    m = re.match(r'^(KLV|KXQ|KT|NS|NM|NT)(?=[.\-\s]|\d|$)', text)
+    m = re.match(r'^(KLV|KXQ|KT|NS|NM|NT)(?=[._\-\s]|\d|$)', text)
     return m.group(1) if m else ''
 
 
@@ -91,7 +140,7 @@ def _is_blank_code(code):
     value = _norm(code).strip()
     code_prefix = sample_family(code)
     if code_prefix:
-        value = re.sub(r'^[a-z]+[.\-\s]*', '', value)
+        value = re.sub(r'^[a-z]+[._\-\s]*', '', value)
     return value in BLANK_MARKERS
 
 
@@ -254,6 +303,31 @@ def _replace_paragraph_tokens(paragraph, mapping):
             runs[last].text = suffix
 
 
+def replace_report_unit(paragraph, result_unit):
+    """Thay đơn vị dòng diễn giải kể cả khi (mg/Nm3) bị Word chia nhiều runs."""
+    if not result_unit or 'C: nồng độ chất phân tích' not in paragraph.text:
+        return
+    runs=paragraph.runs
+    text=''.join(run.text for run in runs)
+    match=re.search(r'\(mg/Nm(?:3|³)\)',text,flags=re.I)
+    if not match:
+        return
+    offsets=[];start=0
+    for idx,run in enumerate(runs):
+        offsets.append((start,start+len(run.text),idx));start+=len(run.text)
+    first=next(i for a,b,i in offsets if a<=match.start()<b)
+    last=next(i for a,b,i in offsets if a<match.end()<=b)
+    left=match.start()-offsets[first][0]
+    right=match.end()-offsets[last][0]
+    prefix=runs[first].text[:left]
+    suffix=runs[last].text[right:]
+    if first==last:runs[first].text=prefix+'('+_as_text(result_unit)+')'+suffix
+    else:
+        runs[first].text=prefix+'('+_as_text(result_unit)+')'
+        for i in range(first+1,last):runs[i].text=''
+        runs[last].text=suffix
+
+
 def _all_paragraphs(document):
     for p in document.paragraphs:
         yield p
@@ -392,11 +466,18 @@ def generate_bien_ban(template_bytes, metadata, chemicals, rows, result_unit, *,
         raise ValueError('Thiếu file mẫu Word.')
     if rows.empty:
         raise ValueError('Chưa chọn dòng kết quả để xuất.')
+    validate_result_unit(rows, result_unit)
+    validate_dates(metadata, rows)
     data = rows.copy()
     for col in WORD_COLUMNS:
         if col not in data:
             data[col] = ''
-    document = Document(BytesIO(template_bytes))
+    from zipfile import BadZipFile
+    from docx.opc.exceptions import PackageNotFoundError
+    try:
+        document = Document(BytesIO(template_bytes))
+    except (BadZipFile, PackageNotFoundError) as exc:
+        raise ValueError('Mẫu Word .docx không hợp lệ hoặc bị hỏng.') from exc
     _get_table(document, ('{{ loai_mau }}', '{{ ma_me }}'))
     _get_table(document, ('{{ hc1_ten }}',))
     mapping = {key: _as_text(metadata.get(key, '')) for key in WORD_FIELDS}
@@ -405,8 +486,14 @@ def generate_bien_ban(template_bytes, metadata, chemicals, rows, result_unit, *,
         entry = chemicals[i] if i < len(chemicals) else {}
         for token, field in [('ten', 'Hóa chất'), ('ngay_pha', 'Ngày pha'), ('han_su_dung', 'Hạn sử dụng')]:
             mapping[f'hc{i+1}_{token}'] = _as_text(entry.get(field, ''))
+    if draft:
+        for required in ('nguoi_phan_tich', 'phuong_phap', 'chi_tieu_phan_tich'):
+            if not mapping[required]:
+                mapping[required] = '[CHƯA NHẬP — CẦN XÁC NHẬN]'
     for p in _all_paragraphs(document):
         _replace_paragraph_tokens(p, mapping)
+        # Cập nhật dòng giải thích đơn vị theo nền, không sửa công thức gốc.
+        replace_report_unit(p, result_unit)
     _fill_table(document, data, result_unit)
     if draft:
         from docx.oxml import OxmlElement
@@ -478,10 +565,12 @@ def generate_bien_ban_excel(metadata, rows, result_unit, *, draft=False):
     Thực thi khi nhấn nút, không tính lại bất cứ chỉ tiêu nào.
     """
     from artifact_tool import Workbook, SpreadsheetFile
+    validate_result_unit(rows, result_unit)
+    validate_dates(metadata, rows)
     wb = Workbook.create()
     ws = wb.worksheets.add('Biên bản')
     ws.merge_cells('A1:P2')
-    ws.get_range('A1').values = [['BIÊN BẢN XỬ LÝ MẪU — ' + _as_text(metadata.get('loai_mau'))]]
+    ws.get_range('A1').values = [[_safe_excel_literal('BIÊN BẢN XỬ LÝ MẪU — ' + _as_text(metadata.get('loai_mau')))]]
     ws.get_range('A1:P2').format = {
         'fill': '#17324D', 'font': {'name': 'Arial', 'bold': True, 'size': 16, 'color': '#FFFFFF'},
         'horizontal_alignment': 'center', 'vertical_alignment': 'center', 'row_height': 28}
@@ -493,6 +582,10 @@ def generate_bien_ban_excel(metadata, rows, result_unit, *, draft=False):
     ws.get_range('I4').values = [['Đơn vị kết quả: '+_as_text(result_unit)]]
     ws.merge_cells('A5:P5')
     ws.get_range('A5').values = [['Phương pháp xử lý mẫu: '+_as_text(metadata.get('phuong_phap'))]]
+    ws.merge_cells('A7:P7')
+    ws.get_range('A7').values = [['Chỉ tiêu phân tích: '+_as_text(metadata.get('chi_tieu_phan_tich'))]]
+    ws.get_range('A7:P7').format = {'font': {'name':'Arial','size':10,'color':'#203448'},
+                                    'fill':'#F0F5F9','row_height':26, 'wrap_text':True}
     ws.merge_cells('A6:P6')
     ws.get_range('A6').values = [['BẢN NHÁP — cần xác nhận dữ liệu/đơn vị/SOP trước khi phát hành.' if draft
                                 else 'Dữ liệu tự động trích xuất; cần đối chiếu hồ sơ trước khi phát hành.']]
@@ -516,7 +609,7 @@ def generate_bien_ban_excel(metadata, rows, result_unit, *, draft=False):
             val=_as_text(row.get(key,''))
             if key in ('KH ống','Vial','K','V khí','Pa','Nhiệt độ') and re.fullmatch(r'\d+(?:[.,]\d+)?',val):
                 val = float(val.replace(',','.')) if ('.' in val or ',' in val) else int(val)
-            values.append(val)
+            values.append(_safe_excel_literal(val))
         matrix.append(values)
     if matrix:
         last=8+len(matrix)
@@ -548,7 +641,7 @@ def generate_bien_ban_excel(metadata, rows, result_unit, *, draft=False):
                             _as_text(r.get('Pa')),_as_text(r.get('Nhiệt độ')),
                             'BLANK mặc định — không có số đo' if _as_text(r.get('Tên mẫu')).upper()=='BLANK' else 'V khí/TG giải hấp theo quy tắc mặc định nếu không có số liệu nguồn'])
     if source_rows:
-        trace.get_range(f'A2:J{len(source_rows)+1}').values=source_rows
+        trace.get_range(f'A2:J{len(source_rows)+1}').values=[[ _safe_excel_literal(v) for v in row ] for row in source_rows]
         trace.get_range(f'A2:J{len(source_rows)+1}').format={'font':{'size':10},'row_height':23,'wrap_text':True}
     for col,width in zip('ABCDEFGHIJ',[18,24,21,20,15,16,14,19,20,70]):
         trace.get_range(f'{col}:{col}').format.column_width=width
@@ -623,14 +716,30 @@ def render_bien_ban_xu_ly(*, excel_reader, result_reader, results, stock=None, e
     if hints['phuong_phap_nguon']:
         st.caption('Phương pháp PHÂN TÍCH ghi trong Excel: ' + hints['phuong_phap_nguon'] + '. Cần xác nhận SOP xử lý riêng cho mỗi nền.')
     families = list(split_sample_groups(base_frame))
-    st.markdown('**Tách biên bản theo nền mẫu — Word và Excel**')
+    st.markdown('**Thông tin xuất biên bản: Người làm · Phương pháp · Chỉ tiêu · Đơn vị từng nền**')
     st.caption('Mỗi nền: vị trí 1 = BLANK, mẫu thật 2, 3…; KH ống/Vial đánh theo mẫu; K = 1; TG giải hấp = Ngày PT; V khí KT = 24 L, KLV/KXQ = 4 L.')
     configured_units = {}
+    family_metadata = {}
     for family in families:
         kind, default_unit = SAMPLE_FAMILIES[family]
-        configured_units[family] = st.text_input(
-            f'{family} — {kind}: đơn vị kết quả', value=default_unit,
-            key='bbxl_unit_'+family+'_'+source_digest)
+        family_hints = suggest_metadata(split_sample_groups(base_frame)[family],
+                                        'excel' if is_excel else 'session')
+        with st.expander(f'Điền thông tin {family} — {kind}', expanded=True):
+            x, y = st.columns(2)
+            family_analyst = x.text_input('Người làm / Người phân tích', value=analyst,
+                                          key='bbxl_analyst_'+family+'_'+source_digest)
+            family_method = y.text_input('Phương pháp xử lý mẫu (SOP)', value=method,
+                                         key='bbxl_method_'+family+'_'+source_digest)
+            family_indicators = st.text_area('Chỉ tiêu phân tích — có thể sửa, giữ theo biên bản',
+                                             value=family_hints['chi_tieu_phan_tich'],
+                                             height=76, key='bbxl_indicators_'+family+'_'+source_digest)
+            configured_units[family] = st.text_input(
+                f'Đơn vị kết quả {family} (tự chọn theo tiền tố mã mẫu)', value=default_unit,
+                key='bbxl_unit_'+family+'_'+source_digest)
+            st.caption('Đơn vị chỉ là nhãn mặc định theo nền mẫu, không tự quy đổi trị số phân tích hay MDL.')
+            family_metadata[family] = {'nguoi_phan_tich': family_analyst.strip(),
+                                       'phuong_phap': family_method.strip(),
+                                       'chi_tieu_phan_tich': family_indicators.strip()}
         if family == 'KLV':
             st.warning('KLV đang ghi **Mg/m³** theo đúng yêu cầu. Trong ký hiệu SI, Mg (megagam) khác mg (miligam). Cần xác nhận chữ M hoa trước khi phát hành.')
         if family in ('NS', 'NM', 'NT'):
@@ -684,8 +793,8 @@ def render_bien_ban_xu_ly(*, excel_reader, result_reader, results, stock=None, e
                               key='bbxl_klv_capital_'+source_digest) if 'KLV' in families else True
     chem_rows = _confirmed_chemicals(chem)
     # Một đầu vào dẫn đến nhiều file. Kết quả ZIP để dễ tải đồng loạt và file riêng để đối chiếu.
-    payload = (repr({'batch': batch, 'analyst': analyst, 'date': analysis_date, 'method': method,
-                     'units': configured_units}) + repr(chem_rows) + chosen[WORD_COLUMNS].to_json(orient='records', force_ascii=False)
+    payload = (repr({'batch': batch, 'date': analysis_date, 'units': configured_units,
+                     'family_metadata': family_metadata}) + repr(chem_rows) + chosen[WORD_COLUMNS].to_json(orient='records', force_ascii=False)
                + str(draft) + str(klv_confirm) + hashlib.sha256(template_bytes or b'').hexdigest())
     form_digest = hashlib.sha256(payload.encode()).hexdigest()[:16]
 
@@ -699,8 +808,14 @@ def render_bien_ban_xu_ly(*, excel_reader, result_reader, results, stock=None, e
                     raise ValueError('Hệ số pha loãng K phải là số thực ≥ 1.')
             if not draft and 'KLV' in families and configured_units['KLV'].strip()=='Mg/m³' and not klv_confirm:
                 raise ValueError('Phải xác nhận cách viết Mg/m³ hoặc đổi sang mg/m³ trước khi xuất bản hoàn chỉnh.')
-            if not draft and (not analyst.strip() or not method.strip() or not analysis_date.strip() or not batch.strip()):
-                raise ValueError('Biên bản hoàn chỉnh yêu cầu mã mẻ, người phân tích, ngày và SOP xử lý mẫu.')
+            if not draft and (not analysis_date.strip() or not batch.strip()):
+                raise ValueError('Biên bản hoàn chỉnh yêu cầu mã mẻ và ngày phân tích.')
+            if not draft:
+                for family in families:
+                    missing = [key for key in ('nguoi_phan_tich','phuong_phap','chi_tieu_phan_tich')
+                               if not family_metadata[family].get(key, '').strip()]
+                    if missing:
+                        raise ValueError(f'{family}: cần điền người làm, phương pháp và chỉ tiêu trước khi xuất bản chính thức.')
             if not draft and not any(_as_text(c['Hóa chất']) for c in chem_rows):
                 raise ValueError('Biên bản hoàn chỉnh: phải xác nhận hóa chất thực sự đã sử dụng.')
             created = []
@@ -717,11 +832,15 @@ def render_bien_ban_xu_ly(*, excel_reader, result_reader, results, stock=None, e
                 subset = subset.copy()
                 if analysis_date.strip():
                     subset.loc[subset['Ngày PT'].map(_as_text).eq(''), 'Ngày PT'] = analysis_date.strip()
+                # The editor only shows 16 columns: reattach the read-only source
+                # unit from the ORIGINAL frame by index to avoid silent relabelling.
+                if 'Đơn vị kết quả nguồn' in base_frame:
+                    subset['Đơn vị kết quả nguồn'] = base_frame.loc[subset.index, 'Đơn vị kết quả nguồn']
+                validate_result_unit(subset, unit)
                 grouped_rows = number_tubes_and_vials(subset, insert_blank=True)
                 group_hints = suggest_metadata(subset, 'excel' if is_excel else 'session')
-                header = {'loai_mau': kind, 'ma_me': batch, 'nguoi_phan_tich': analyst,
-                          'ngay_phan_tich': analysis_date, 'phuong_phap': method,
-                          'chi_tieu_phan_tich': group_hints['chi_tieu_phan_tich']}
+                header = {'loai_mau': kind, 'ma_me': batch, 'ngay_phan_tich': analysis_date,
+                          **family_metadata[family]}
                 result = generate_bien_ban(template_bytes, header, chem_rows, grouped_rows, unit, draft=draft)
                 try:
                     xlsx = generate_bien_ban_excel(header, grouped_rows, unit, draft=draft)
