@@ -91,6 +91,76 @@ button:focus-visible,input:focus-visible{outline:2px solid #b6abff;outline-offse
 [data-testid="stCaptionContainer"] p,.section-note{font-size:14px!important;color:#bdcbe0!important}
 .stTabs [data-baseweb="tab"]{font-size:15px}.hero{min-height:170px}.hero:after,.hero:before{display:none}
 
+/* VIETLAB V4 - High contrast. Streamlit dataframe canvas also needs
+   .streamlit/config.toml; CSS text rules alone DO NOT recolor canvas cells. */
+:root{
+ --lab-text:#f3f7ff;
+ --lab-text-secondary:#d4e0f2;
+ --lab-text-muted:#b9cbe2;
+ --lab-bg-input:#182a43;
+ --lab-border:#536986;
+}
+.stApp{color:var(--lab-text)!important;color-scheme:dark}
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li {color:var(--lab-text-secondary)}
+[data-testid="stMarkdownContainer"] strong,
+[data-testid="stMarkdownContainer"] b {color:var(--lab-text)}
+[data-testid="stWidgetLabel"] p,
+[data-testid="stWidgetLabel"] label,
+[data-testid="stRadio"] label p,
+[data-testid="stCheckbox"] label p,
+[data-testid="stToggle"] label p,
+[data-testid="stFileUploader"] label {color:var(--lab-text)!important}
+[data-testid="stCaptionContainer"],
+[data-testid="stCaptionContainer"] p,
+[data-testid="stCaptionContainer"] span,
+small.stCaption {color:var(--lab-text-muted)!important;opacity:1!important}
+
+/* Background and border around tables; cell text is governed by theme.textColor. */
+[data-testid="stDataFrame"],
+[data-testid="stDataEditor"]{
+ background-color:#18263e!important;
+ border:1px solid var(--lab-border)!important;
+ border-radius:10px!important;
+ color:var(--lab-text)!important;
+}
+/* Fallbacks for HTML-based grid layers on some Streamlit releases. */
+[data-testid="stDataFrame"] [role="columnheader"],
+[data-testid="stDataEditor"] [role="columnheader"]{
+ color:var(--lab-text)!important;background-color:#233753!important;
+}
+[data-testid="stDataFrame"] [role="gridcell"],
+[data-testid="stDataEditor"] [role="gridcell"]{color:var(--lab-text)!important}
+
+/* Inputs, selectboxes and editable controls. */
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input,
+[data-testid="stTextArea"] textarea,
+[data-testid="stDateInput"] input,
+[data-testid="stTimeInput"] input{
+ color:var(--lab-text)!important;
+ background:var(--lab-bg-input)!important;
+ caret-color:#ffffff!important;
+ border-color:var(--lab-border)!important;
+ -webkit-text-fill-color:var(--lab-text)!important;
+}
+[data-testid="stTextInput"] input::placeholder,
+[data-testid="stTextArea"] textarea::placeholder,
+[data-testid="stNumberInput"] input::placeholder{
+ color:var(--lab-text-muted)!important;opacity:1!important;
+}
+[data-baseweb="select"] > div{background:var(--lab-bg-input)!important;border-color:var(--lab-border)!important}
+[data-baseweb="select"] [data-baseweb="tag"]{color:var(--lab-text)!important}
+[data-baseweb="select"] input{color:var(--lab-text)!important;-webkit-text-fill-color:var(--lab-text)!important}
+[data-baseweb="popover"] [role="option"],
+[role="listbox"] [role="option"]{color:#122037!important;background-color:#f4f7ff!important}
+[data-baseweb="popover"] [role="option"]:hover,
+[role="listbox"] [role="option"]:hover{background-color:#d8e7fb!important;color:#102136!important}
+.stTabs [data-baseweb="tab"]{color:var(--lab-text-secondary)!important}
+.stTabs [data-baseweb="tab"][aria-selected="true"]{color:#f7f3ff!important}
+[data-testid="stAlert"] p{color:inherit!important}
+.stButton button:disabled,.stDownloadButton button:disabled{color:#c7d0e0!important;opacity:.75}
+
 </style>
 """, unsafe_allow_html=True)
 
