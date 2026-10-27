@@ -371,6 +371,71 @@ def _set_cell(cell, value):
             run.text = ''
 
 
+def _compact_sop_layout(document):
+    """Giữ nguyên chữ/logo/quy trình; chuyển công thức cùng phần bảng ngang.
+
+    Khắc phục trang đứng gần như trắng do section break nằm sau công thức.
+    """
+    from docx.shared import Cm, Pt
+    from docx.oxml.ns import qn
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    if len(document.sections) > 1:
+        section = document.sections[0]
+        section.top_margin = Cm(0.8)
+        section.bottom_margin = Cm(0.65)
+
+    formula_at = next((i for i,p in enumerate(document.paragraphs)
+                       if 'Nồng độ chất phân tích được tính theo công thức' in p.text), None)
+    if formula_at is not None:
+        para = document.paragraphs[formula_at]
+        # A section break already switches portrait to landscape; manual page break
+        # here would introduce another blank sheet.
+        para.paragraph_format.page_break_before = False
+        for br in list(para._p.xpath('.//w:br')):
+            if br.get(qn('w:type')) == 'page':
+                br.getparent().remove(br)
+        # In the original form, the portrait section closes AFTER the formula.
+        # End portrait BEFORE the formula so the formula and results flow together
+        # on the landscape pages. Preserve exact sectPr and all formula objects.
+        section_holder = next((p for p in document.paragraphs[formula_at+1:]
+                               if p._p.xpath('./w:pPr/w:sectPr')), None)
+        if section_holder is not None and formula_at > 0:
+            previous = document.paragraphs[formula_at-1]
+            if not previous._p.xpath('./w:pPr/w:sectPr'):
+                section_pr = section_holder._p.xpath('./w:pPr/w:sectPr')[0]
+                section_pr.getparent().remove(section_pr)
+                previous._p.get_or_add_pPr().append(section_pr)
+                # Original holder is now an empty paragraph between formula and table.
+                if not section_holder.text.strip() and not section_holder._p.xpath('.//w:drawing | .//w:object'):
+                    section_holder._p.getparent().remove(section_holder._p)
+    for paragraph in document.paragraphs:
+        if not paragraph.text.strip():
+            paragraph.paragraph_format.space_before = Pt(0)
+            paragraph.paragraph_format.space_after = Pt(0)
+
+    # Slightly tighten only the SOP steps to keep the final instruction on page 1.
+    for table in document.tables:
+        if len(table.columns) == 1 and len(table.rows) == 1:
+            text = table.cell(0, 0).text
+            if 'Ống hấp phụ' in text or 'ống than hấp phụ' in text:
+                # Nới riêng hộp SOP để câu dài không vượt viền phải ở trang dọc.
+                table.autofit = False
+                table.columns[0].width = Cm(18.4)
+                table.cell(0, 0).width = Cm(18.4)
+                for p in table.cell(0, 0).paragraphs:
+                    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    p.paragraph_format.space_before = Pt(0)
+                    p.paragraph_format.space_after = Pt(1.2)
+                    p.paragraph_format.line_spacing = 1.0
+                    for run in p.runs:
+                        # Chỉ thêm ngắt dòng trước câu dài, không sửa chữ SOP.
+                        if ' Dịch chiết' in run.text:
+                            run.text = run.text.replace(' Dịch chiết', '\nDịch chiết')
+                        size = run.font.size.pt if run.font.size else 10.0
+                        run.font.size = Pt(min(size, 9.3))
+
+
 def _fill_table(document, rows, unit):
     """Bảng Word khổ ngang 16 cột: kích thước ổn định, hàng xen kẽ, tiêu đề lặp."""
     from docx.shared import Pt, Cm
@@ -395,10 +460,13 @@ def _fill_table(document, rows, unit):
     table.autofit = False
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     # Tổng rộng 26,55 cm, không vượt khổ ngang 27,94 cm trừ lề 0,51 cm mỗi bên.
-    widths_cm = [1.75, 2.35, 1.50, 1.70, 1.10, 1.05, 1.05, 3.40,
-                 1.00, 1.50, 1.05, 1.50, 1.55, 1.35, 1.70, 3.00]
+    widths_cm = [1.55, 2.65, 1.25, 1.55, 1.00, .95, .80, 4.35,
+                 .95, 1.25, .85, 1.10, 1.25, 1.10, 1.20, 3.60]
     for i, width in enumerate(widths_cm):
         table.columns[i].width = Cm(width)
+    # Synchronize tblGrid and individual cell width across Word/LibreOffice.
+    for i, grid_col in enumerate(table._tbl.tblGrid.gridCol_lst):
+        grid_col.set(qn('w:w'), str(int(Cm(widths_cm[i]).twips)))
 
     def style_cell(cell, *, header=False, alternate=False, blank=False, col=0):
         cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
@@ -411,7 +479,7 @@ def _fill_table(document, rows, unit):
         margins = tcPr.find(qn('w:tcMar'))
         if margins is None:
             margins = OxmlElement('w:tcMar'); tcPr.append(margins)
-        for name, amount in [('top',80),('bottom',80),('left',70),('right',65)]:
+        for name, amount in [('top',55),('bottom',55),('left',65),('right',55)]:
             edge=margins.find(qn('w:'+name))
             if edge is None: edge=OxmlElement('w:'+name); margins.append(edge)
             edge.set(qn('w:w'), str(amount));edge.set(qn('w:type'),'dxa')
@@ -430,7 +498,7 @@ def _fill_table(document, rows, unit):
             fmt.line_spacing=1.05
             for run in para.runs:
                 run.font.name='Times New Roman'
-                run.font.size=Pt(7.4 if header else 7.5 if col==15 else 8.0)
+                run.font.size=Pt(7.15 if header else 7.2 if col==15 else 7.6 if col==7 else 7.75)
                 run.font.bold=header or blank
                 if header:run.font.color.rgb=__import__('docx').shared.RGBColor(23,49,77)
 
@@ -439,23 +507,32 @@ def _fill_table(document, rows, unit):
     header_pr=table.rows[0]._tr.get_or_add_trPr()
     if header_pr.find(qn('w:tblHeader')) is None:
         header_pr.append(OxmlElement('w:tblHeader'))
-    table.rows[0].height=Pt(57)
+    table.rows[0].height=Pt(48)
     table.rows[0].height_rule=WD_ROW_HEIGHT_RULE.AT_LEAST
     for ci, width in enumerate(widths_cm):
         cell=table.rows[0].cells[ci]; cell.width=Cm(width)
         style_cell(cell,header=True,col=ci)
     for i, (_, record) in enumerate(rows.iterrows(), 1):
         current=table.rows[i]
-        current.height=Pt(26)
+        current.height=Pt(22)
         current.height_rule=WD_ROW_HEIGHT_RULE.AT_LEAST
         tr_pr=current._tr.get_or_add_trPr()
         if tr_pr.find(qn('w:cantSplit')) is None:tr_pr.append(OxmlElement('w:cantSplit'))
         is_blank=_is_blank_code(record.get('Tên mẫu',''))
+        is_group_start = (i == 1 or _as_text(record.get('Tên mẫu','')) != _as_text(rows.iloc[i-2].get('Tên mẫu','')))
         for ci,key in enumerate(WORD_COLUMNS):
             cell=current.cells[ci]
             cell.width=Cm(widths_cm[ci])
             _set_cell(cell, record.get(key,''))
             style_cell(cell,alternate=(i%2==0),blank=is_blank,col=ci)
+            if is_group_start:
+                tc_borders=cell._tc.get_or_add_tcPr().find(qn('w:tcBorders'))
+                top=tc_borders.find(qn('w:top'))
+                top.set(qn('w:sz'),'10')
+                top.set(qn('w:color'),'437B9C')
+                if ci == 1:
+                    for p in cell.paragraphs:
+                        for run in p.runs: run.font.bold = True
     return max(original_capacity,len(rows))
 
 
@@ -495,6 +572,7 @@ def generate_bien_ban(template_bytes, metadata, chemicals, rows, result_unit, *,
         # Cập nhật dòng giải thích đơn vị theo nền, không sửa công thức gốc.
         replace_report_unit(p, result_unit)
     _fill_table(document, data, result_unit)
+    _compact_sop_layout(document)
     if draft:
         from docx.oxml import OxmlElement
         from docx.oxml.ns import qn
