@@ -2318,119 +2318,56 @@ def bbkt_groups(frame,capacity):
     return pages
 
 def bbkt_build(template,frame,result_unit,measured_unit='',surr_unit='',capacity=18,draft=False,metadata=None):
+    """V8: Một bảng liên tục, tự ngắt trang, lặp tiêu đề; KHÔNG gộp ô dọc.
+
+    `capacity` được giữ để tương thích UI cũ; không còn ép ngắt trang theo số dòng.
+    Đầu biên bản và toàn bộ SOP được giữ theo template của phòng thử nghiệm.
+    """
     from docx import Document
-    from docx.table import Table
-    from docx.shared import Pt,Cm
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT,WD_ROW_HEIGHT_RULE
-    from docx.oxml import OxmlElement
+    from docx.shared import Pt
     from docx.oxml.ns import qn
-    from copy import deepcopy
+    from bien_ban_xu_ly import (generate_bien_ban, WORD_COLUMNS,
+                                _get_table, _set_cell)
+    if not 5 <= int(capacity) <= 21:
+        raise ValueError('Tùy chọn dòng/trang không hợp lệ.')
     frame=frame.copy()
-    for c in BBKT_COLUMNS:
-        if c not in frame:frame[c]=''
-        frame[c]=frame[c].map(bbkt_text)
+    for col in BBKT_COLUMNS:
+        if col not in frame: frame[col]=''
+        frame[col]=frame[col].map(bbkt_text)
     if frame.empty:raise ValueError('Chưa chọn dòng để xuất.')
     frame=bbkt_recovery(bbkt_defaults(frame))
     if frame[['Tên mẫu','Tên chỉ tiêu']].eq('').any().any():raise ValueError('Có dòng thiếu mã mẫu/chỉ tiêu.')
-    if frame[['Tên mẫu','Tên chỉ tiêu']].apply(lambda c:c.str.casefold()).duplicated().any():raise ValueError('Trùng mẫu/chỉ tiêu trong bản xuất.')
-    if not draft and frame.loc[~frame['Tên mẫu'].str.fullmatch(r'(?i)BLANK|BLK|MẪU TRẮNG',na=False),'Kết quả'].eq('').any():raise ValueError('Có kết quả trống; hoàn thiện hoặc chọn xuất bản nháp.')
+    if frame[['Tên mẫu','Tên chỉ tiêu']].apply(lambda c:c.str.casefold()).duplicated().any():
+        raise ValueError('Trùng mẫu/chỉ tiêu trong bản xuất.')
+    if not draft and frame.loc[~frame['Tên mẫu'].str.fullmatch(r'(?i)BLANK|BLK|MẪU TRẮNG',na=False),'Kết quả'].eq('').any():
+        raise ValueError('Có kết quả trống; hoàn thiện hoặc chọn xuất bản nháp.')
     if not draft and not result_unit:raise ValueError('Cần xác nhận đơn vị kết quả trước khi xuất.')
     for field,unit in [('C đo',measured_unit),('Csurr trước',surr_unit),('Csurr sau',surr_unit)]:
         if frame[field].ne('').any() and not unit:raise ValueError('Cần chọn đơn vị cho '+field)
     for source,unit in [('Đơn vị kết quả nguồn',result_unit),('Đơn vị C đo nguồn',measured_unit),('Đơn vị Csurr nguồn',surr_unit)]:
         if source in frame:
             declared={u_canonical(x) for x in frame[source].map(bbkt_text) if x}
-            if declared and declared!={u_canonical(unit)}:raise ValueError(source+' không khớp hoặc có nhiều đơn vị. Quy đổi trong phần tính trước khi xuất.')
-    doc=Document(io.BytesIO(template))
-    candidates=[t for t in doc.tables if len(t.columns) in (16,17) and 'chi tieu' in lab_norm(t.rows[0].cells[7].text) and 'ket qua' in lab_norm(t.rows[0].cells[-1].text)]
-    if not candidates:raise ValueError('Không tìm thấy bảng BB-KT 16 hoặc 17 cột.')
-    original=candidates[0]
-    columns=[c for c in BBKT_COLUMNS if c!='Pm'] if len(original.columns)==16 else BBKT_COLUMNS[:]
-    expected=['ngay pt','kh mau','csurr truoc','tg giai hap','kh ong','ky hieu vial','cis','chi tieu','he so','csurr sau','h%','pa']+(['pm'] if 'Pm' in columns else [])+['nhiet do','v khi','c do','ket qua']
-    for t in candidates:
-        if len(t.columns)!=len(columns):raise ValueError('Các bảng BB-KT trong mẫu có số cột khác nhau.')
-        for i,prefix in enumerate(expected):
-            if not lab_norm(t.rows[0].cells[i].text).startswith(prefix):raise ValueError(f'Cột {i+1} khác mẫu BB-KT; chưa tự điền để tránh lệch ô.')
-    prototype=deepcopy(original._tbl)
-    for r in list(prototype.findall(qn('w:tr')))[2:]:prototype.remove(r)
-    # A completed reference may contain vertical merges. Start from independent cells.
-    for merge in list(prototype.xpath('.//w:vMerge')):merge.getparent().remove(merge)
-    # Remove empty page separators left between tables of a completed reference.
-    for paragraph in list(doc.paragraphs):
-        if not paragraph.text.strip() and not paragraph._p.xpath('.//w:drawing | .//w:sectPr'):
-            paragraph._p.getparent().remove(paragraph._p)
-    parent=original._tbl.getparent();insert_at=parent.index(original._tbl)
-    for t in candidates:t._tbl.getparent().remove(t._tbl)
-    headers=['Ngày PT','KH mẫu',f'Csurr trước\n({surr_unit})' if surr_unit else 'Csurr trước','TG giải hấp','KH ống đựng mẫu','Ký hiệu Vial', 'CIS','Chỉ tiêu','Hệ số pha loãng (K)',f'Csurr sau\n({surr_unit})' if surr_unit else 'Csurr sau','H%','Pa','Pm','Nhiệt độ (°C)','V khí (L)',f'C đo\n({measured_unit})' if measured_unit else 'C đo',f'Kết quả\n({result_unit})' if result_unit else 'Kết quả\n(chưa rõ đơn vị)']
-    if 'Pm' not in columns:headers.pop(12)
-    def write(cell,text,bold=False):
-        cell.text=text;cell.vertical_alignment=WD_CELL_VERTICAL_ALIGNMENT.CENTER
-        for p in cell.paragraphs:
-            p.alignment=WD_ALIGN_PARAGRAPH.CENTER
-            p.paragraph_format.space_before=Pt(0);p.paragraph_format.space_after=Pt(0)
-            p.paragraph_format.line_spacing=1
-            for r in p.runs:r.font.name='Times New Roman';r.font.size=Pt(8 if bold or re.fullmatch(r'\d{2}/\d{2}/\d{4}',text) else 9);r.bold=bold
-    for page_no,records in enumerate(bbkt_groups(frame,capacity)):
-        if page_no:
-            para=OxmlElement('w:p');run=OxmlElement('w:r');br=OxmlElement('w:br');br.set(qn('w:type'),'page');run.append(br);para.append(run);parent.insert(insert_at,para);insert_at+=1
-        if draft:
-            para=OxmlElement('w:p');run=OxmlElement('w:r');text=OxmlElement('w:t');text.text='BẢN NHÁP — Đối chiếu dữ liệu và đơn vị trước khi sử dụng';run.append(text);para.append(run);parent.insert(insert_at,para);insert_at+=1
-        tbl=deepcopy(prototype)
-        for floating in list(tbl.xpath('./w:tblPr/w:tblpPr')):floating.getparent().remove(floating)
-        rowproto=deepcopy(tbl.findall(qn('w:tr'))[1]);tbl.remove(tbl.findall(qn('w:tr'))[1])
-        for _ in records:tbl.append(deepcopy(rowproto))
-        parent.insert(insert_at,tbl);insert_at+=1
-        table=Table(tbl,original._parent)
-        for i,label in enumerate(headers):write(table.rows[0].cells[i],label,True)
-        header_repeat=OxmlElement('w:tblHeader');table.rows[0]._tr.get_or_add_trPr().append(header_repeat)
-        for i,record in enumerate(records,1):
-            row=table.rows[i];row.height=Cm(.7);row.height_rule=WD_ROW_HEIGHT_RULE.AT_LEAST
-            row._tr.get_or_add_trPr().append(OxmlElement('w:cantSplit'))
-            for col,key in enumerate(columns):
-                display=re.sub(r'^(KPH)\s*\(',r'\1\n(',record[key],flags=re.I) if key=='Kết quả' else record[key]
-                write(row.cells[col],display)
-                if key=='Tên mẫu':
-                    for p in row.cells[col].paragraphs:
-                        for run in p.runs:run.font.size=Pt(8)
-        # Merge only identical sample-level fields, only within this page.
-        start=0
-        while start<len(records):
-            end=start+1
-            while end<len(records) and records[end]['Tên mẫu']==records[start]['Tên mẫu']:end+=1
-            if end-start>1:
-                for key in ['Ngày PT','Tên mẫu','Csurr trước','TG giải hấp','KH ống','Vial','Csurr sau','H%','Pa','Pm','Nhiệt độ','V khí']:
-                    if key not in columns:continue
-                    col=columns.index(key);values={r[key] for r in records[start:end]}
-                    if len(values)==1:
-                        cell=table.rows[start+1].cells[col].merge(table.rows[end].cells[col]);write(cell,records[start][key])
-                        if col==1:
-                            cell.vertical_alignment=WD_CELL_VERTICAL_ALIGNMENT.TOP
-                            for p in cell.paragraphs:
-                                for run in p.runs:run.font.size=Pt(8)
-            start=end
-    if metadata is not None:
-        from bien_ban_xu_ly import _all_paragraphs, _replace_paragraph_tokens, replace_report_unit
-        values = dict(metadata)
-        values.setdefault('loai_mau','')
-        values.setdefault('ma_me','')
-        values.setdefault('ngay_phan_tich','')
-        values.setdefault('nguoi_phan_tich','')
-        values.setdefault('phuong_phap','')
-        values.setdefault('chi_tieu_phan_tich','')
-        for field in ('nguoi_phan_tich','phuong_phap','chi_tieu_phan_tich'):
-            if draft and not values[field]: values[field]='[CHƯA NHẬP — CẦN XÁC NHẬN]'
-        # BB-KT cũ không có sổ pha hóa chất; xóa marker, đánh dấu thiếu dữ liệu ở bản nháp.
-        for i in range(1,5):
-            for field in ('ten','ngay_pha','han_su_dung'):
-                values[f'hc{i}_{field}']=''
-        for paragraph in _all_paragraphs(doc):
-            _replace_paragraph_tokens(paragraph,values)
-            replace_report_unit(paragraph, result_unit)
-        unresolved=[paragraph.text for paragraph in _all_paragraphs(doc)
-                    if re.search(r'\{\{[^{}]+\}\}',paragraph.text)]
-        if unresolved:raise ValueError('Mẫu Word còn thẻ chưa điền; kiểm tra thẻ theo template.')
-    out=io.BytesIO();doc.save(out);return out.getvalue()
+            if declared and declared!={u_canonical(unit)}:
+                raise ValueError(source+' không khớp hoặc có nhiều đơn vị. Quy đổi trong phần tính trước khi xuất.')
+    # Không được tự đổi nhãn đơn vị hay thêm kết quả giả.
+    form={key:'' for key in ('loai_mau','ma_me','nguoi_phan_tich','ngay_phan_tich','phuong_phap','chi_tieu_phan_tich')}
+    form.update(metadata or {})
+    # Đặt dữ liệu theo đúng 16 cột Word; Pm là thông số phụ, mẫu 16 cột không có Pm.
+    rows=frame.rename(columns={'Tên chỉ tiêu':'Tên chỉ tiêu'}).copy()
+    raw=generate_bien_ban(template,form,[],rows,result_unit,draft=draft)
+    doc=Document(io.BytesIO(raw))
+    table=_get_table(doc,('Ngày PT','KH mẫu','Csurr trước'),min_cols=16)
+    # Đơn vị C đo và Csurr chỉ xuất khi được xác nhận.
+    if surr_unit:
+        _set_cell(table.rows[0].cells[2],f'Csurr trước\n({surr_unit})')
+        _set_cell(table.rows[0].cells[9],f'Csurr sau\n({surr_unit})')
+    if measured_unit:
+        _set_cell(table.rows[0].cells[14],f'C đo\n({measured_unit})')
+    for i in (2,9,14):
+        for p in table.rows[0].cells[i].paragraphs:
+            for run in p.runs:run.font.name='Times New Roman';run.font.size=Pt(7.15);run.font.bold=True
+    output=io.BytesIO();doc.save(output)
+    return output.getvalue()
 
 def bbkt_recovery(frame):
     from decimal import Decimal,InvalidOperation,localcontext,ROUND_HALF_UP
@@ -2625,7 +2562,7 @@ def render_bbkt():
                                 'ma_me':batch,'ngay_phan_tich':bbkt_text(family_frame['Ngày PT'].iloc[0])}
     measured_unit=st.selectbox('Đơn vị C đo (nếu có)',['']+AN_LIQUID,key='bbkt_measured_unit')
     surr_unit=st.selectbox('Đơn vị Csurr (nếu có)',['']+AN_LIQUID,key='bbkt_surr_unit')
-    capacity=st.number_input('Số dòng tối đa mỗi trang',min_value=5,max_value=21,value=18,key='bbkt_capacity')
+    capacity=18  # V8: Word tự phân trang, không ép số dòng/trang.
     draft=st.checkbox('Xuất bản nháp nếu thiếu dữ liệu',value=True,key='bbkt_draft')
     klv_ok=st.checkbox('Xác nhận KLV phải viết Mg/m³ (khác mg/m³ về hệ SI)',key='bbkt_v6_klv_confirm') if 'KLV' in valid_codes else True
     digest=hashlib.sha256((edited.to_json()+batch+repr(group_inputs)+measured_unit+surr_unit+str(draft)+str(capacity)).encode()).hexdigest()[:16]
@@ -2644,6 +2581,12 @@ def render_bbkt():
                 if code=='KLV' and not (draft or klv_ok):
                     raise ValueError('Cần xác nhận Mg/m³ cho nền KLV.')
                 sub=chosen.loc[chosen['Tên mẫu'].map(sample_family).eq(code)].copy()
+                # V8: nguồn Excel có nhiều chỉ tiêu không đo. Không xuất 111 ô trống
+                # thành hàng Word; chỉ giữ giá trị kết quả thật (bao gồm KPH/MDL).
+                # BLANK thật trong dữ liệu được giữ nguyên.
+                result_mask=sub['Kết quả'].map(bbkt_text).ne('')
+                blank_mask=sub['Tên mẫu'].map(lambda x:bbkt_text(x).strip().upper() in ('BLANK','BLK','MẪU TRẮNG'))
+                sub=sub.loc[result_mask | blank_mask].copy()
                 if sub.empty:continue
                 # BLANK là mẫu trắng vật lý số 1, không tạo số đo hoặc kết quả giả.
                 if not sub['Tên mẫu'].map(lambda x:bbkt_text(x).strip().upper()=='BLANK').any():
