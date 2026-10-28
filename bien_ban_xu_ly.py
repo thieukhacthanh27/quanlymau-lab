@@ -436,12 +436,46 @@ def _compact_sop_layout(document):
                         run.font.size = Pt(min(size, 9.3))
 
 
+def _monochrome_aux_tables(document):
+    """Các bảng thông tin/hóa chất/SOP giữ nguyên nội dung, chỉ đổi thành trắng đen."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from docx.shared import RGBColor
+
+    for table in document.tables:
+        if len(table.columns) == 16:
+            continue  # bảng kết quả được xử lý chi tiết trong _fill_table
+        for row_index, row in enumerate(table.rows):
+            for cell in row.cells:
+                tc_pr = cell._tc.get_or_add_tcPr()
+                for shade in list(tc_pr.findall(qn('w:shd'))):
+                    tc_pr.remove(shade)
+                # Các bảng nội dung không dùng nền màu, kể cả header.
+                shade = OxmlElement('w:shd')
+                shade.set(qn('w:fill'), 'FFFFFF')
+                tc_pr.append(shade)
+                borders = tc_pr.find(qn('w:tcBorders'))
+                if borders is not None:
+                    for edge in borders:
+                        if edge.tag in {qn('w:top'), qn('w:bottom'), qn('w:left'),
+                                        qn('w:right'), qn('w:insideH'), qn('w:insideV')}:
+                            edge.set(qn('w:color'), '000000')
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.color.rgb = RGBColor(0, 0, 0)
+
+
 def _fill_table(document, rows, unit):
-    """Bảng Word khổ ngang 16 cột: kích thước ổn định, hàng xen kẽ, tiêu đề lặp."""
-    from docx.shared import Pt, Cm
+    """Bảng 16 cột theo mẫu 2026.07.130: trắng đen và ô chung nối theo nhóm mẫu.
+
+    Không tạo ô gộp dọc XML vì nhóm mẫu dài thường bị Word đẩy nguyên
+    cả nhóm sang trang mới. Thay vào đó ẩn đường kẻ ngang bên trong các
+    cột metadata chung, và hiện giá trị đúng một lần trong nhóm. Kết quả
+    nhìn như gộp ô, nhưng Word phân trang theo từng dòng chỉ tiêu.
+    """
+    from docx.shared import Pt, Cm, RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.enum.table import (WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT,
-                                 WD_ROW_HEIGHT_RULE)
+    from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT, WD_ROW_HEIGHT_RULE
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
 
@@ -451,88 +485,134 @@ def _fill_table(document, rows, unit):
     original_capacity = len(table.rows) - 1
     if original_capacity < 1:
         raise ValueError('Mẫu Word không có hàng dữ liệu dự phòng.')
+
     prototype = deepcopy(table.rows[-1]._tr)
-    for _ in range(max(0, len(rows) - original_capacity)):
+    for _ in range(max(0, len(rows)-original_capacity)):
         table._tbl.append(deepcopy(prototype))
     for leftover in list(table.rows)[len(rows)+1:]:
         table._tbl.remove(leftover._tr)
-
     table.autofit = False
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    # Tổng rộng 26,55 cm, không vượt khổ ngang 27,94 cm trừ lề 0,51 cm mỗi bên.
+    # Vẫn vừa một trang ngang; cột chỉ tiêu/kết quả ưu tiên độ rộng.
     widths_cm = [1.55, 2.65, 1.25, 1.55, 1.00, .95, .80, 4.35,
                  .95, 1.25, .85, 1.10, 1.25, 1.10, 1.20, 3.60]
-    for i, width in enumerate(widths_cm):
-        table.columns[i].width = Cm(width)
-    # Synchronize tblGrid and individual cell width across Word/LibreOffice.
-    for i, grid_col in enumerate(table._tbl.tblGrid.gridCol_lst):
-        grid_col.set(qn('w:w'), str(int(Cm(widths_cm[i]).twips)))
+    for j, width in enumerate(widths_cm):
+        table.columns[j].width = Cm(width)
+    for j, grid_col in enumerate(table._tbl.tblGrid.gridCol_lst):
+        grid_col.set(qn('w:w'), str(int(Cm(widths_cm[j]).twips)))
 
-    def style_cell(cell, *, header=False, alternate=False, blank=False, col=0):
+    def border(tc_pr, side, *, visible=True, width=5):
+        borders = tc_pr.find(qn('w:tcBorders'))
+        if borders is None:
+            borders = OxmlElement('w:tcBorders')
+            tc_pr.append(borders)
+        edge = borders.find(qn('w:'+side))
+        if edge is None:
+            edge = OxmlElement('w:'+side)
+            borders.append(edge)
+        edge.set(qn('w:val'), 'single' if visible else 'nil')
+        edge.set(qn('w:sz'), str(width))
+        edge.set(qn('w:color'), '000000')
+
+    def style_cell(cell, *, heading=False, column=0, group_start=False):
         cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
-        tcPr = cell._tc.get_or_add_tcPr()
-        for node in tcPr.findall(qn('w:shd')):
-            tcPr.remove(node)
-        shade = OxmlElement('w:shd')
-        shade.set(qn('w:fill'), 'DCEAF2' if header else ('EAF2F8' if blank else 'F4F7FB' if alternate else 'FFFFFF'))
-        tcPr.append(shade)
-        margins = tcPr.find(qn('w:tcMar'))
+        tc_pr = cell._tc.get_or_add_tcPr()
+        for old in list(tc_pr.findall(qn('w:shd'))):
+            tc_pr.remove(old)
+        shade = OxmlElement('w:shd'); shade.set(qn('w:fill'), 'FFFFFF')
+        tc_pr.append(shade)
+        margins=tc_pr.find(qn('w:tcMar'))
         if margins is None:
-            margins = OxmlElement('w:tcMar'); tcPr.append(margins)
-        for name, amount in [('top',55),('bottom',55),('left',65),('right',55)]:
-            edge=margins.find(qn('w:'+name))
-            if edge is None: edge=OxmlElement('w:'+name); margins.append(edge)
-            edge.set(qn('w:w'), str(amount));edge.set(qn('w:type'),'dxa')
-        borders=tcPr.find(qn('w:tcBorders'))
-        if borders is None: borders=OxmlElement('w:tcBorders');tcPr.append(borders)
+            margins=OxmlElement('w:tcMar');tc_pr.append(margins)
+        for side, twips in [('top',45),('bottom',45),('left',46),('right',46)]:
+            entry=margins.find(qn('w:'+side))
+            if entry is None:
+                entry=OxmlElement('w:'+side);margins.append(entry)
+            entry.set(qn('w:w'), str(twips));entry.set(qn('w:type'),'dxa')
         for side in ('top','bottom','left','right'):
-            edge=borders.find(qn('w:'+side))
-            if edge is None:edge=OxmlElement('w:'+side);borders.append(edge)
-            edge.set(qn('w:val'),'single');edge.set(qn('w:sz'),'4')
-            edge.set(qn('w:color'),'BACAD6')
+            border(tc_pr, side, width=8 if group_start and side=='top' else 5)
         for para in cell.paragraphs:
-            para.alignment = (WD_ALIGN_PARAGRAPH.LEFT if (col in (1,7,15) and not header)
-                              else WD_ALIGN_PARAGRAPH.CENTER)
+            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
             fmt=para.paragraph_format
-            fmt.space_before=Pt(0);fmt.space_after=Pt(0)
-            fmt.line_spacing=1.05
+            fmt.space_before=Pt(0);fmt.space_after=Pt(0);fmt.line_spacing=1.0
             for run in para.runs:
                 run.font.name='Times New Roman'
-                run.font.size=Pt(7.15 if header else 7.2 if col==15 else 7.6 if col==7 else 7.75)
-                run.font.bold=header or blank
-                if header:run.font.color.rgb=__import__('docx').shared.RGBColor(23,49,77)
+                run.font.color.rgb=RGBColor(0,0,0)
+                run.font.size=Pt(7.2 if heading else 7.2 if column in (7,15) else 7.6)
+                run.font.bold=bool(heading)
 
-    label = f'Kết quả\n({_as_text(unit)})' if _as_text(unit) else 'Kết quả\n(CHƯA XÁC NHẬN ĐƠN VỊ)'
-    _set_cell(table.rows[0].cells[15], label)
+    _set_cell(table.rows[0].cells[15], 'Kết quả\n('+_as_text(unit)+')' if _as_text(unit) else 'Kết quả\n(chưa xác nhận đơn vị)')
     header_pr=table.rows[0]._tr.get_or_add_trPr()
     if header_pr.find(qn('w:tblHeader')) is None:
         header_pr.append(OxmlElement('w:tblHeader'))
-    table.rows[0].height=Pt(48)
+    table.rows[0].height=Pt(46)
     table.rows[0].height_rule=WD_ROW_HEIGHT_RULE.AT_LEAST
-    for ci, width in enumerate(widths_cm):
+    for ci,width in enumerate(widths_cm):
         cell=table.rows[0].cells[ci]; cell.width=Cm(width)
-        style_cell(cell,header=True,col=ci)
-    for i, (_, record) in enumerate(rows.iterrows(), 1):
-        current=table.rows[i]
-        current.height=Pt(22)
-        current.height_rule=WD_ROW_HEIGHT_RULE.AT_LEAST
-        tr_pr=current._tr.get_or_add_trPr()
-        if tr_pr.find(qn('w:cantSplit')) is None:tr_pr.append(OxmlElement('w:cantSplit'))
-        is_blank=_is_blank_code(record.get('Tên mẫu',''))
-        is_group_start = (i == 1 or _as_text(record.get('Tên mẫu','')) != _as_text(rows.iloc[i-2].get('Tên mẫu','')))
+        style_cell(cell,heading=True,column=ci)
+
+    # Một mẫu có thể được phân tích nhiều chỉ tiêu. Các ô này giống nhau
+    # trong mẫu 2026.07.130: nối theo mã mẫu nhưng không gộp XML dọc.
+    shared_columns = (0,1,2,3,4,5,9,10,11,12,13)
+    ordered = list(rows.iterrows())
+    groups=[]
+    for position, (_, record) in enumerate(ordered):
+        code=_as_text(record.get('Tên mẫu',''))
+        if not groups or not code or code != groups[-1]['code']:
+            groups.append({'code':code,'positions':[position]})
+        else:
+            groups[-1]['positions'].append(position)
+    shared_rules={}
+    for group in groups:
+        positions=group['positions']; n=len(positions)
+        # Nhóm quá dài (>6 chỉ tiêu) có thể qua nhiều trang:
+        # hiện đủ metadata từng dòng thay vì tạo ô nối xuyên trang.
+        if n<=1 or n>6:
+            continue
+        for ci in shared_columns:
+            key=WORD_COLUMNS[ci]
+            texts=[_as_text(ordered[idx][1].get(key,'')) for idx in positions]
+            unique_nonempty={value for value in texts if value}
+            # Khi nguồn có nhiều giá trị cho cùng mẫu, hiện từng dòng đầy đủ,
+            # không được giấu các khác biệt theo giả định gộp mẫu.
+            if len(unique_nonempty)>1:
+                continue
+            mid = positions[0] if ci==1 or n>8 else positions[n//2]
+            for idx in positions:
+                shared_rules[(idx,ci)]={'display':next(iter(unique_nonempty),'') if idx==mid else '',
+                                         'hide_top':idx != positions[0],
+                                         'hide_bottom':idx != positions[-1]}
+
+    # Giữ nguyên một nhóm mẫu nhỏ trên một trang khi có thể.
+    # Tránh lặp lại lỗi V8: chỉ bật keep_with_next với nhóm <= 6 chỉ tiêu.
+    keep_next_positions = set()
+    for group in groups:
+        if 1 < len(group['positions']) <= 6:
+            keep_next_positions.update(group['positions'][:-1])
+
+    for position,(_,record) in enumerate(ordered):
+        row=table.rows[position+1]
+        row.height=Pt(20)
+        row.height_rule=WD_ROW_HEIGHT_RULE.AT_LEAST
+        tr_pr=row._tr.get_or_add_trPr()
+        if tr_pr.find(qn('w:cantSplit')) is None:
+            tr_pr.append(OxmlElement('w:cantSplit'))
+        first_of_sample = position==0 or _as_text(ordered[position-1][1].get('Tên mẫu')) != _as_text(record.get('Tên mẫu'))
         for ci,key in enumerate(WORD_COLUMNS):
-            cell=current.cells[ci]
+            cell=row.cells[ci]
             cell.width=Cm(widths_cm[ci])
-            _set_cell(cell, record.get(key,''))
-            style_cell(cell,alternate=(i%2==0),blank=is_blank,col=ci)
-            if is_group_start:
-                tc_borders=cell._tc.get_or_add_tcPr().find(qn('w:tcBorders'))
-                top=tc_borders.find(qn('w:top'))
-                top.set(qn('w:sz'),'10')
-                top.set(qn('w:color'),'437B9C')
-                if ci == 1:
-                    for p in cell.paragraphs:
-                        for run in p.runs: run.font.bold = True
+            rule=shared_rules.get((position,ci))
+            display=rule['display'] if rule else record.get(key,'')
+            _set_cell(cell,display)
+            style_cell(cell,column=ci,group_start=first_of_sample)
+            # Word sẽ ưu tiên giữ các dòng của cùng mẫu ở một trang.
+            if position in keep_next_positions:
+                for para in cell.paragraphs:
+                    para.paragraph_format.keep_with_next = True
+            if rule:
+                tc_pr=cell._tc.get_or_add_tcPr()
+                if rule['hide_top']:border(tc_pr,'top',visible=False)
+                if rule['hide_bottom']:border(tc_pr,'bottom',visible=False)
     return max(original_capacity,len(rows))
 
 
@@ -571,6 +651,7 @@ def generate_bien_ban(template_bytes, metadata, chemicals, rows, result_unit, *,
         _replace_paragraph_tokens(p, mapping)
         # Cập nhật dòng giải thích đơn vị theo nền, không sửa công thức gốc.
         replace_report_unit(p, result_unit)
+    _monochrome_aux_tables(document)
     _fill_table(document, data, result_unit)
     _compact_sop_layout(document)
     if draft:
@@ -650,7 +731,7 @@ def generate_bien_ban_excel(metadata, rows, result_unit, *, draft=False):
     ws.merge_cells('A1:P2')
     ws.get_range('A1').values = [[_safe_excel_literal('BIÊN BẢN XỬ LÝ MẪU — ' + _as_text(metadata.get('loai_mau')))]]
     ws.get_range('A1:P2').format = {
-        'fill': '#17324D', 'font': {'name': 'Arial', 'bold': True, 'size': 16, 'color': '#FFFFFF'},
+        'fill': '#FFFFFF', 'font': {'name': 'Arial', 'bold': True, 'size': 16, 'color': '#000000'},
         'horizontal_alignment': 'center', 'vertical_alignment': 'center', 'row_height': 28}
     ws.merge_cells('A3:H3');ws.merge_cells('I3:P3')
     ws.get_range('A3').values = [['Mã mẻ: '+_as_text(metadata.get('ma_me'))]]
@@ -662,22 +743,22 @@ def generate_bien_ban_excel(metadata, rows, result_unit, *, draft=False):
     ws.get_range('A5').values = [['Phương pháp xử lý mẫu: '+_as_text(metadata.get('phuong_phap'))]]
     ws.merge_cells('A7:P7')
     ws.get_range('A7').values = [['Chỉ tiêu phân tích: '+_as_text(metadata.get('chi_tieu_phan_tich'))]]
-    ws.get_range('A7:P7').format = {'font': {'name':'Arial','size':10,'color':'#203448'},
-                                    'fill':'#F0F5F9','row_height':26, 'wrap_text':True}
+    ws.get_range('A7:P7').format = {'font': {'name':'Arial','size':10,'color':'#000000'},
+                                    'fill':'#FFFFFF','row_height':26, 'wrap_text':True}
     ws.merge_cells('A6:P6')
     ws.get_range('A6').values = [['BẢN NHÁP — cần xác nhận dữ liệu/đơn vị/SOP trước khi phát hành.' if draft
                                 else 'Dữ liệu tự động trích xuất; cần đối chiếu hồ sơ trước khi phát hành.']]
     ws.get_range('A3:P6').format = {
-        'fill': '#F0F5F9','font':{'name':'Arial','size':10,'color':'#33485C'},
+        'fill': '#F0F5F9','font':{'name':'Arial','size':10,'color':'#000000'},
         'row_height':22,'vertical_alignment':'center'}
-    ws.get_range('A6:P6').format = {'fill':'#FFF4DF','font':{'name':'Arial','bold':True,'size':10,'color':'#85591F'},'row_height':24}
+    ws.get_range('A6:P6').format = {'fill':'#FFFFFF','font':{'name':'Arial','bold':True,'size':10,'color':'#000000'},'row_height':24}
     columns = ['Ngày PT','KH mẫu','Csurr trước','TG giải hấp','KH ống đựng mẫu',
                'Ký hiệu Vial','CIS','Chỉ tiêu','Hệ số pha loãng (K)',
                'Csurr sau','H%','Pa','Nhiệt độ (°C)','V khí (L)','C đo',
                'Kết quả ('+_as_text(result_unit)+')']
     ws.get_range('A8:P8').values = [columns]
     ws.get_range('A8:P8').format = {
-        'fill':'#22516D','font':{'name':'Arial','bold':True,'size':10,'color':'#FFFFFF'},
+        'fill':'#FFFFFF','font':{'name':'Arial','bold':True,'size':10,'color':'#000000'},
         'horizontal_alignment':'center','vertical_alignment':'center',
         'wrap_text':True,'row_height':51}
     matrix=[]
@@ -693,16 +774,15 @@ def generate_bien_ban_excel(metadata, rows, result_unit, *, draft=False):
         last=8+len(matrix)
         ws.get_range(f'A9:P{last}').values = matrix
         ws.get_range(f'A9:P{last}').format = {
-            'font':{'name':'Arial','size':10,'color':'#203448'},
+            'font':{'name':'Arial','size':10,'color':'#000000'},
             'vertical_alignment':'center','horizontal_alignment':'center',
             'row_height':28, 'wrap_text':True}
         for i,entry in enumerate(matrix,9):
-            if entry[1]=='BLANK':
-                ws.get_range(f'A{i}:P{i}').format.fill='#DDECF7'
-            elif i%2==0:
-                ws.get_range(f'A{i}:P{i}').format.fill='#F5F8FB'
+            # Giữ mọi dòng cùng nền trắng, không tô BLANK hoặc xen kẽ màu.
+            pass
         for col in ('B','H','P'):
             ws.get_range(f'{col}9:{col}{last}').format.horizontal_alignment='left'
+    ws.get_range(f'A8:P{8+len(matrix)}').format.borders = {'preset':'all','style':'thin','color':'#000000'}
     for letter,width in zip('ABCDEFGHIJKLMNOP', [13,20,14,15,14,12,11,24,14,14,10,11,15,12,14,24]):
         ws.get_range(f'{letter}:{letter}').format.column_width=width
     ws.freeze_panes.freeze_rows(8)
@@ -710,7 +790,7 @@ def generate_bien_ban_excel(metadata, rows, result_unit, *, draft=False):
     source_columns=['KH mẫu','Chỉ tiêu','Kết quả nguyên gốc','Ô nguồn Excel',
                     'Ngày PT','TG giải hấp','V khí (L)','Pa (giá trị gốc)','Nhiệt độ (°C)','Lưu ý']
     trace.get_range('A1:J1').values=[source_columns]
-    trace.get_range('A1:J1').format={'fill':'#22516D','font':{'bold':True,'color':'#FFFFFF','size':10},'row_height':34,'wrap_text':True}
+    trace.get_range('A1:J1').format={'fill':'#FFFFFF','font':{'bold':True,'color':'#000000','size':10},'row_height':34,'wrap_text':True}
     source_rows=[]
     for _,r in rows.iterrows():
         source_rows.append([_as_text(r.get('Tên mẫu')),_as_text(r.get('Tên chỉ tiêu')),_as_text(r.get('Kết quả')),
@@ -721,6 +801,7 @@ def generate_bien_ban_excel(metadata, rows, result_unit, *, draft=False):
     if source_rows:
         trace.get_range(f'A2:J{len(source_rows)+1}').values=[[ _safe_excel_literal(v) for v in row ] for row in source_rows]
         trace.get_range(f'A2:J{len(source_rows)+1}').format={'font':{'size':10},'row_height':23,'wrap_text':True}
+    trace.get_range(f'A1:J{1+len(source_rows)}').format.borders = {'preset':'all','style':'thin','color':'#000000'}
     for col,width in zip('ABCDEFGHIJ',[18,24,21,20,15,16,14,19,20,70]):
         trace.get_range(f'{col}:{col}').format.column_width=width
     trace.freeze_panes.freeze_rows(1)
